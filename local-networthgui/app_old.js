@@ -95,6 +95,7 @@ const state = {
     deep: null,
     audit: null,
   },
+  formulaValidation: null,
   govData: {
     sources: [],
     calculations: [],
@@ -398,15 +399,19 @@ function h(tag, attrs = {}, children = []) {
 }
 
 async function fetchJson(path) {
-  const res = await fetch(path);
+  const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json();
 }
 
 async function fetchText(path) {
-  const res = await fetch(path);
+  const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to load ${path}`);
-  return res.text();
+  const text = await res.text();
+  if (/^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text)) {
+    throw new Error(`${path} returned HTML fallback instead of data`);
+  }
+  return text;
 }
 
 async function fetchFirst(paths, loader) {
@@ -419,6 +424,18 @@ async function fetchFirst(paths, loader) {
     }
   }
   throw new Error(errors.join(" | "));
+}
+
+async function importFirst(paths) {
+  const errors = [];
+  for (const path of paths) {
+    try {
+      return await import(/* @vite-ignore */ path);
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
+  }
+  return { loadError: errors.join(" | ") };
 }
 
 function formatBenchmark(value, unit = "") {
@@ -1074,6 +1091,39 @@ function assumptionQualitySection() {
   ]), "Flags assumptions that are far away from dataset averages so users can review them before saving or running scenarios.");
 }
 
+function formulaValidationSection() {
+  const report = state.formulaValidation;
+  if (!report?.checks?.length) {
+    return sectionCard("Formula verification status", h("div", { class: "notice warn" }, "Formula validation report is not loaded. Run npm run formula:validate to regenerate it."), "Government-backed checks are generated locally from cached official datasets.");
+  }
+  const sourceById = Object.fromEntries((report.sources || []).map((source) => [source.id, source]));
+  const rows = report.checks.map((check) => ({
+    ...check,
+    sources: (check.sourceIds || []).map((id) => sourceById[id]?.label || id).join(", "),
+  }));
+  return sectionCard("Formula verification status", h("div", { class: "section-stack" }, [
+    h("div", { class: "inline-metrics three" }, [
+      inlineMetric("Status", report.status || "review"),
+      inlineMetric("Passing checks", String(report.summary?.pass ?? 0)),
+      inlineMetric("Needs review", String((report.summary?.review ?? 0) + (report.summary?.fail ?? 0))),
+    ]),
+    makeTable(
+      [
+        { label: "Check", render: (row) => row.label },
+        { label: "Status", render: (row) => h("span", { class: `status-pill ${row.status}` }, row.status) },
+        { label: "Source", render: (row) => row.sources },
+        { label: "Formula / gate", render: (row) => row.formula },
+        { label: "Validation note", render: (row) => row.note },
+      ],
+      rows
+    ),
+    h("div", { class: "inline-link-list" }, [
+      h("a", { href: "./FORMULA_VALIDATION.md", target: "_blank" }, "Open validation notes"),
+      h("a", { href: "./data/formula-validation.json", target: "_blank" }, "Open validation JSON"),
+    ]),
+  ]), "Validation currently flags simplifications instead of silently replacing behavior. Tax is intentionally marked review because the app still uses effective-rate taxes.");
+}
+
 function featureFlagSection() {
   return sectionCard("Model feature flags", h("div", { class: "section-stack" }, [
     toggleControl("Use validated projection preview", state.featureFlags.useValidatedProjectionModel, (checked) => {
@@ -1528,6 +1578,7 @@ function renderDashboardTools() {
       ]),
     ]),
     assumptionQualitySection(),
+    formulaValidationSection(),
     profileCrossReferenceSection("Current profile cross-reference", "Compare the active dashboard numbers against saved profiles before applying scenario changes."),
     h("details", { class: "accordion", open: true }, [
       h("summary", {}, "Advanced assumption inventory"),
@@ -2431,6 +2482,7 @@ function renderModelNotes() {
         helpBox("Reference profile", state.profileMeta?.profile_code || "silver-lion-8366"),
       ]),
     ]),
+    formulaValidationSection(),
     accordion("JSON backup", true, [
       h("p", { class: "section-copy" }, "JSON restores compatible profiles and migrates older files when possible. Keep a CSV export too."),
       h("button", { class: "btn full", onclick: () => window.open("../deep-interactions/downloads/profile.json", "_blank") }, "Download profile JSON"),
@@ -2645,16 +2697,17 @@ function render() {
 }
 
 async function loadData() {
-  const [profile, deep, auditReport, auditCsv, settingsCsv, publicBenchmarks, profileBenchmarks, govCacheManifest, govModule] = await Promise.all([
-    fetchFirst(["./data/snapshots/profile.json", "../deep-interactions/downloads/profile.json"], fetchJson),
-    fetchFirst(["./data/snapshots/deep-report.json", "../deep-interactions/report.json"], fetchJson),
-    fetchFirst(["./data/snapshots/audit-report.json", "../exhaustive-audit/report.json"], fetchJson),
-    fetchFirst(["./data/snapshots/projection-audit.csv", "../deep-interactions/downloads/projection-audit.csv"], fetchText),
-    fetchFirst(["./data/snapshots/settings.csv", "../deep-interactions/downloads/settings.csv"], fetchText),
-    fetchJson("./data/public-benchmarks.json").catch(() => ({ benchmarks: DEFAULT_PUBLIC_BENCHMARKS })),
-    fetchJson("./data/profile-benchmarks.json").catch(() => ({ profiles: DEFAULT_PROFILE_BENCHMARKS })),
-    fetchJson("./data/gov-cache/manifest.json").catch(() => null),
-    import("./scaffold/index.js").catch((error) => ({ loadError: error.message })),
+  const [profile, deep, auditReport, auditCsv, settingsCsv, publicBenchmarks, profileBenchmarks, formulaValidation, govCacheManifest, govModule] = await Promise.all([
+    fetchFirst(["./data/snapshots/profile.json", "/data/snapshots/profile.json", "../deep-interactions/downloads/profile.json"], fetchJson),
+    fetchFirst(["./data/snapshots/deep-report.json", "/data/snapshots/deep-report.json", "../deep-interactions/report.json"], fetchJson),
+    fetchFirst(["./data/snapshots/audit-report.json", "/data/snapshots/audit-report.json", "../exhaustive-audit/report.json"], fetchJson),
+    fetchFirst(["./data/snapshots/projection-audit.csv", "/data/snapshots/projection-audit.csv", "../deep-interactions/downloads/projection-audit.csv"], fetchText),
+    fetchFirst(["./data/snapshots/settings.csv", "/data/snapshots/settings.csv", "../deep-interactions/downloads/settings.csv"], fetchText),
+    fetchFirst(["./data/public-benchmarks.json", "/data/public-benchmarks.json"], fetchJson).catch(() => ({ benchmarks: DEFAULT_PUBLIC_BENCHMARKS })),
+    fetchFirst(["./data/profile-benchmarks.json", "/data/profile-benchmarks.json"], fetchJson).catch(() => ({ profiles: DEFAULT_PROFILE_BENCHMARKS })),
+    fetchFirst(["./data/formula-validation.json", "/data/formula-validation.json"], fetchJson).catch(() => null),
+    fetchFirst(["./data/gov-cache/manifest.json", "/data/gov-cache/manifest.json"], fetchJson).catch(() => null),
+    importFirst(["./scaffold/index.js", "/scaffold/index.js"]),
   ]);
   state.profileMeta = profile;
   state.settings = profile.config || {};
@@ -2668,6 +2721,7 @@ async function loadData() {
   }
   state.govData.benchmarks = publicBenchmarks.benchmarks || DEFAULT_PUBLIC_BENCHMARKS;
   state.profileBenchmarks = profileBenchmarks.profiles || DEFAULT_PROFILE_BENCHMARKS;
+  state.formulaValidation = formulaValidation;
   if (!state.profileBenchmarks.some((item) => item.id === state.profileBenchmarkKey)) {
     state.profileBenchmarkKey = state.profileBenchmarks[0]?.id || DEFAULT_PROFILE_BENCHMARKS[0].id;
   }

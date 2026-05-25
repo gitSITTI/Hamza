@@ -1253,10 +1253,25 @@ body.theme-dark .frame-dots {
   background: var(--green-soft);
 }
 
+.status-pill.pass {
+  border-color: var(--green-line);
+  background: var(--green-soft);
+}
+
+.status-pill.review {
+  border-color: #f3c26b;
+  background: rgba(243, 194, 107, 0.16);
+}
+
 .status-pill.failed,
 .status-pill.missing-key {
   border-color: var(--blue-line);
   background: var(--blue-soft);
+}
+
+.status-pill.fail {
+  border-color: var(--accent);
+  background: var(--accent-soft);
 }
 
 .snapshot-box {

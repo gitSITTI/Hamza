@@ -86,6 +86,7 @@ const state = {
   profileBenchmarks: [],
   savedProfiles: [],
   apiKeyDrafts: {},
+  accordionOpen: {},
   featureFlags: {
     useValidatedProjectionModel: false,
     useGovernmentBenchmarks: true,
@@ -399,15 +400,19 @@ function h(tag, attrs = {}, children = []) {
 }
 
 async function fetchJson(path) {
-  const res = await fetch(path);
+  const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to load ${path}`);
   return res.json();
 }
 
 async function fetchText(path) {
-  const res = await fetch(path);
+  const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to load ${path}`);
-  return res.text();
+  const text = await res.text();
+  if (/^\s*<!doctype html/i.test(text) || /^\s*<html/i.test(text)) {
+    throw new Error(`${path} returned HTML fallback instead of data`);
+  }
+  return text;
 }
 
 async function fetchFirst(paths, loader) {
@@ -420,6 +425,18 @@ async function fetchFirst(paths, loader) {
     }
   }
   throw new Error(errors.join(" | "));
+}
+
+async function importFirst(paths) {
+  const errors = [];
+  for (const path of paths) {
+    try {
+      return await import(/* @vite-ignore */ path);
+    } catch (error) {
+      errors.push(`${path}: ${error.message}`);
+    }
+  }
+  return { loadError: errors.join(" | ") };
 }
 
 function formatBenchmark(value, unit = "") {
@@ -2499,10 +2516,21 @@ function chartSection(title, copy, series) {
   ]);
 }
 
+function stopAccordionToggle(event) {
+  event.stopPropagation();
+}
+
 function accordion(title, open, bodyChildren) {
   const details = h("details", { class: "accordion" });
-  if (open) details.open = true;
-  details.append(h("summary", {}, title), h("div", { class: "accordion-body" }, bodyChildren));
+  details.open = state.accordionOpen[title] ?? open;
+  details.addEventListener("toggle", () => {
+    state.accordionOpen[title] = details.open;
+  });
+  const body = h("div", { class: "accordion-body" }, bodyChildren);
+  ["click", "pointerdown", "mousedown", "touchstart", "keydown"].forEach((eventName) => {
+    body.addEventListener(eventName, stopAccordionToggle, true);
+  });
+  details.append(h("summary", {}, title), body);
   return details;
 }
 
@@ -2682,16 +2710,16 @@ function render() {
 
 async function loadData() {
   const [profile, deep, auditReport, auditCsv, settingsCsv, publicBenchmarks, profileBenchmarks, formulaValidation, govCacheManifest, govModule] = await Promise.all([
-    fetchFirst(["./data/snapshots/profile.json", "../deep-interactions/downloads/profile.json"], fetchJson),
-    fetchFirst(["./data/snapshots/deep-report.json", "../deep-interactions/report.json"], fetchJson),
-    fetchFirst(["./data/snapshots/audit-report.json", "../exhaustive-audit/report.json"], fetchJson),
-    fetchFirst(["./data/snapshots/projection-audit.csv", "../deep-interactions/downloads/projection-audit.csv"], fetchText),
-    fetchFirst(["./data/snapshots/settings.csv", "../deep-interactions/downloads/settings.csv"], fetchText),
-    fetchJson("./data/public-benchmarks.json").catch(() => ({ benchmarks: DEFAULT_PUBLIC_BENCHMARKS })),
-    fetchJson("./data/profile-benchmarks.json").catch(() => ({ profiles: DEFAULT_PROFILE_BENCHMARKS })),
-    fetchJson("./data/formula-validation.json").catch(() => null),
-    fetchJson("./data/gov-cache/manifest.json").catch(() => null),
-    import("./scaffold/index.js").catch((error) => ({ loadError: error.message })),
+    fetchFirst(["./data/snapshots/profile.json", "/data/snapshots/profile.json", "../deep-interactions/downloads/profile.json"], fetchJson),
+    fetchFirst(["./data/snapshots/deep-report.json", "/data/snapshots/deep-report.json", "../deep-interactions/report.json"], fetchJson),
+    fetchFirst(["./data/snapshots/audit-report.json", "/data/snapshots/audit-report.json", "../exhaustive-audit/report.json"], fetchJson),
+    fetchFirst(["./data/snapshots/projection-audit.csv", "/data/snapshots/projection-audit.csv", "../deep-interactions/downloads/projection-audit.csv"], fetchText),
+    fetchFirst(["./data/snapshots/settings.csv", "/data/snapshots/settings.csv", "../deep-interactions/downloads/settings.csv"], fetchText),
+    fetchFirst(["./data/public-benchmarks.json", "/data/public-benchmarks.json"], fetchJson).catch(() => ({ benchmarks: DEFAULT_PUBLIC_BENCHMARKS })),
+    fetchFirst(["./data/profile-benchmarks.json", "/data/profile-benchmarks.json"], fetchJson).catch(() => ({ profiles: DEFAULT_PROFILE_BENCHMARKS })),
+    fetchFirst(["./data/formula-validation.json", "/data/formula-validation.json"], fetchJson).catch(() => null),
+    fetchFirst(["./data/gov-cache/manifest.json", "/data/gov-cache/manifest.json"], fetchJson).catch(() => null),
+    importFirst(["./scaffold/index.js", "/scaffold/index.js"]),
   ]);
   state.profileMeta = profile;
   state.settings = profile.config || {};
