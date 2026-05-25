@@ -1,0 +1,15 @@
+[
+  {
+    "source": "bls",
+    "seriesId": "LASST290000000000003",
+    "points": [
+      {
+        "year": 2026,
+        "period": "M04",
+        "periodName": "April",
+        "value": 3.8,
+        "latest": true
+      }
+    ]
+  }
+]

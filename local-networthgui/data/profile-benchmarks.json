@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "label": "Comparison profiles",
+    "updated": "2026-05-23",
+    "note": "Profiles are starter cross-reference profiles built from local snapshot values plus refreshed public benchmarks where available."
+  },
+  "profiles": [
+    {
+      "id": "public-national-average",
+      "label": "Public national average",
+      "description": "General U.S. reference profile for checking user-entered assumptions against public benchmarks.",
+      "source": "Generated from cached public benchmark file and local defaults",
+      "metrics": {
+        "annualIncome": 78000,
+        "annualSpending": 65000,
+        "startingNetWorth": 192900,
+        "cashReserve": 19500,
+        "retirementAge": 67,
+        "inflationRate": 2.6,
+        "equityReturn": 10,
+        "emergencyReserveMonths": 6,
+        "children": 1.8
+      }
+    },
+    {
+      "id": "st-louis-balanced",
+      "label": "St. Louis balanced household",
+      "description": "Local balanced spending case close to the current app baseline.",
+      "source": "Local captured profile and lifestyle snapshot",
+      "metrics": {
+        "annualIncome": 127000,
+        "annualSpending": 79000,
+        "startingNetWorth": 173000,
+        "cashReserve": 16000,
+        "retirementAge": 68,
+        "inflationRate": 3,
+        "equityReturn": 10,
+        "emergencyReserveMonths": 3,
+        "children": 0
+      }
+    },
+    {
+      "id": "local-working-profile",
+      "label": "Local working profile",
+      "description": "Current local household estimate seeded from captured app financial values and public default assumptions.",
+      "source": "Captured local app baseline plus cached public benchmark defaults",
+      "metrics": {
+        "annualIncome": 127000,
+        "annualSpending": 79030,
+        "startingNetWorth": 173361,
+        "cashReserve": 11000,
+        "retirementAge": 67,
+        "inflationRate": 3,
+        "equityReturn": 10,
+        "emergencyReserveMonths": 3,
+        "children": 0
+      }
+    },
+    {
+      "id": "conservative-planner",
+      "label": "Conservative planner",
+      "description": "Lower return and stronger liquidity profile for stress-aware planning.",
+      "source": "Planning profile derived from public benchmark guardrails",
+      "metrics": {
+        "annualIncome": 95000,
+        "annualSpending": 62000,
+        "startingNetWorth": 225000,
+        "cashReserve": 31000,
+        "retirementAge": 67,
+        "inflationRate": 3,
+        "equityReturn": 7,
+        "emergencyReserveMonths": 6,
+        "children": 1
+      }
+    },
+    {
+      "id": "high-cost-metro",
+      "label": "High cost metro",
+      "description": "Higher income and higher spending profile for checking lifestyle pressure.",
+      "source": "Planning profile for high-cost metro scenario comparisons",
+      "metrics": {
+        "annualIncome": 165000,
+        "annualSpending": 118000,
+        "startingNetWorth": 250000,
+        "cashReserve": 29500,
+        "retirementAge": 67,
+        "inflationRate": 3.2,
+        "equityReturn": 10,
+        "emergencyReserveMonths": 6,
+        "children": 1
+      }
+    }
+  ]
+}

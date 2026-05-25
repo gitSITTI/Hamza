@@ -1,0 +1,295 @@
+{
+  "result": {
+    "input": {
+      "address": {
+        "address": "1200 Market St, St. Louis, MO 63103"
+      },
+      "vintage": {
+        "isDefault": true,
+        "id": "4",
+        "vintageName": "Current_Current",
+        "vintageDescription": "Current Vintage - Current Benchmark"
+      },
+      "benchmark": {
+        "isDefault": true,
+        "benchmarkDescription": "Public Address Ranges - Current Benchmark",
+        "id": "4",
+        "benchmarkName": "Public_AR_Current"
+      }
+    },
+    "addressMatches": [
+      {
+        "tigerLine": {
+          "side": "L",
+          "tigerLineId": "107605634"
+        },
+        "geographies": {
+          "States": [
+            {
+              "STATENS": "01779791",
+              "GEOID": "29",
+              "CENTLAT": "+38.3569837",
+              "AREAWATER": "2487488279",
+              "STATE": "29",
+              "BASENAME": "Missouri",
+              "STUSAB": "MO",
+              "OID": "2749046934061",
+              "LSADC": "00",
+              "FUNCSTAT": "A",
+              "INTPTLAT": "+38.3507508",
+              "DIVISION": "4",
+              "NAME": "Missouri",
+              "REGION": "2",
+              "OBJECTID": 8,
+              "CENTLON": "-092.4580520",
+              "AREALAND": "178052638139",
+              "INTPTLON": "-092.4567820",
+              "MTFCC": "G4000"
+            }
+          ],
+          "Combined Statistical Areas": [
+            {
+              "POP100": "",
+              "GEOID": "476",
+              "CENTLAT": "+38.6839906",
+              "AREAWATER": "582222431",
+              "BASENAME": "St. Louis-St. Charles-Farmington, MO-IL",
+              "OID": "2619034687908121",
+              "LSADC": "M0",
+              "FUNCSTAT": "S",
+              "INTPTLAT": "+38.6843841",
+              "NAME": "St. Louis-St. Charles-Farmington, MO-IL CSA",
+              "OBJECTID": 148,
+              "CSA": "476",
+              "CENTLON": "-090.2663583",
+              "INTPTLON": "-090.2644483",
+              "AREALAND": "23019554825",
+              "HU100": "",
+              "MTFCC": "G3100"
+            }
+          ],
+          "County Subdivisions": [
+            {
+              "COUSUB": "65000",
+              "GEOID": "2951065000",
+              "CENTLAT": "+38.6357896",
+              "AREAWATER": "11534972",
+              "STATE": "29",
+              "BASENAME": "St. Louis",
+              "OID": "27690325436609",
+              "LSADC": "25",
+              "FUNCSTAT": "F",
+              "INTPTLAT": "+38.6356988",
+              "NAME": "St. Louis city",
+              "OBJECTID": 10042,
+              "CENTLON": "-090.2451124",
+              "COUSUBCC": "Z7",
+              "AREALAND": "159847392",
+              "INTPTLON": "-090.2445816",
+              "MTFCC": "G4040",
+              "COUSUBNS": "00767557",
+              "COUNTY": "510"
+            }
+          ],
+          "Urban Areas": [
+            {
+              "GEOID": "77770",
+              "CENTLAT": "+38.6375265",
+              "AREAWATER": "32072298",
+              "BASENAME": "St. Louis, MO--IL",
+              "OID": "27021149986311",
+              "UA": "77770",
+              "LSADC": "67",
+              "FUNCSTAT": "S",
+              "INTPTLAT": "+38.6363760",
+              "NAME": "St. Louis, MO--IL Urban Area",
+              "OBJECTID": 869,
+              "CENTLON": "-090.3423811",
+              "AREALAND": "2358471991",
+              "INTPTLON": "-090.3414179",
+              "MTFCC": "G3500"
+            }
+          ],
+          "Incorporated Places": [
+            {
+              "DISP_CLR": 2,
+              "NECTAPCI": "N",
+              "GEOID": "2965000",
+              "CENTLAT": "+38.6357896",
+              "AREAWATER": "11534972",
+              "BASENAME": "St. Louis",
+              "STATE": "29",
+              "OID": "27890325442361",
+              "LSADC": "25",
+              "PLACE": "65000",
+              "FUNCSTAT": "A",
+              "INTPTLAT": "+38.6356988",
+              "NAME": "St. Louis city",
+              "OBJECTID": 32301,
+              "PLACECC": "C7",
+              "CENTLON": "-090.2451124",
+              "CBSAPCI": "Y",
+              "AREALAND": "159847392",
+              "INTPTLON": "-090.2445816",
+              "PLACENS": "00767557",
+              "MTFCC": "G4110"
+            }
+          ],
+          "Counties": [
+            {
+              "GEOID": "29510",
+              "CENTLAT": "+38.6357896",
+              "AREAWATER": "11534972",
+              "STATE": "29",
+              "BASENAME": "St. Louis",
+              "OID": "27590325427938",
+              "LSADC": "25",
+              "FUNCSTAT": "F",
+              "INTPTLAT": "+38.6356988",
+              "NAME": "St. Louis city",
+              "OBJECTID": 2211,
+              "CENTLON": "-090.2451124",
+              "COUNTYCC": "C7",
+              "COUNTYNS": "00767557",
+              "AREALAND": "159847392",
+              "INTPTLON": "-090.2445816",
+              "MTFCC": "G4020",
+              "COUNTY": "510"
+            }
+          ],
+          "2024 State Legislative Districts - Upper": [
+            {
+              "GEOID": "29005",
+              "CENTLAT": "+38.6496665",
+              "AREAWATER": "11253686",
+              "STATE": "29",
+              "BASENAME": "5",
+              "OID": "2129035951821972",
+              "SLDU": "005",
+              "LSADC": "LU",
+              "FUNCSTAT": "N",
+              "INTPTLAT": "+38.6497548",
+              "NAME": "State Senate District 5",
+              "OBJECTID": 197,
+              "CENTLON": "-090.2277063",
+              "LSY": "2024",
+              "AREALAND": "105544241",
+              "INTPTLON": "-090.2284231",
+              "MTFCC": "G5210",
+              "LDTYP": "O"
+            }
+          ],
+          "2024 State Legislative Districts - Lower": [
+            {
+              "GEOID": "29078",
+              "CENTLAT": "+38.6206352",
+              "SLDL": "078",
+              "AREAWATER": "0",
+              "STATE": "29",
+              "BASENAME": "78",
+              "OID": "2139035951822006",
+              "LSADC": "LL",
+              "FUNCSTAT": "N",
+              "INTPTLAT": "+38.6206352",
+              "NAME": "State House District 78",
+              "OBJECTID": 4525,
+              "CENTLON": "-090.2121247",
+              "LSY": "2024",
+              "AREALAND": "13044446",
+              "INTPTLON": "-090.2121247",
+              "MTFCC": "G5220",
+              "LDTYP": "O"
+            }
+          ],
+          "2020 Census Blocks": [
+            {
+              "SUFFIX": "",
+              "GEOID": "295101255002011",
+              "CENTLAT": "+38.6266820",
+              "BLOCK": "2011",
+              "AREAWATER": "0",
+              "STATE": "29",
+              "BASENAME": "2011",
+              "OID": "210701005652965",
+              "LSADC": "BK",
+              "FUNCSTAT": "S",
+              "INTPTLAT": "+38.6266820",
+              "NAME": "Block 2011",
+              "OBJECTID": 6001889,
+              "TRACT": "125500",
+              "CENTLON": "-090.2001207",
+              "BLKGRP": "2",
+              "AREALAND": "61904",
+              "INTPTLON": "-090.2001207",
+              "MTFCC": "G5040",
+              "LWBLKTYP": "L",
+              "UR": "U",
+              "COUNTY": "510"
+            }
+          ],
+          "Census Tracts": [
+            {
+              "GEOID": "29510125500",
+              "CENTLAT": "+38.6293098",
+              "AREAWATER": "0",
+              "STATE": "29",
+              "BASENAME": "1255",
+              "OID": "20790325466640",
+              "LSADC": "CT",
+              "FUNCSTAT": "S",
+              "INTPTLAT": "+38.6293098",
+              "NAME": "Census Tract 1255",
+              "OBJECTID": 24603,
+              "TRACT": "125500",
+              "CENTLON": "-090.2029461",
+              "AREALAND": "1099351",
+              "INTPTLON": "-090.2029461",
+              "MTFCC": "G5020",
+              "COUNTY": "510"
+            }
+          ],
+          "119th Congressional Districts": [
+            {
+              "GEOID": "2901",
+              "CENTLAT": "+38.7249455",
+              "CDSESSN": "119",
+              "AREAWATER": "27282319",
+              "BASENAME": "1",
+              "STATE": "29",
+              "OID": "2119035951822595",
+              "LSADC": "C2",
+              "FUNCSTAT": "N",
+              "INTPTLAT": "+38.7269305",
+              "NAME": "Congressional District 1",
+              "OBJECTID": 70,
+              "CENTLON": "-090.3056293",
+              "CD119": "01",
+              "AREALAND": "642191380",
+              "INTPTLON": "-090.3058980",
+              "MTFCC": "G5200"
+            }
+          ]
+        },
+        "coordinates": {
+          "x": -90.198428455559,
+          "y": 38.627407425881
+        },
+        "addressComponents": {
+          "zip": "63103",
+          "streetName": "MARKET",
+          "preType": "",
+          "city": "SAINT LOUIS",
+          "preDirection": "",
+          "suffixDirection": "",
+          "fromAddress": "1200",
+          "state": "MO",
+          "suffixType": "ST",
+          "toAddress": "1298",
+          "suffixQualifier": "",
+          "preQualifier": ""
+        },
+        "matchedAddress": "1200 MARKET ST, SAINT LOUIS, MO, 63103"
+      }
+    ]
+  }
+}

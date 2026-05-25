@@ -1,0 +1,1202 @@
+[
+  {
+    "source": "ssa",
+    "exactAge": 0,
+    "maleDeathProbability": 0.006064,
+    "maleLives": 100000,
+    "maleLifeExpectancy": 74.74,
+    "femaleDeathProbability": 0.005119,
+    "femaleLives": 100000,
+    "femaleLifeExpectancy": 80.18
+  },
+  {
+    "source": "ssa",
+    "exactAge": 1,
+    "maleDeathProbability": 0.000491,
+    "maleLives": 99394,
+    "maleLifeExpectancy": 74.2,
+    "femaleDeathProbability": 0.000398,
+    "femaleLives": 99488,
+    "femaleLifeExpectancy": 79.6
+  },
+  {
+    "source": "ssa",
+    "exactAge": 2,
+    "maleDeathProbability": 0.000309,
+    "maleLives": 99345,
+    "maleLifeExpectancy": 73.23,
+    "femaleDeathProbability": 0.00024,
+    "femaleLives": 99449,
+    "femaleLifeExpectancy": 78.63
+  },
+  {
+    "source": "ssa",
+    "exactAge": 3,
+    "maleDeathProbability": 0.000248,
+    "maleLives": 99314,
+    "maleLifeExpectancy": 72.25,
+    "femaleDeathProbability": 0.000198,
+    "femaleLives": 99425,
+    "femaleLifeExpectancy": 77.65
+  },
+  {
+    "source": "ssa",
+    "exactAge": 4,
+    "maleDeathProbability": 0.000199,
+    "maleLives": 99290,
+    "maleLifeExpectancy": 71.27,
+    "femaleDeathProbability": 0.00016,
+    "femaleLives": 99405,
+    "femaleLifeExpectancy": 76.66
+  },
+  {
+    "source": "ssa",
+    "exactAge": 5,
+    "maleDeathProbability": 0.000167,
+    "maleLives": 99270,
+    "maleLifeExpectancy": 70.29,
+    "femaleDeathProbability": 0.000134,
+    "femaleLives": 99389,
+    "femaleLifeExpectancy": 75.67
+  },
+  {
+    "source": "ssa",
+    "exactAge": 6,
+    "maleDeathProbability": 0.000143,
+    "maleLives": 99253,
+    "maleLifeExpectancy": 69.3,
+    "femaleDeathProbability": 0.000118,
+    "femaleLives": 99376,
+    "femaleLifeExpectancy": 74.68
+  },
+  {
+    "source": "ssa",
+    "exactAge": 7,
+    "maleDeathProbability": 0.000126,
+    "maleLives": 99239,
+    "maleLifeExpectancy": 68.31,
+    "femaleDeathProbability": 0.000109,
+    "femaleLives": 99364,
+    "femaleLifeExpectancy": 73.69
+  },
+  {
+    "source": "ssa",
+    "exactAge": 8,
+    "maleDeathProbability": 0.000121,
+    "maleLives": 99226,
+    "maleLifeExpectancy": 67.32,
+    "femaleDeathProbability": 0.000106,
+    "femaleLives": 99353,
+    "femaleLifeExpectancy": 72.7
+  },
+  {
+    "source": "ssa",
+    "exactAge": 9,
+    "maleDeathProbability": 0.000121,
+    "maleLives": 99214,
+    "maleLifeExpectancy": 66.32,
+    "femaleDeathProbability": 0.000106,
+    "femaleLives": 99343,
+    "femaleLifeExpectancy": 71.71
+  },
+  {
+    "source": "ssa",
+    "exactAge": 10,
+    "maleDeathProbability": 0.000127,
+    "maleLives": 99202,
+    "maleLifeExpectancy": 65.33,
+    "femaleDeathProbability": 0.000111,
+    "femaleLives": 99332,
+    "femaleLifeExpectancy": 70.72
+  },
+  {
+    "source": "ssa",
+    "exactAge": 11,
+    "maleDeathProbability": 0.000143,
+    "maleLives": 99190,
+    "maleLifeExpectancy": 64.34,
+    "femaleDeathProbability": 0.000121,
+    "femaleLives": 99321,
+    "femaleLifeExpectancy": 69.72
+  },
+  {
+    "source": "ssa",
+    "exactAge": 12,
+    "maleDeathProbability": 0.000171,
+    "maleLives": 99176,
+    "maleLifeExpectancy": 63.35,
+    "femaleDeathProbability": 0.00014,
+    "femaleLives": 99309,
+    "femaleLifeExpectancy": 68.73
+  },
+  {
+    "source": "ssa",
+    "exactAge": 13,
+    "maleDeathProbability": 0.000227,
+    "maleLives": 99159,
+    "maleLifeExpectancy": 62.36,
+    "femaleDeathProbability": 0.000162,
+    "femaleLives": 99295,
+    "femaleLifeExpectancy": 67.74
+  },
+  {
+    "source": "ssa",
+    "exactAge": 14,
+    "maleDeathProbability": 0.00032,
+    "maleLives": 99136,
+    "maleLifeExpectancy": 61.37,
+    "femaleDeathProbability": 0.000188,
+    "femaleLives": 99279,
+    "femaleLifeExpectancy": 66.75
+  },
+  {
+    "source": "ssa",
+    "exactAge": 15,
+    "maleDeathProbability": 0.000451,
+    "maleLives": 99104,
+    "maleLifeExpectancy": 60.39,
+    "femaleDeathProbability": 0.000224,
+    "femaleLives": 99260,
+    "femaleLifeExpectancy": 65.76
+  },
+  {
+    "source": "ssa",
+    "exactAge": 16,
+    "maleDeathProbability": 0.000622,
+    "maleLives": 99060,
+    "maleLifeExpectancy": 59.42,
+    "femaleDeathProbability": 0.000276,
+    "femaleLives": 99238,
+    "femaleLifeExpectancy": 64.78
+  },
+  {
+    "source": "ssa",
+    "exactAge": 17,
+    "maleDeathProbability": 0.000826,
+    "maleLives": 98998,
+    "maleLifeExpectancy": 58.46,
+    "femaleDeathProbability": 0.000337,
+    "femaleLives": 99211,
+    "femaleLifeExpectancy": 63.8
+  },
+  {
+    "source": "ssa",
+    "exactAge": 18,
+    "maleDeathProbability": 0.001026,
+    "maleLives": 98916,
+    "maleLifeExpectancy": 57.5,
+    "femaleDeathProbability": 0.000395,
+    "femaleLives": 99177,
+    "femaleLifeExpectancy": 62.82
+  },
+  {
+    "source": "ssa",
+    "exactAge": 19,
+    "maleDeathProbability": 0.001182,
+    "maleLives": 98815,
+    "maleLifeExpectancy": 56.56,
+    "femaleDeathProbability": 0.00045,
+    "femaleLives": 99138,
+    "femaleLifeExpectancy": 61.84
+  },
+  {
+    "source": "ssa",
+    "exactAge": 20,
+    "maleDeathProbability": 0.001301,
+    "maleLives": 98698,
+    "maleLifeExpectancy": 55.63,
+    "femaleDeathProbability": 0.000496,
+    "femaleLives": 99094,
+    "femaleLifeExpectancy": 60.87
+  },
+  {
+    "source": "ssa",
+    "exactAge": 21,
+    "maleDeathProbability": 0.001404,
+    "maleLives": 98570,
+    "maleLifeExpectancy": 54.7,
+    "femaleDeathProbability": 0.000532,
+    "femaleLives": 99044,
+    "femaleLifeExpectancy": 59.9
+  },
+  {
+    "source": "ssa",
+    "exactAge": 22,
+    "maleDeathProbability": 0.001498,
+    "maleLives": 98431,
+    "maleLifeExpectancy": 53.78,
+    "femaleDeathProbability": 0.000567,
+    "femaleLives": 98992,
+    "femaleLifeExpectancy": 58.93
+  },
+  {
+    "source": "ssa",
+    "exactAge": 23,
+    "maleDeathProbability": 0.001586,
+    "maleLives": 98284,
+    "maleLifeExpectancy": 52.86,
+    "femaleDeathProbability": 0.00061,
+    "femaleLives": 98936,
+    "femaleLifeExpectancy": 57.97
+  },
+  {
+    "source": "ssa",
+    "exactAge": 24,
+    "maleDeathProbability": 0.001679,
+    "maleLives": 98128,
+    "maleLifeExpectancy": 51.94,
+    "femaleDeathProbability": 0.00065,
+    "femaleLives": 98875,
+    "femaleLifeExpectancy": 57
+  },
+  {
+    "source": "ssa",
+    "exactAge": 25,
+    "maleDeathProbability": 0.001776,
+    "maleLives": 97963,
+    "maleLifeExpectancy": 51.03,
+    "femaleDeathProbability": 0.000699,
+    "femaleLives": 98811,
+    "femaleLifeExpectancy": 56.04
+  },
+  {
+    "source": "ssa",
+    "exactAge": 26,
+    "maleDeathProbability": 0.001881,
+    "maleLives": 97789,
+    "maleLifeExpectancy": 50.12,
+    "femaleDeathProbability": 0.000743,
+    "femaleLives": 98742,
+    "femaleLifeExpectancy": 55.08
+  },
+  {
+    "source": "ssa",
+    "exactAge": 27,
+    "maleDeathProbability": 0.001985,
+    "maleLives": 97605,
+    "maleLifeExpectancy": 49.21,
+    "femaleDeathProbability": 0.000796,
+    "femaleLives": 98669,
+    "femaleLifeExpectancy": 54.12
+  },
+  {
+    "source": "ssa",
+    "exactAge": 28,
+    "maleDeathProbability": 0.002095,
+    "maleLives": 97412,
+    "maleLifeExpectancy": 48.31,
+    "femaleDeathProbability": 0.000855,
+    "femaleLives": 98590,
+    "femaleLifeExpectancy": 53.16
+  },
+  {
+    "source": "ssa",
+    "exactAge": 29,
+    "maleDeathProbability": 0.002219,
+    "maleLives": 97208,
+    "maleLifeExpectancy": 47.41,
+    "femaleDeathProbability": 0.000924,
+    "femaleLives": 98506,
+    "femaleLifeExpectancy": 52.2
+  },
+  {
+    "source": "ssa",
+    "exactAge": 30,
+    "maleDeathProbability": 0.002332,
+    "maleLives": 96992,
+    "maleLifeExpectancy": 46.51,
+    "femaleDeathProbability": 0.000988,
+    "femaleLives": 98415,
+    "femaleLifeExpectancy": 51.25
+  },
+  {
+    "source": "ssa",
+    "exactAge": 31,
+    "maleDeathProbability": 0.002445,
+    "maleLives": 96766,
+    "maleLifeExpectancy": 45.62,
+    "femaleDeathProbability": 0.001053,
+    "femaleLives": 98318,
+    "femaleLifeExpectancy": 50.3
+  },
+  {
+    "source": "ssa",
+    "exactAge": 32,
+    "maleDeathProbability": 0.002562,
+    "maleLives": 96529,
+    "maleLifeExpectancy": 44.73,
+    "femaleDeathProbability": 0.001123,
+    "femaleLives": 98214,
+    "femaleLifeExpectancy": 49.35
+  },
+  {
+    "source": "ssa",
+    "exactAge": 33,
+    "maleDeathProbability": 0.002653,
+    "maleLives": 96282,
+    "maleLifeExpectancy": 43.84,
+    "femaleDeathProbability": 0.001198,
+    "femaleLives": 98104,
+    "femaleLifeExpectancy": 48.41
+  },
+  {
+    "source": "ssa",
+    "exactAge": 34,
+    "maleDeathProbability": 0.002716,
+    "maleLives": 96026,
+    "maleLifeExpectancy": 42.96,
+    "femaleDeathProbability": 0.001263,
+    "femaleLives": 97986,
+    "femaleLifeExpectancy": 47.47
+  },
+  {
+    "source": "ssa",
+    "exactAge": 35,
+    "maleDeathProbability": 0.002791,
+    "maleLives": 95765,
+    "maleLifeExpectancy": 42.08,
+    "femaleDeathProbability": 0.001324,
+    "femaleLives": 97863,
+    "femaleLifeExpectancy": 46.53
+  },
+  {
+    "source": "ssa",
+    "exactAge": 36,
+    "maleDeathProbability": 0.002894,
+    "maleLives": 95498,
+    "maleLifeExpectancy": 41.19,
+    "femaleDeathProbability": 0.001403,
+    "femaleLives": 97733,
+    "femaleLifeExpectancy": 45.59
+  },
+  {
+    "source": "ssa",
+    "exactAge": 37,
+    "maleDeathProbability": 0.002994,
+    "maleLives": 95222,
+    "maleLifeExpectancy": 40.31,
+    "femaleDeathProbability": 0.001493,
+    "femaleLives": 97596,
+    "femaleLifeExpectancy": 44.65
+  },
+  {
+    "source": "ssa",
+    "exactAge": 38,
+    "maleDeathProbability": 0.003091,
+    "maleLives": 94937,
+    "maleLifeExpectancy": 39.43,
+    "femaleDeathProbability": 0.001596,
+    "femaleLives": 97450,
+    "femaleLifeExpectancy": 43.72
+  },
+  {
+    "source": "ssa",
+    "exactAge": 39,
+    "maleDeathProbability": 0.003217,
+    "maleLives": 94643,
+    "maleLifeExpectancy": 38.55,
+    "femaleDeathProbability": 0.0017,
+    "femaleLives": 97295,
+    "femaleLifeExpectancy": 42.79
+  },
+  {
+    "source": "ssa",
+    "exactAge": 40,
+    "maleDeathProbability": 0.003353,
+    "maleLives": 94339,
+    "maleLifeExpectancy": 37.67,
+    "femaleDeathProbability": 0.001803,
+    "femaleLives": 97129,
+    "femaleLifeExpectancy": 41.86
+  },
+  {
+    "source": "ssa",
+    "exactAge": 41,
+    "maleDeathProbability": 0.003499,
+    "maleLives": 94022,
+    "maleLifeExpectancy": 36.8,
+    "femaleDeathProbability": 0.001905,
+    "femaleLives": 96954,
+    "femaleLifeExpectancy": 40.93
+  },
+  {
+    "source": "ssa",
+    "exactAge": 42,
+    "maleDeathProbability": 0.003642,
+    "maleLives": 93693,
+    "maleLifeExpectancy": 35.93,
+    "femaleDeathProbability": 0.002009,
+    "femaleLives": 96769,
+    "femaleLifeExpectancy": 40.01
+  },
+  {
+    "source": "ssa",
+    "exactAge": 43,
+    "maleDeathProbability": 0.003811,
+    "maleLives": 93352,
+    "maleLifeExpectancy": 35.05,
+    "femaleDeathProbability": 0.002116,
+    "femaleLives": 96575,
+    "femaleLifeExpectancy": 39.09
+  },
+  {
+    "source": "ssa",
+    "exactAge": 44,
+    "maleDeathProbability": 0.003996,
+    "maleLives": 92997,
+    "maleLifeExpectancy": 34.19,
+    "femaleDeathProbability": 0.002223,
+    "femaleLives": 96371,
+    "femaleLifeExpectancy": 38.17
+  },
+  {
+    "source": "ssa",
+    "exactAge": 45,
+    "maleDeathProbability": 0.004175,
+    "maleLives": 92625,
+    "maleLifeExpectancy": 33.32,
+    "femaleDeathProbability": 0.002352,
+    "femaleLives": 96156,
+    "femaleLifeExpectancy": 37.25
+  },
+  {
+    "source": "ssa",
+    "exactAge": 46,
+    "maleDeathProbability": 0.004388,
+    "maleLives": 92238,
+    "maleLifeExpectancy": 32.46,
+    "femaleDeathProbability": 0.002516,
+    "femaleLives": 95930,
+    "femaleLifeExpectancy": 36.34
+  },
+  {
+    "source": "ssa",
+    "exactAge": 47,
+    "maleDeathProbability": 0.004666,
+    "maleLives": 91833,
+    "maleLifeExpectancy": 31.6,
+    "femaleDeathProbability": 0.002712,
+    "femaleLives": 95689,
+    "femaleLifeExpectancy": 35.43
+  },
+  {
+    "source": "ssa",
+    "exactAge": 48,
+    "maleDeathProbability": 0.004973,
+    "maleLives": 91405,
+    "maleLifeExpectancy": 30.75,
+    "femaleDeathProbability": 0.002936,
+    "femaleLives": 95429,
+    "femaleLifeExpectancy": 34.53
+  },
+  {
+    "source": "ssa",
+    "exactAge": 49,
+    "maleDeathProbability": 0.005305,
+    "maleLives": 90950,
+    "maleLifeExpectancy": 29.9,
+    "femaleDeathProbability": 0.003177,
+    "femaleLives": 95149,
+    "femaleLifeExpectancy": 33.63
+  },
+  {
+    "source": "ssa",
+    "exactAge": 50,
+    "maleDeathProbability": 0.005666,
+    "maleLives": 90468,
+    "maleLifeExpectancy": 29.05,
+    "femaleDeathProbability": 0.003407,
+    "femaleLives": 94847,
+    "femaleLifeExpectancy": 32.73
+  },
+  {
+    "source": "ssa",
+    "exactAge": 51,
+    "maleDeathProbability": 0.006069,
+    "maleLives": 89955,
+    "maleLifeExpectancy": 28.22,
+    "femaleDeathProbability": 0.003642,
+    "femaleLives": 94524,
+    "femaleLifeExpectancy": 31.84
+  },
+  {
+    "source": "ssa",
+    "exactAge": 52,
+    "maleDeathProbability": 0.006539,
+    "maleLives": 89409,
+    "maleLifeExpectancy": 27.39,
+    "femaleDeathProbability": 0.003917,
+    "femaleLives": 94180,
+    "femaleLifeExpectancy": 30.96
+  },
+  {
+    "source": "ssa",
+    "exactAge": 53,
+    "maleDeathProbability": 0.007073,
+    "maleLives": 88825,
+    "maleLifeExpectancy": 26.56,
+    "femaleDeathProbability": 0.004238,
+    "femaleLives": 93811,
+    "femaleLifeExpectancy": 30.08
+  },
+  {
+    "source": "ssa",
+    "exactAge": 54,
+    "maleDeathProbability": 0.007675,
+    "maleLives": 88196,
+    "maleLifeExpectancy": 25.75,
+    "femaleDeathProbability": 0.004619,
+    "femaleLives": 93413,
+    "femaleLifeExpectancy": 29.2
+  },
+  {
+    "source": "ssa",
+    "exactAge": 55,
+    "maleDeathProbability": 0.008348,
+    "maleLives": 87520,
+    "maleLifeExpectancy": 24.94,
+    "femaleDeathProbability": 0.00504,
+    "femaleLives": 92982,
+    "femaleLifeExpectancy": 28.34
+  },
+  {
+    "source": "ssa",
+    "exactAge": 56,
+    "maleDeathProbability": 0.009051,
+    "maleLives": 86789,
+    "maleLifeExpectancy": 24.15,
+    "femaleDeathProbability": 0.005493,
+    "femaleLives": 92513,
+    "femaleLifeExpectancy": 27.48
+  },
+  {
+    "source": "ssa",
+    "exactAge": 57,
+    "maleDeathProbability": 0.009822,
+    "maleLives": 86003,
+    "maleLifeExpectancy": 23.37,
+    "femaleDeathProbability": 0.005987,
+    "femaleLives": 92005,
+    "femaleLifeExpectancy": 26.63
+  },
+  {
+    "source": "ssa",
+    "exactAge": 58,
+    "maleDeathProbability": 0.010669,
+    "maleLives": 85159,
+    "maleLifeExpectancy": 22.59,
+    "femaleDeathProbability": 0.006509,
+    "femaleLives": 91454,
+    "femaleLifeExpectancy": 25.78
+  },
+  {
+    "source": "ssa",
+    "exactAge": 59,
+    "maleDeathProbability": 0.011548,
+    "maleLives": 84250,
+    "maleLifeExpectancy": 21.83,
+    "femaleDeathProbability": 0.007067,
+    "femaleLives": 90859,
+    "femaleLifeExpectancy": 24.95
+  },
+  {
+    "source": "ssa",
+    "exactAge": 60,
+    "maleDeathProbability": 0.012458,
+    "maleLives": 83277,
+    "maleLifeExpectancy": 21.08,
+    "femaleDeathProbability": 0.007658,
+    "femaleLives": 90217,
+    "femaleLifeExpectancy": 24.12
+  },
+  {
+    "source": "ssa",
+    "exactAge": 61,
+    "maleDeathProbability": 0.013403,
+    "maleLives": 82240,
+    "maleLifeExpectancy": 20.34,
+    "femaleDeathProbability": 0.008305,
+    "femaleLives": 89526,
+    "femaleLifeExpectancy": 23.31
+  },
+  {
+    "source": "ssa",
+    "exactAge": 62,
+    "maleDeathProbability": 0.01445,
+    "maleLives": 81138,
+    "maleLifeExpectancy": 19.61,
+    "femaleDeathProbability": 0.008991,
+    "femaleLives": 88782,
+    "femaleLifeExpectancy": 22.5
+  },
+  {
+    "source": "ssa",
+    "exactAge": 63,
+    "maleDeathProbability": 0.015571,
+    "maleLives": 79965,
+    "maleLifeExpectancy": 18.89,
+    "femaleDeathProbability": 0.009681,
+    "femaleLives": 87984,
+    "femaleLifeExpectancy": 21.7
+  },
+  {
+    "source": "ssa",
+    "exactAge": 64,
+    "maleDeathProbability": 0.016737,
+    "maleLives": 78720,
+    "maleLifeExpectancy": 18.18,
+    "femaleDeathProbability": 0.010343,
+    "femaleLives": 87132,
+    "femaleLifeExpectancy": 20.9
+  },
+  {
+    "source": "ssa",
+    "exactAge": 65,
+    "maleDeathProbability": 0.017897,
+    "maleLives": 77402,
+    "maleLifeExpectancy": 17.48,
+    "femaleDeathProbability": 0.011018,
+    "femaleLives": 86231,
+    "femaleLifeExpectancy": 20.12
+  },
+  {
+    "source": "ssa",
+    "exactAge": 66,
+    "maleDeathProbability": 0.019017,
+    "maleLives": 76017,
+    "maleLifeExpectancy": 16.79,
+    "femaleDeathProbability": 0.011743,
+    "femaleLives": 85281,
+    "femaleLifeExpectancy": 19.34
+  },
+  {
+    "source": "ssa",
+    "exactAge": 67,
+    "maleDeathProbability": 0.020213,
+    "maleLives": 74572,
+    "maleLifeExpectancy": 16.11,
+    "femaleDeathProbability": 0.012532,
+    "femaleLives": 84279,
+    "femaleLifeExpectancy": 18.56
+  },
+  {
+    "source": "ssa",
+    "exactAge": 68,
+    "maleDeathProbability": 0.021569,
+    "maleLives": 73064,
+    "maleLifeExpectancy": 15.43,
+    "femaleDeathProbability": 0.013512,
+    "femaleLives": 83223,
+    "femaleLifeExpectancy": 17.79
+  },
+  {
+    "source": "ssa",
+    "exactAge": 69,
+    "maleDeathProbability": 0.023088,
+    "maleLives": 71488,
+    "maleLifeExpectancy": 14.76,
+    "femaleDeathProbability": 0.014684,
+    "femaleLives": 82099,
+    "femaleLifeExpectancy": 17.03
+  },
+  {
+    "source": "ssa",
+    "exactAge": 70,
+    "maleDeathProbability": 0.024828,
+    "maleLives": 69838,
+    "maleLifeExpectancy": 14.09,
+    "femaleDeathProbability": 0.016025,
+    "femaleLives": 80893,
+    "femaleLifeExpectancy": 16.27
+  },
+  {
+    "source": "ssa",
+    "exactAge": 71,
+    "maleDeathProbability": 0.026705,
+    "maleLives": 68104,
+    "maleLifeExpectancy": 13.44,
+    "femaleDeathProbability": 0.017468,
+    "femaleLives": 79597,
+    "femaleLifeExpectancy": 15.53
+  },
+  {
+    "source": "ssa",
+    "exactAge": 72,
+    "maleDeathProbability": 0.028761,
+    "maleLives": 66285,
+    "maleLifeExpectancy": 12.8,
+    "femaleDeathProbability": 0.019195,
+    "femaleLives": 78206,
+    "femaleLifeExpectancy": 14.8
+  },
+  {
+    "source": "ssa",
+    "exactAge": 73,
+    "maleDeathProbability": 0.031116,
+    "maleLives": 64379,
+    "maleLifeExpectancy": 12.16,
+    "femaleDeathProbability": 0.021195,
+    "femaleLives": 76705,
+    "femaleLifeExpectancy": 14.08
+  },
+  {
+    "source": "ssa",
+    "exactAge": 74,
+    "maleDeathProbability": 0.033861,
+    "maleLives": 62376,
+    "maleLifeExpectancy": 11.53,
+    "femaleDeathProbability": 0.023452,
+    "femaleLives": 75079,
+    "femaleLifeExpectancy": 13.37
+  },
+  {
+    "source": "ssa",
+    "exactAge": 75,
+    "maleDeathProbability": 0.037088,
+    "maleLives": 60263,
+    "maleLifeExpectancy": 10.92,
+    "femaleDeathProbability": 0.02598,
+    "femaleLives": 73319,
+    "femaleLifeExpectancy": 12.68
+  },
+  {
+    "source": "ssa",
+    "exactAge": 76,
+    "maleDeathProbability": 0.041126,
+    "maleLives": 58028,
+    "maleLifeExpectancy": 10.32,
+    "femaleDeathProbability": 0.029153,
+    "femaleLives": 71414,
+    "femaleLifeExpectancy": 12
+  },
+  {
+    "source": "ssa",
+    "exactAge": 77,
+    "maleDeathProbability": 0.045241,
+    "maleLives": 55642,
+    "maleLifeExpectancy": 9.74,
+    "femaleDeathProbability": 0.032394,
+    "femaleLives": 69332,
+    "femaleLifeExpectancy": 11.35
+  },
+  {
+    "source": "ssa",
+    "exactAge": 78,
+    "maleDeathProbability": 0.049793,
+    "maleLives": 53125,
+    "maleLifeExpectancy": 9.18,
+    "femaleDeathProbability": 0.035888,
+    "femaleLives": 67086,
+    "femaleLifeExpectancy": 10.71
+  },
+  {
+    "source": "ssa",
+    "exactAge": 79,
+    "maleDeathProbability": 0.054768,
+    "maleLives": 50479,
+    "maleLifeExpectancy": 8.64,
+    "femaleDeathProbability": 0.039676,
+    "femaleLives": 64678,
+    "femaleLifeExpectancy": 10.09
+  },
+  {
+    "source": "ssa",
+    "exactAge": 80,
+    "maleDeathProbability": 0.06066,
+    "maleLives": 47715,
+    "maleLifeExpectancy": 8.11,
+    "femaleDeathProbability": 0.044156,
+    "femaleLives": 62112,
+    "femaleLifeExpectancy": 9.49
+  },
+  {
+    "source": "ssa",
+    "exactAge": 81,
+    "maleDeathProbability": 0.067027,
+    "maleLives": 44820,
+    "maleLifeExpectancy": 7.6,
+    "femaleDeathProbability": 0.049087,
+    "femaleLives": 59370,
+    "femaleLifeExpectancy": 8.9
+  },
+  {
+    "source": "ssa",
+    "exactAge": 82,
+    "maleDeathProbability": 0.073999,
+    "maleLives": 41816,
+    "maleLifeExpectancy": 7.11,
+    "femaleDeathProbability": 0.054635,
+    "femaleLives": 56455,
+    "femaleLifeExpectancy": 8.34
+  },
+  {
+    "source": "ssa",
+    "exactAge": 83,
+    "maleDeathProbability": 0.081737,
+    "maleLives": 38722,
+    "maleLifeExpectancy": 6.64,
+    "femaleDeathProbability": 0.061066,
+    "femaleLives": 53371,
+    "femaleLifeExpectancy": 7.79
+  },
+  {
+    "source": "ssa",
+    "exactAge": 84,
+    "maleDeathProbability": 0.090458,
+    "maleLives": 35557,
+    "maleLifeExpectancy": 6.18,
+    "femaleDeathProbability": 0.068431,
+    "femaleLives": 50112,
+    "femaleLifeExpectancy": 7.26
+  },
+  {
+    "source": "ssa",
+    "exactAge": 85,
+    "maleDeathProbability": 0.100525,
+    "maleLives": 32340,
+    "maleLifeExpectancy": 5.75,
+    "femaleDeathProbability": 0.076841,
+    "femaleLives": 46683,
+    "femaleLifeExpectancy": 6.76
+  },
+  {
+    "source": "ssa",
+    "exactAge": 86,
+    "maleDeathProbability": 0.111793,
+    "maleLives": 29089,
+    "maleLifeExpectancy": 5.34,
+    "femaleDeathProbability": 0.086205,
+    "femaleLives": 43095,
+    "femaleLifeExpectancy": 6.28
+  },
+  {
+    "source": "ssa",
+    "exactAge": 87,
+    "maleDeathProbability": 0.124494,
+    "maleLives": 25837,
+    "maleLifeExpectancy": 4.94,
+    "femaleDeathProbability": 0.096851,
+    "femaleLives": 39380,
+    "femaleLifeExpectancy": 5.83
+  },
+  {
+    "source": "ssa",
+    "exactAge": 88,
+    "maleDeathProbability": 0.138398,
+    "maleLives": 22621,
+    "maleLifeExpectancy": 4.58,
+    "femaleDeathProbability": 0.109019,
+    "femaleLives": 35566,
+    "femaleLifeExpectancy": 5.4
+  },
+  {
+    "source": "ssa",
+    "exactAge": 89,
+    "maleDeathProbability": 0.153207,
+    "maleLives": 19490,
+    "maleLifeExpectancy": 4.23,
+    "femaleDeathProbability": 0.121867,
+    "femaleLives": 31689,
+    "femaleLifeExpectancy": 5
+  },
+  {
+    "source": "ssa",
+    "exactAge": 90,
+    "maleDeathProbability": 0.169704,
+    "maleLives": 16504,
+    "maleLifeExpectancy": 3.91,
+    "femaleDeathProbability": 0.135805,
+    "femaleLives": 27827,
+    "femaleLifeExpectancy": 4.62
+  },
+  {
+    "source": "ssa",
+    "exactAge": 91,
+    "maleDeathProbability": 0.187963,
+    "maleLives": 13703,
+    "maleLifeExpectancy": 3.6,
+    "femaleDeathProbability": 0.151108,
+    "femaleLives": 24048,
+    "femaleLifeExpectancy": 4.27
+  },
+  {
+    "source": "ssa",
+    "exactAge": 92,
+    "maleDeathProbability": 0.208395,
+    "maleLives": 11128,
+    "maleLifeExpectancy": 3.32,
+    "femaleDeathProbability": 0.16802,
+    "femaleLives": 20414,
+    "femaleLifeExpectancy": 3.94
+  },
+  {
+    "source": "ssa",
+    "exactAge": 93,
+    "maleDeathProbability": 0.230808,
+    "maleLives": 8809,
+    "maleLifeExpectancy": 3.06,
+    "femaleDeathProbability": 0.18634,
+    "femaleLives": 16984,
+    "femaleLifeExpectancy": 3.64
+  },
+  {
+    "source": "ssa",
+    "exactAge": 94,
+    "maleDeathProbability": 0.253914,
+    "maleLives": 6776,
+    "maleLifeExpectancy": 2.83,
+    "femaleDeathProbability": 0.206432,
+    "femaleLives": 13819,
+    "femaleLifeExpectancy": 3.36
+  },
+  {
+    "source": "ssa",
+    "exactAge": 95,
+    "maleDeathProbability": 0.277402,
+    "maleLives": 5055,
+    "maleLifeExpectancy": 2.63,
+    "femaleDeathProbability": 0.228086,
+    "femaleLives": 10967,
+    "femaleLifeExpectancy": 3.1
+  },
+  {
+    "source": "ssa",
+    "exactAge": 96,
+    "maleDeathProbability": 0.300882,
+    "maleLives": 3653,
+    "maleLifeExpectancy": 2.44,
+    "femaleDeathProbability": 0.250406,
+    "femaleLives": 8465,
+    "femaleLifeExpectancy": 2.87
+  },
+  {
+    "source": "ssa",
+    "exactAge": 97,
+    "maleDeathProbability": 0.324326,
+    "maleLives": 2554,
+    "maleLifeExpectancy": 2.28,
+    "femaleDeathProbability": 0.273699,
+    "femaleLives": 6346,
+    "femaleLifeExpectancy": 2.66
+  },
+  {
+    "source": "ssa",
+    "exactAge": 98,
+    "maleDeathProbability": 0.347332,
+    "maleLives": 1726,
+    "maleLifeExpectancy": 2.13,
+    "femaleDeathProbability": 0.296984,
+    "femaleLives": 4609,
+    "femaleLifeExpectancy": 2.47
+  },
+  {
+    "source": "ssa",
+    "exactAge": 99,
+    "maleDeathProbability": 0.36943,
+    "maleLives": 1126,
+    "maleLifeExpectancy": 2,
+    "femaleDeathProbability": 0.319502,
+    "femaleLives": 3240,
+    "femaleLifeExpectancy": 2.3
+  },
+  {
+    "source": "ssa",
+    "exactAge": 100,
+    "maleDeathProbability": 0.391927,
+    "maleLives": 710,
+    "maleLifeExpectancy": 1.88,
+    "femaleDeathProbability": 0.342716,
+    "femaleLives": 2205,
+    "femaleLifeExpectancy": 2.14
+  },
+  {
+    "source": "ssa",
+    "exactAge": 101,
+    "maleDeathProbability": 0.414726,
+    "maleLives": 432,
+    "maleLifeExpectancy": 1.76,
+    "femaleDeathProbability": 0.366532,
+    "femaleLives": 1449,
+    "femaleLifeExpectancy": 2
+  },
+  {
+    "source": "ssa",
+    "exactAge": 102,
+    "maleDeathProbability": 0.437722,
+    "maleLives": 253,
+    "maleLifeExpectancy": 1.66,
+    "femaleDeathProbability": 0.390844,
+    "femaleLives": 918,
+    "femaleLifeExpectancy": 1.87
+  },
+  {
+    "source": "ssa",
+    "exactAge": 103,
+    "maleDeathProbability": 0.4608,
+    "maleLives": 142,
+    "maleLifeExpectancy": 1.56,
+    "femaleDeathProbability": 0.415531,
+    "femaleLives": 559,
+    "femaleLifeExpectancy": 1.75
+  },
+  {
+    "source": "ssa",
+    "exactAge": 104,
+    "maleDeathProbability": 0.48384,
+    "maleLives": 77,
+    "maleLifeExpectancy": 1.47,
+    "femaleDeathProbability": 0.440463,
+    "femaleLives": 327,
+    "femaleLifeExpectancy": 1.63
+  },
+  {
+    "source": "ssa",
+    "exactAge": 105,
+    "maleDeathProbability": 0.508032,
+    "maleLives": 40,
+    "maleLifeExpectancy": 1.39,
+    "femaleDeathProbability": 0.466891,
+    "femaleLives": 183,
+    "femaleLifeExpectancy": 1.52
+  },
+  {
+    "source": "ssa",
+    "exactAge": 106,
+    "maleDeathProbability": 0.533434,
+    "maleLives": 19,
+    "maleLifeExpectancy": 1.31,
+    "femaleDeathProbability": 0.494904,
+    "femaleLives": 97,
+    "femaleLifeExpectancy": 1.42
+  },
+  {
+    "source": "ssa",
+    "exactAge": 107,
+    "maleDeathProbability": 0.560105,
+    "maleLives": 9,
+    "maleLifeExpectancy": 1.23,
+    "femaleDeathProbability": 0.524599,
+    "femaleLives": 49,
+    "femaleLifeExpectancy": 1.32
+  },
+  {
+    "source": "ssa",
+    "exactAge": 108,
+    "maleDeathProbability": 0.588111,
+    "maleLives": 4,
+    "maleLifeExpectancy": 1.15,
+    "femaleDeathProbability": 0.556075,
+    "femaleLives": 23,
+    "femaleLifeExpectancy": 1.23
+  },
+  {
+    "source": "ssa",
+    "exactAge": 109,
+    "maleDeathProbability": 0.617516,
+    "maleLives": 2,
+    "maleLifeExpectancy": 1.08,
+    "femaleDeathProbability": 0.589439,
+    "femaleLives": 10,
+    "femaleLifeExpectancy": 1.14
+  },
+  {
+    "source": "ssa",
+    "exactAge": 110,
+    "maleDeathProbability": 0.648392,
+    "maleLives": 1,
+    "maleLifeExpectancy": 1.01,
+    "femaleDeathProbability": 0.624805,
+    "femaleLives": 4,
+    "femaleLifeExpectancy": 1.05
+  },
+  {
+    "source": "ssa",
+    "exactAge": 111,
+    "maleDeathProbability": 0.680812,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.94,
+    "femaleDeathProbability": 0.662294,
+    "femaleLives": 2,
+    "femaleLifeExpectancy": 0.97
+  },
+  {
+    "source": "ssa",
+    "exactAge": 112,
+    "maleDeathProbability": 0.714852,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.87,
+    "femaleDeathProbability": 0.702031,
+    "femaleLives": 1,
+    "femaleLifeExpectancy": 0.89
+  },
+  {
+    "source": "ssa",
+    "exactAge": 113,
+    "maleDeathProbability": 0.750595,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.81,
+    "femaleDeathProbability": 0.744153,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.82
+  },
+  {
+    "source": "ssa",
+    "exactAge": 114,
+    "maleDeathProbability": 0.788125,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.75,
+    "femaleDeathProbability": 0.788125,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.75
+  },
+  {
+    "source": "ssa",
+    "exactAge": 115,
+    "maleDeathProbability": 0.827531,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.7,
+    "femaleDeathProbability": 0.827531,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.7
+  },
+  {
+    "source": "ssa",
+    "exactAge": 116,
+    "maleDeathProbability": 0.868907,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.64,
+    "femaleDeathProbability": 0.868907,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.64
+  },
+  {
+    "source": "ssa",
+    "exactAge": 117,
+    "maleDeathProbability": 0.912353,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.59,
+    "femaleDeathProbability": 0.912353,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.59
+  },
+  {
+    "source": "ssa",
+    "exactAge": 118,
+    "maleDeathProbability": 0.95797,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.54,
+    "femaleDeathProbability": 0.95797,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.54
+  },
+  {
+    "source": "ssa",
+    "exactAge": 119,
+    "maleDeathProbability": 1,
+    "maleLives": 0,
+    "maleLifeExpectancy": 0.5,
+    "femaleDeathProbability": 1,
+    "femaleLives": 0,
+    "femaleLifeExpectancy": 0.5
+  }
+]

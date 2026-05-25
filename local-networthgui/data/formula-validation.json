@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-25T07:23:48.597Z",
+  "status": "review",
+  "summary": {
+    "pass": 8,
+    "review": 1,
+    "fail": 0
+  },
+  "sources": [
+    {
+      "id": "bls-cpi-u",
+      "label": "BLS CPI-U",
+      "url": "https://www.bls.gov/cpi/overview.htm",
+      "use": "Purchasing-power deflator and inflation benchmark."
+    },
+    {
+      "id": "irs-2026-tax",
+      "label": "IRS 2026 federal tax brackets",
+      "url": "https://www.irs.gov/newsroom/irs-releases-tax-inflation-adjustments-for-tax-year-2026-including-amendments-from-the-one-big-beautiful-bill",
+      "use": "Progressive federal income tax validation for 2026 household income."
+    },
+    {
+      "id": "irs-payroll-tax",
+      "label": "IRS Social Security and Medicare withholding",
+      "url": "https://www.irs.gov/taxtopics/tc751",
+      "use": "Payroll tax validation separate from federal income tax."
+    },
+    {
+      "id": "ssa-retirement-age",
+      "label": "SSA normal retirement age",
+      "url": "https://www.ssa.gov/oact/progdata/nra.html",
+      "use": "Retirement-age defaults and claim-age bounds."
+    },
+    {
+      "id": "ssa-life-table",
+      "label": "SSA actuarial life table",
+      "url": "https://www.ssa.gov/oact/STATS/table4c6.html",
+      "use": "Projection horizon and longevity sanity checks."
+    },
+    {
+      "id": "treasury-yield-curve",
+      "label": "Treasury daily yield curve",
+      "url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve",
+      "use": "Risk-free nominal rate anchor for investment assumptions."
+    },
+    {
+      "id": "fhfa-hpi",
+      "label": "FHFA House Price Index",
+      "url": "https://www.fhfa.gov/data/hpi",
+      "use": "Home-value appreciation validation by geography."
+    },
+    {
+      "id": "census-acs",
+      "label": "Census ACS API",
+      "url": "https://www.census.gov/programs-surveys/acs/data/data-via-api.html",
+      "use": "Regional income, housing, and population baseline validation."
+    },
+    {
+      "id": "fed-scf",
+      "label": "Federal Reserve Survey of Consumer Finances",
+      "url": "https://www.federalreserve.gov/econres/scfindex.htm",
+      "use": "Net-worth distribution validation by age/income bands."
+    }
+  ],
+  "checks": [
+    {
+      "id": "nominal-compounding",
+      "label": "Nominal compounding",
+      "formula": "future = present * (1 + annual_rate) ^ years",
+      "sourceIds": [
+        "treasury-yield-curve"
+      ],
+      "expected": 259374.24601000024,
+      "actual": 259374.24601000024,
+      "status": "pass",
+      "note": "Core income, spending, and investment formulas use the standard compound-growth shape."
+    },
+    {
+      "id": "purchasing-power-deflator",
+      "label": "Purchasing-power deflator",
+      "formula": "real_value = nominal_value / (1 + inflation_rate) ^ years",
+      "sourceIds": [
+        "bls-cpi-u"
+      ],
+      "expected": 74409.39148967249,
+      "actual": 74409.39148967249,
+      "status": "pass",
+      "note": "Matches the app dollar-basis conversion and BLS CPI deflator use case."
+    },
+    {
+      "id": "real-return",
+      "label": "Real return",
+      "formula": "real_return = (1 + nominal_return) / (1 + inflation_rate) - 1",
+      "sourceIds": [
+        "bls-cpi-u",
+        "treasury-yield-curve"
+      ],
+      "expected": 6.796116504854366,
+      "actual": 6.796116504854366,
+      "status": "pass",
+      "note": "Formula is mathematically correct; assumption value still needs investment benchmark validation."
+    },
+    {
+      "id": "cpi-benchmark",
+      "label": "Inflation benchmark",
+      "formula": "recent CPI-U annual average = average yearly percent changes in annual CPI index",
+      "sourceIds": [
+        "bls-cpi-u"
+      ],
+      "expected": 2.6,
+      "actual": 2.6,
+      "tolerance": 0.2,
+      "status": "pass",
+      "note": "Checks the public benchmark file against normalized BLS CPI-U cache."
+    },
+    {
+      "id": "federal-tax",
+      "label": "Federal and payroll tax",
+      "formula": "tax = IRS progressive federal income tax after standard deduction + employee FICA",
+      "sourceIds": [
+        "irs-2026-tax",
+        "irs-payroll-tax"
+      ],
+      "expected": 17490.8,
+      "actual": 31858.8,
+      "tolerance": 4372.7,
+      "status": "review",
+      "note": "The current app uses effective tax rates. Replace with bracket/payroll model when validation phase accepts behavior changes."
+    },
+    {
+      "id": "ssa-horizon",
+      "label": "SSA longevity horizon",
+      "formula": "projection_end_age >= age 65 + max(male/female life expectancy at 65) + 5-year buffer",
+      "sourceIds": [
+        "ssa-life-table",
+        "ssa-retirement-age"
+      ],
+      "expected": 95,
+      "actual": 95,
+      "tolerance": 0,
+      "status": "pass",
+      "note": "Baseline horizon should stay conservative until user-specific longevity settings exist."
+    },
+    {
+      "id": "treasury-risk-free-anchor",
+      "label": "Risk-free anchor",
+      "formula": "equity_return_assumption should be reviewed against current 10-year Treasury yield",
+      "sourceIds": [
+        "treasury-yield-curve"
+      ],
+      "expected": 4.19,
+      "actual": 10,
+      "tolerance": 0,
+      "status": "pass",
+      "note": "Not an equity forecast. It verifies that the app shows a risk premium over the current risk-free anchor."
+    },
+    {
+      "id": "housing-source",
+      "label": "Housing appreciation source",
+      "formula": "home_value_growth should use FHFA HPI once geography is selected",
+      "sourceIds": [
+        "fhfa-hpi"
+      ],
+      "expected": "FHFA HPI available",
+      "actual": "FHFA HPI available",
+      "status": "pass",
+      "note": "App currently holds home appreciation mostly as a planning assumption; geography-specific HPI is the next replacement."
+    },
+    {
+      "id": "net-worth-monotonicity",
+      "label": "Projection sanity",
+      "formula": "ending_net_worth should remain finite and final value should exceed current value in the baseline case",
+      "sourceIds": [
+        "fed-scf"
+      ],
+      "expected": "finite positive growth",
+      "actual": "finite positive growth",
+      "status": "pass",
+      "note": "This is a regression guard, not a proof of forecast accuracy."
+    }
+  ],
+  "findings": [
+    {
+      "id": "federal-tax",
+      "severity": "medium",
+      "finding": "The current app uses effective tax rates. Replace with bracket/payroll model when validation phase accepts behavior changes."
+    }
+  ]
+}

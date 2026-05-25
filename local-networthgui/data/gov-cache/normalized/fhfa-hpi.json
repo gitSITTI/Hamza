@@ -1,0 +1,102 @@
+[
+  {
+    "source": "fhfa-hpi",
+    "label": "[CSV]",
+    "url": "/hpi/download/monthly/hpi_master.csv"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/document/d/hpi/hpi_dictionary.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "XLSX]",
+    "url": "/document/d/hpi/hpi_specifications.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/monthly/hpi_po_monthly_hist.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/monthly/hpi_po_monthly_sa.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/monthly/hpi_po_monthly_nsa.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_summary.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_us_and_census.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_state.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_metro.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_distressfree.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_pr.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_po_mh.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[CSV]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_us_and_census.csv"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_us_and_census.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "CSV",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_state.csv"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_state.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[CSV]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_metro.csv"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_metro.xlsx"
+  },
+  {
+    "source": "fhfa-hpi",
+    "label": "[XLSX]",
+    "url": "/hpi/download/quarterly_datasets/hpi_at_nonmetro.xlsx"
+  }
+]

@@ -1,0 +1,141 @@
+{
+  "metadata": {
+    "label": "Saved public benchmark starter pack",
+    "updated": "2026-05-23",
+    "note": "Generated from cached no-key public datasets where available; local defaults remain where a direct government metric is not yet wired.",
+    "generatedBy": "scripts/gov-refresh.mjs",
+    "sourceManifest": "data/gov-cache/manifest.json"
+  },
+  "benchmarks": {
+    "inflationRate": {
+      "bestOptionMetric": "Use the recent BLS CPI-U average as a live inflation anchor, then stress test higher inflation separately.",
+      "nationalAverage": 2.6,
+      "unit": "%",
+      "source": "BLS CPI-U annual average",
+      "sourceUrl": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+      "datasetYear": 2025,
+      "fetchedAt": "2026-05-23T12:48:53.961Z",
+      "provenance": "official"
+    },
+    "vooReturn": {
+      "bestOptionMetric": "Use broad-equity return assumptions alongside the current Treasury risk-free anchor; higher equity returns require accepting volatility.",
+      "nationalAverage": 10,
+      "unit": "%",
+      "source": "Equity planning proxy cross-checked against Treasury daily yield curve",
+      "provenance": "official",
+      "sourceUrl": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml",
+      "datasetYear": "2026",
+      "fetchedAt": "2026-05-23T12:48:53.961Z"
+    },
+    "primaryJobCompGrowth": {
+      "bestOptionMetric": "Latest BLS labor-market context shows unemployment near 3.8%. Keep wage growth conservative until role-specific BLS wage data is added.",
+      "nationalAverage": 3.5,
+      "unit": "%",
+      "source": "BLS Local Area Unemployment Statistics",
+      "provenance": "official",
+      "sourceUrl": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+      "datasetYear": 2026,
+      "fetchedAt": "2026-05-23T12:48:53.961Z"
+    },
+    "retirementAge": {
+      "bestOptionMetric": "Model 67 as the standard baseline, then compare earlier and later retirement scenarios.",
+      "nationalAverage": 67,
+      "unit": "age",
+      "source": "SSA actuarial life table",
+      "sourceUrl": "https://www.ssa.gov/oact/STATS/table4c6.html",
+      "datasetYear": "2022",
+      "fetchedAt": "2026-05-23T12:48:53.961Z",
+      "provenance": "official"
+    },
+    "partnerStayHomeAge": {
+      "bestOptionMetric": "Use the same retirement-age baseline unless there is a known family-care or health reason.",
+      "nationalAverage": 67,
+      "unit": "age",
+      "source": "SSA actuarial life table",
+      "sourceUrl": "https://www.ssa.gov/oact/STATS/table4c6.html",
+      "datasetYear": "2022",
+      "fetchedAt": "2026-05-23T12:48:53.961Z",
+      "provenance": "official"
+    },
+    "setupPrimaryAge": {
+      "bestOptionMetric": "Start with the user's actual age; age drives every projection year and life-stage milestone.",
+      "nationalAverage": 39,
+      "unit": "age",
+      "source": "Census adult household planning proxy",
+      "provenance": "local-default"
+    },
+    "setupPartnerAge": {
+      "bestOptionMetric": "Use the partner's actual age; mismatched ages affect income, retirement, and survivor horizons.",
+      "nationalAverage": 39,
+      "unit": "age",
+      "source": "Census adult household planning proxy",
+      "provenance": "local-default"
+    },
+    "setupProjectionEndAge": {
+      "bestOptionMetric": "Use at least the SSA-informed conservative horizon for retirement planning, then extend for longevity stress testing.",
+      "nationalAverage": 95,
+      "unit": "age",
+      "source": "SSA actuarial life table",
+      "sourceUrl": "https://www.ssa.gov/oact/STATS/table4c6.html",
+      "datasetYear": "2022",
+      "fetchedAt": "2026-05-23T12:48:53.961Z",
+      "provenance": "official"
+    },
+    "numberOfChildren": {
+      "bestOptionMetric": "Enter the expected household count; this drives childcare, tax credits, and spending needs.",
+      "nationalAverage": 1.8,
+      "unit": "children",
+      "source": "Census household planning proxy",
+      "provenance": "local-default"
+    },
+    "emergencyReserveMonths": {
+      "bestOptionMetric": "Use 6 months for a resilient baseline; 3 months is a minimum for stable dual-income households.",
+      "nationalAverage": 6,
+      "unit": "months",
+      "source": "Consumer finance planning rule",
+      "provenance": "local-default"
+    },
+    "decisionLoanRate": {
+      "bestOptionMetric": "Compare against current Treasury and consumer-credit rates before using debt funding.",
+      "nationalAverage": 7.5,
+      "unit": "%",
+      "source": "Federal Reserve consumer-rate planning proxy",
+      "provenance": "local-default"
+    },
+    "decisionDownPayment": {
+      "bestOptionMetric": "Use at least 20% when possible to reduce leverage and liquidity stress.",
+      "nationalAverage": 20,
+      "unit": "%",
+      "source": "Mortgage and durable-purchase planning proxy",
+      "provenance": "local-default"
+    },
+    "vacancyRate": {
+      "bestOptionMetric": "Use 5% to 8% for rentals unless local HUD or property-manager data says otherwise.",
+      "nationalAverage": 6,
+      "unit": "%",
+      "source": "HUD rental-market planning proxy",
+      "provenance": "local-default"
+    },
+    "managementFee": {
+      "bestOptionMetric": "Use 8% to 10% for third-party property management in base rental cases.",
+      "nationalAverage": 8,
+      "unit": "%",
+      "source": "Rental operations planning proxy",
+      "provenance": "local-default"
+    },
+    "lifestyleBaseline": {
+      "bestOptionMetric": "Use a local baseline first, then compare against the U.S. average for affordability pressure.",
+      "nationalAverage": "US average",
+      "unit": "preset",
+      "source": "BLS Consumer Expenditure Survey planning proxy",
+      "provenance": "local-default"
+    },
+    "lifestyleStyle": {
+      "bestOptionMetric": "Balanced household is the default option; move lean or premium only when the budget supports it.",
+      "nationalAverage": "Balanced household",
+      "unit": "preset",
+      "source": "BLS Consumer Expenditure Survey planning proxy",
+      "provenance": "local-default"
+    }
+  }
+}

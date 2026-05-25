@@ -1,0 +1,835 @@
+{
+  "url": "https://networthgui.streamlit.app/",
+  "runDate": "2026-05-22T05:36:23.929Z",
+  "states": [
+    {
+      "page": "Dashboard",
+      "stage": "base",
+      "screenshot": "dashboard-base-deep.png"
+    },
+    {
+      "page": "Dashboard",
+      "stage": "expanded-and-plotted",
+      "screenshot": "dashboard-expanded-deep.png"
+    },
+    {
+      "page": "Setup",
+      "stage": "base",
+      "screenshot": "setup-base-deep.png"
+    },
+    {
+      "page": "Setup",
+      "stage": "expanded-and-stepped",
+      "screenshot": "setup-expanded-deep.png"
+    },
+    {
+      "page": "High Impact",
+      "stage": "nudged",
+      "screenshot": "high-impact-nudged.png"
+    },
+    {
+      "page": "Assumptions",
+      "stage": "expanded",
+      "screenshot": "assumptions-expanded-deep.png"
+    },
+    {
+      "page": "Real Estate",
+      "stage": "simple-rental-portfolio",
+      "screenshot": "real-estate-simple-rental-portfolio.png"
+    },
+    {
+      "page": "Real Estate",
+      "stage": "advanced-investor",
+      "screenshot": "real-estate-advanced-investor.png"
+    },
+    {
+      "page": "Decision Lab",
+      "stage": "after-apply",
+      "screenshot": "decision-lab-after-apply-deep.png"
+    },
+    {
+      "page": "Lifestyle",
+      "stage": "after-apply-estimate",
+      "screenshot": "lifestyle-after-apply-estimate-deep.png"
+    },
+    {
+      "page": "Scenario Comparison",
+      "stage": "after-run",
+      "screenshot": "scenario-comparison-after-run-deep.png"
+    },
+    {
+      "page": "Stress Tests",
+      "stage": "after-renders",
+      "screenshot": "stress-tests-after-renders-deep.png"
+    },
+    {
+      "page": "Projection Audit View",
+      "stage": "after-render",
+      "screenshot": "projection-audit-after-render-deep.png"
+    },
+    {
+      "page": "Profile & Export",
+      "stage": "base",
+      "screenshot": "profile-export-base.png"
+    },
+    {
+      "page": "Profile & Export",
+      "stage": "after-flow",
+      "screenshot": "profile-export-after-flow.png"
+    },
+    {
+      "page": "Model Notes",
+      "stage": "expanded",
+      "screenshot": "model-notes-expanded-deep.png"
+    }
+  ],
+  "helpTooltips": [
+    {
+      "label": "Help for Today · 2026 · age 35",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Cash reserve",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Age 40 · 2031 · age 40",
+      "tooltip": "Age 40"
+    },
+    {
+      "label": "Help for Annual income",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Investment balance",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Age 50 · 2041 · age 50",
+      "tooltip": "Age 50"
+    },
+    {
+      "label": "Help for Annual spending",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Debt summary",
+      "tooltip": "Age 35"
+    },
+    {
+      "label": "Help for Age 60 · 2051 · age 60",
+      "tooltip": "Age 60"
+    },
+    {
+      "label": "Help for Annual surplus / shortfall",
+      "tooltip": "Positive means cash left after tax and spending."
+    },
+    {
+      "label": "Help for 1 year older · 2027 · age 36",
+      "tooltip": "Age 36"
+    },
+    {
+      "label": "Help for Age 70 · 2061 · age 70",
+      "tooltip": "Age 70"
+    }
+  ],
+  "sliders": {
+    "highImpact": [
+      {
+        "label": "Retirement age from primary job",
+        "before": "67",
+        "afterIncrease": "68",
+        "afterRestore": "67"
+      },
+      {
+        "label": "Partner stay-at-home age",
+        "before": "65",
+        "afterIncrease": "66",
+        "afterRestore": "65"
+      },
+      {
+        "label": "Inflation rate",
+        "before": "3.0%",
+        "afterIncrease": "3.0%",
+        "afterRestore": "3.0%"
+      },
+      {
+        "label": "VOO/S&P return (nominal)",
+        "before": "10.0%",
+        "afterIncrease": "10.0%",
+        "afterRestore": "10.0%"
+      },
+      {
+        "label": "Primary job comp growth (nominal)",
+        "before": "3.0%",
+        "afterIncrease": "3.0%",
+        "afterRestore": "3.0%"
+      }
+    ],
+    "assumptions": [],
+    "realEstate-simple-rental-portfolio": [
+      {
+        "label": "Existing property appreciation (nominal)",
+        "before": "2.0%",
+        "afterIncrease": "2.0%",
+        "afterRestore": "2.0%"
+      },
+      {
+        "label": "Existing rental CF growth (nominal)",
+        "before": "2.5%",
+        "afterIncrease": "2.5%",
+        "afterRestore": "2.5%"
+      },
+      {
+        "label": "Existing principal paydown growth",
+        "before": "2.0%",
+        "afterIncrease": "2.0%",
+        "afterRestore": "2.0%"
+      },
+      {
+        "label": "Gross rent growth",
+        "before": "2.5%",
+        "afterIncrease": "2.5%",
+        "afterRestore": "2.5%"
+      },
+      {
+        "label": "Vacancy rate",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Management fee %",
+        "before": "8.0%",
+        "afterIncrease": "8.0%",
+        "afterRestore": "8.0%"
+      },
+      {
+        "label": "Expense growth",
+        "before": "3.0%",
+        "afterIncrease": "3.0%",
+        "afterRestore": "3.0%"
+      },
+      {
+        "label": "Max total LTV",
+        "before": "85.0%",
+        "afterIncrease": "85.0%",
+        "afterRestore": "85.0%"
+      }
+    ],
+    "realEstate-advanced-investor": [
+      {
+        "label": "Existing property appreciation (nominal)",
+        "before": "2.0%",
+        "afterIncrease": "2.0%",
+        "afterRestore": "2.0%"
+      },
+      {
+        "label": "Existing rental CF growth (nominal)",
+        "before": "2.5%",
+        "afterIncrease": "2.5%",
+        "afterRestore": "2.5%"
+      },
+      {
+        "label": "Existing principal paydown growth",
+        "before": "2.0%",
+        "afterIncrease": "2.0%",
+        "afterRestore": "2.0%"
+      },
+      {
+        "label": "Gross rent growth",
+        "before": "2.5%",
+        "afterIncrease": "2.5%",
+        "afterRestore": "2.5%"
+      },
+      {
+        "label": "Vacancy rate",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Management fee %",
+        "before": "8.0%",
+        "afterIncrease": "8.0%",
+        "afterRestore": "8.0%"
+      },
+      {
+        "label": "Expense growth",
+        "before": "3.0%",
+        "afterIncrease": "3.0%",
+        "afterRestore": "3.0%"
+      },
+      {
+        "label": "New rental cash-to-close %",
+        "before": "25.0%",
+        "afterIncrease": "25.0%",
+        "afterRestore": "25.0%"
+      },
+      {
+        "label": "New rental cash-flow yield",
+        "before": "4.5%",
+        "afterIncrease": "4.5%",
+        "afterRestore": "4.5%"
+      },
+      {
+        "label": "New rental principal paydown rate",
+        "before": "3.0%",
+        "afterIncrease": "3.0%",
+        "afterRestore": "3.0%"
+      },
+      {
+        "label": "Max total LTV",
+        "before": "85.0%",
+        "afterIncrease": "85.0%",
+        "afterRestore": "85.0%"
+      },
+      {
+        "label": "Refinance every N years",
+        "before": "6",
+        "afterIncrease": "6",
+        "afterRestore": "6"
+      },
+      {
+        "label": "Refinance target LTV",
+        "before": "75.0%",
+        "afterIncrease": "75.0%",
+        "afterRestore": "75.0%"
+      },
+      {
+        "label": "Liquidate all real estate at primary age",
+        "before": "99",
+        "afterIncrease": "99",
+        "afterRestore": "99"
+      },
+      {
+        "label": "Refinance cost %",
+        "before": "4.0%",
+        "afterIncrease": "4.0%",
+        "afterRestore": "4.0%"
+      },
+      {
+        "label": "Interest drag on cash-out",
+        "before": "7.0%",
+        "afterIncrease": "7.0%",
+        "afterRestore": "7.0%"
+      },
+      {
+        "label": "Liquidation sale cost %",
+        "before": "8.0%",
+        "afterIncrease": "8.0%",
+        "afterRestore": "8.0%"
+      },
+      {
+        "label": "Liquidation tax/other drag %",
+        "before": "10.0%",
+        "afterIncrease": "10.0%",
+        "afterRestore": "10.0%"
+      },
+      {
+        "label": "Maintenance reserve drag %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Max rental LTV allowed",
+        "before": "80.0%",
+        "afterIncrease": "80.0%",
+        "afterRestore": "80.0%"
+      },
+      {
+        "label": "Max DTI comfort level",
+        "before": "45.0%",
+        "afterIncrease": "45.0%",
+        "afterRestore": "45.0%"
+      },
+      {
+        "label": "Debt-service proxy rate",
+        "before": "0.08",
+        "afterIncrease": "0.08",
+        "afterRestore": "0.08"
+      },
+      {
+        "label": "Property value drop %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Vacancy cash-flow loss %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Ongoing rental margin squeeze %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      }
+    ],
+    "decisionLab": [
+      {
+        "label": "Growth rate %",
+        "before": "0.00",
+        "afterIncrease": "0.50",
+        "afterRestore": "0.00"
+      },
+      {
+        "label": "Part-time pay %",
+        "before": "70.0%",
+        "afterIncrease": "70.0%",
+        "afterRestore": "70.0%"
+      },
+      {
+        "label": "Retirement glide starts at age",
+        "before": "100",
+        "afterIncrease": "100",
+        "afterRestore": "100"
+      },
+      {
+        "label": "Glide-path pay %",
+        "before": "70.0%",
+        "afterIncrease": "70.0%",
+        "afterRestore": "70.0%"
+      },
+      {
+        "label": "Bonus adjustment vs baseline",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Career break months",
+        "before": "0",
+        "afterIncrease": "0",
+        "afterRestore": "0"
+      },
+      {
+        "label": "Promotion raise %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Delay partner income by years",
+        "before": "0",
+        "afterIncrease": "0",
+        "afterRestore": "0"
+      },
+      {
+        "label": "Partner part-time income %",
+        "before": "60.0%",
+        "afterIncrease": "60.0%",
+        "afterRestore": "60.0%"
+      },
+      {
+        "label": "International family trip every N years",
+        "before": "0",
+        "afterIncrease": "0",
+        "afterRestore": "0"
+      },
+      {
+        "label": "Emergency reserve months",
+        "before": "3",
+        "afterIncrease": "3",
+        "afterRestore": "3"
+      },
+      {
+        "label": "Primary job hours/week",
+        "before": "40.00",
+        "afterIncrease": "40.00",
+        "afterRestore": "40.00"
+      },
+      {
+        "label": "Admin/tax/document hours/month",
+        "before": "2.00",
+        "afterIncrease": "2.00",
+        "afterRestore": "2.00"
+      }
+    ],
+    "stressTests": [
+      {
+        "label": "Stock crash %",
+        "before": "0.0%",
+        "afterIncrease": "0.0%",
+        "afterRestore": "0.0%"
+      },
+      {
+        "label": "Post-crash VOO return %",
+        "before": "10.0%",
+        "afterIncrease": "10.0%",
+        "afterRestore": "10.0%"
+      },
+      {
+        "label": "Job loss months",
+        "before": "0",
+        "afterIncrease": "0",
+        "afterRestore": "0"
+      },
+      {
+        "label": "Primary income remaining during stress %",
+        "before": "70.0%",
+        "afterIncrease": "70.0%",
+        "afterRestore": "70.0%"
+      },
+      {
+        "label": "Partner income delay years",
+        "before": "0",
+        "afterIncrease": "0",
+        "afterRestore": "0"
+      }
+    ]
+  },
+  "steppers": {
+    "setup": [],
+    "realEstate-simple-rental-portfolio": [],
+    "realEstate-advanced-investor": [],
+    "decisionLab": [],
+    "stressTests": []
+  },
+  "combos": {
+    "dashboardDollarDisplay": [
+      {
+        "text": "Nominal dollars",
+        "selected": true
+      },
+      {
+        "text": "2026 purchasing-power dollars",
+        "selected": false
+      }
+    ],
+    "assumptionsDisplayBasis": [
+      {
+        "text": "Nominal dollars",
+        "selected": true
+      },
+      {
+        "text": "2026 purchasing-power dollars",
+        "selected": false
+      }
+    ],
+    "realEstateMode": [
+      {
+        "text": "No rentals",
+        "selected": true
+      },
+      {
+        "text": "Simple rental portfolio",
+        "selected": false
+      },
+      {
+        "text": "Advanced investor",
+        "selected": false
+      }
+    ],
+    "decisionPurchaseType": [
+      {
+        "text": "Pure consumption",
+        "selected": true
+      },
+      {
+        "text": "Durable personal asset",
+        "selected": false
+      },
+      {
+        "text": "Vehicle",
+        "selected": false
+      },
+      {
+        "text": "Productivity/business asset",
+        "selected": false
+      },
+      {
+        "text": "Other asset",
+        "selected": false
+      },
+      {
+        "text": "Real estate / home",
+        "selected": false
+      }
+    ],
+    "decisionFrequency": [
+      {
+        "text": "One-time",
+        "selected": false
+      },
+      {
+        "text": "Weekly",
+        "selected": false
+      },
+      {
+        "text": "Monthly",
+        "selected": true
+      },
+      {
+        "text": "Annual",
+        "selected": false
+      }
+    ],
+    "decisionFunding": [
+      {
+        "text": "Cash",
+        "selected": true
+      },
+      {
+        "text": "Future surplus",
+        "selected": false
+      },
+      {
+        "text": "VOO/index",
+        "selected": false
+      },
+      {
+        "text": "Debt",
+        "selected": false
+      }
+    ],
+    "lifestyleBaseline": [
+      {
+        "text": "St. Louis / Missouri baseline",
+        "selected": true
+      },
+      {
+        "text": "US average",
+        "selected": false
+      },
+      {
+        "text": "High cost metro",
+        "selected": false
+      },
+      {
+        "text": "Low cost area",
+        "selected": false
+      }
+    ],
+    "lifestyleStyle": [
+      {
+        "text": "Lean local starter — ~$55k/yr (~$4.6k/mo)",
+        "selected": false
+      },
+      {
+        "text": "Practical local baseline — ~$65k/yr (~$5.5k/mo)",
+        "selected": false
+      },
+      {
+        "text": "Balanced household — ~$76k/yr (~$6.3k/mo)",
+        "selected": true
+      },
+      {
+        "text": "Comfortable household — ~$88k/yr (~$7.4k/mo)",
+        "selected": false
+      },
+      {
+        "text": "Premium but intentional — ~$104k/yr (~$8.6k/mo)",
+        "selected": false
+      }
+    ],
+    "lifestyleGrowth": [
+      {
+        "text": "Conservative growth",
+        "selected": false
+      },
+      {
+        "text": "Average lifestyle growth",
+        "selected": true
+      },
+      {
+        "text": "Higher lifestyle creep",
+        "selected": false
+      },
+      {
+        "text": "Custom / keep current",
+        "selected": false
+      }
+    ],
+    "scenarioBasis": [
+      {
+        "text": "Use current settings",
+        "selected": true
+      },
+      {
+        "text": "Use clean baseline assumptions",
+        "selected": false
+      }
+    ],
+    "stressYear": [
+      {
+        "text": "2029",
+        "selected": false
+      },
+      {
+        "text": "2030",
+        "selected": false
+      },
+      {
+        "text": "2031",
+        "selected": false
+      },
+      {
+        "text": "2032",
+        "selected": false
+      },
+      {
+        "text": "2033",
+        "selected": false
+      },
+      {
+        "text": "2034",
+        "selected": false
+      },
+      {
+        "text": "2035",
+        "selected": true
+      },
+      {
+        "text": "2036",
+        "selected": false
+      },
+      {
+        "text": "2037",
+        "selected": false
+      },
+      {
+        "text": "2038",
+        "selected": false
+      },
+      {
+        "text": "2039",
+        "selected": false
+      },
+      {
+        "text": "2040",
+        "selected": false
+      },
+      {
+        "text": "2041",
+        "selected": false
+      }
+    ],
+    "stressSeverity": [
+      {
+        "text": "None",
+        "selected": true
+      },
+      {
+        "text": "Mild",
+        "selected": false
+      },
+      {
+        "text": "Base",
+        "selected": false
+      },
+      {
+        "text": "Severe",
+        "selected": false
+      },
+      {
+        "text": "Custom",
+        "selected": false
+      }
+    ],
+    "auditViewMode": [
+      {
+        "text": "Plain stable table",
+        "selected": true
+      },
+      {
+        "text": "Styled projection matrix",
+        "selected": false
+      }
+    ]
+  },
+  "multiselects": {
+    "dashboardMilestones": {
+      "label": "Milestone years to track",
+      "before": "Selected 2026, 2027, 2031, 2041, 2051, 2061. Milestone years to track",
+      "added": "2028",
+      "after": "Selected 2026, 2027, 2031, 2041, 2051, 2061. Milestone years to track"
+    },
+    "scenarioMilestones": {
+      "label": "Scenario milestone years",
+      "before": "Selected 2026, 2027, 2031, 2041, 2051, 2061. Scenario milestone years",
+      "added": "",
+      "after": "Selected 2026, 2027, 2031, 2041, 2051. Scenario milestone years"
+    },
+    "stressImpactYears": {
+      "label": "Stress impact years",
+      "before": "Selected 2030, 2035, 2056. Stress impact years",
+      "added": "2026",
+      "after": "Selected 2030, 2035, 2056. Stress impact years"
+    }
+  },
+  "plotDrag": {
+    "changed": false,
+    "ticksBefore": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "ticksAfter": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "mainMenu": {
+    "items": [
+      "Print",
+      "Record screen"
+    ],
+    "printClicked": true,
+    "itemsAfterPrint": [
+      "Print",
+      "Record screen"
+    ],
+    "recordScreenClicked": true
+  },
+  "profileFlow": {
+    "createdCode": "silver-lion-8366",
+    "highImpactBefore": "67",
+    "afterChange": "68",
+    "afterSecondChange": "69",
+    "restoredAfterLoad": "68",
+    "saveMessages": [
+      "Saved profiles",
+      "Create, save, or load a public saved profile code.",
+      "Saved profile silver-lion-8366."
+    ],
+    "loadMessages": [
+      "Saved profiles",
+      "Create, save, or load a public saved profile code."
+    ],
+    "uploadMessages": [
+      "Saved profiles",
+      "Uploaded profile silver-lion-8366.",
+      "Create, save, or load a public saved profile code."
+    ],
+    "downloads": {
+      "profileJsonPath": "C:\\Users\\edsos\\OneDrive\\Documents2\\New project\\deep-interactions\\downloads\\profile.json",
+      "settingsCsvPath": "C:\\Users\\edsos\\OneDrive\\Documents2\\New project\\deep-interactions\\downloads\\settings.csv"
+    }
+  },
+  "downloads": {
+    "auditCsvPath": "C:\\Users\\edsos\\OneDrive\\Documents2\\New project\\deep-interactions\\downloads\\projection-audit.csv",
+    "profileJsonSummary": {
+      "profileCode": "silver-lion-8366",
+      "appVersion": "0.8.0",
+      "modelVersion": "0.4.0"
+    },
+    "settingsCsvHead": "category,field,label,value,unit,profile,source / type,notes\nVersion,app_version,App version,0.8.0,,Public/default,metadata,\nVersion,model_version,Model version,0.4.0,,Public/default,metadata,\nVersion,version_date,Version date,2026-05-20,,Public/default,metadata,\nProfile,profile_mode,Profile mode,Average case,,Public/default,metadata,\nProfile,profile_code,Profile code,silver-lion-8366,,Public/defau",
+    "auditCsvHead": "Year,Primary Age,Partner Age,Investment Strategy,Primary Job Status,Partner Career Stage,Starting Net Worth,Ending Net Worth,Net Worth Increase,Economic Gross Income,Taxes,Federal Tax Estimate,State/Local Tax Estimate,Payroll Tax Estimate,Investment/Rental Tax Drag,High Income Surcharge,Total Taxes,Taxes Before Child Credits,Taxes After Child Credits,Qualifying Children for CTC,Child Tax Credit Es"
+  },
+  "notes": []
+}
