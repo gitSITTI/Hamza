@@ -15,8 +15,17 @@ const NAV_PAGES = [
 
 const GENERIC_LEDE = "Generic household case study. Change assumptions in the tabs; results update immediately.";
 
+function initialPageFromUrl() {
+  try {
+    const page = new URLSearchParams(window.location.search).get("page");
+    return NAV_PAGES.includes(page) ? page : "Dashboard";
+  } catch {
+    return "Dashboard";
+  }
+}
+
 const state = {
-  page: "Dashboard",
+  page: initialPageFromUrl(),
   profileKey: "",
   profileCodeInput: "",
   freezeUpdates: false,
@@ -76,6 +85,8 @@ const state = {
   decisionResidualValue: 30,
   decisionOperatingCost: 2500,
   stressEventYear: 2027,
+  stressStockCrashYear: 2027,
+  stressJobLossStartYear: 2027,
   renderedAudit: false,
   renderedScenario: false,
   settings: {},
@@ -183,6 +194,11 @@ const state = {
     stressIncomeRemaining: 70,
     stressPartnerDelayYears: 0,
   },
+  renderedStress: false,
+  stressStockCrashEnabled: false,
+  stressReducedReturnEnabled: false,
+  stressRateSqueezeEnabled: false,
+  stressJobLossEnabled: false,
   notes: "This local rebuild is derived from the captured app structure, live screenshots, report JSON, and exported files. Use it to validate the full page inventory locally.",
 };
 
@@ -1646,6 +1662,19 @@ function showToast(message) {
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
+function setPage(page) {
+  if (!NAV_PAGES.includes(page)) return;
+  state.page = page;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("page", page);
+    window.history.replaceState({}, "", url);
+  } catch {
+    // The local mirror still works if URL history is unavailable.
+  }
+  render();
+}
+
 function renderSidebar() {
   const groups = sidebarMetricGroups();
   const side = h("aside", { class: "sidebar" }, [
@@ -1664,15 +1693,20 @@ function renderSidebar() {
     ]),
     h("div", { class: "nav-list" }, NAV_PAGES.map((page) => {
       const id = `nav-${page.replaceAll(/\W+/g, "-").toLowerCase()}`;
-      return h("label", { class: "nav-item", for: id }, [
+      return h("label", {
+        class: "nav-item",
+        for: id,
+        onclick: () => {
+          if (state.page !== page) setPage(page);
+        },
+      }, [
         h("input", {
           id,
           type: "radio",
           name: "page",
           checked: state.page === page,
           onchange: () => {
-            state.page = page;
-            render();
+            setPage(page);
           },
         }),
         h("span", {}, page),
@@ -2099,7 +2133,7 @@ function renderRealEstate() {
       ]),
     ]),
     selectControl("Real estate setup mode", "realEstateMode", controlsMeta.realEstateMode),
-    isNone ? h("div", { class: "page-grid" }, [
+    isNone ? h("div", { class: "section-stack" }, [
       h("div", { class: "notice" }, "Real estate investor mode is off. The model assumes no rental portfolio, no rental debt, no refinance strategy, and no new rental purchases."),
       h("p", { class: "section-copy" }, "Simple and advanced controls are hidden until you switch the setup mode."),
     ]) : h("div", { class: "kpi-band" }, [
@@ -2158,7 +2192,7 @@ function renderRealEstate() {
         sliderControl("Ongoing rental margin squeeze %", "rentalMarginSqueeze", { min: 0, max: 50, step: 1, suffix: "%" }),
       ]),
     ]) : null,
-    h("div", { class: "notice" }, "Turn on real estate mode to see rental-business analytics."),
+    isNone ? h("div", { class: "notice" }, "Turn on real estate mode to see rental-business analytics.") : null,
   ]);
 }
 
@@ -2419,12 +2453,19 @@ function renderScenarioComparison() {
 }
 
 function renderStressTests() {
+  const stressStatus = state.stressSeverity === "None" ? "Stress Off" : `Stress ${state.stressSeverity}`;
+  const stressResultsStatus = state.renderedStress ? "Stress results current" : "Stress results not rendered";
+  const renderStress = (message) => {
+    state.renderedStress = true;
+    showToast(message);
+    render();
+  };
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Stress Sandbox"),
     h("p", { class: "section-copy" }, "Choose a stress preset or configure custom stress, then render results."),
     h("p", { class: "section-copy" }, "No active decision is applied. Use the commit controls above to update the projection and sidebar net worth panel."),
-    h("div", { class: "toolbar-row" }, [
-      h("div", { class: "toolbar-copy" }, "Stress draft matches active projection"),
+    h("div", { class: "toolbar-row wide-copy" }, [
+      h("div", { class: "toolbar-copy" }, "Stress draft has unapplied changes"),
       h("button", { class: "btn primary", onclick: () => showToast("Stress sandbox applied.") }, "Apply Stress Sandbox"),
       h("button", { class: "btn", onclick: () => showToast("Stress draft reset.") }, "Cancel Stress Changes"),
       h("button", { class: "btn", onclick: () => showToast("Stress draft copied from active projection.") }, "Reset Stress Draft from Active"),
@@ -2443,36 +2484,66 @@ function renderStressTests() {
     ]),
     h("h3", { class: "section-title", style: "font-size:18px; margin-top:18px;" }, "2. Timing"),
     selectControl("Preset severity", "stressSeverity", controlsMeta.stressSeverity),
-    accordion("3. Market / investment", true, [
+    h("h3", { class: "section-title", style: "font-size:18px; margin-top:18px;" }, "3. Market / investment"),
+    h("div", { class: "control-grid" }, [
+      toggleControl("Enable stock crash?", state.stressStockCrashEnabled, (checked) => {
+        state.stressStockCrashEnabled = checked;
+        render();
+      }),
+      numberInputControl("Stock crash year", "stressStockCrashYear", { min: 2026, max: 2061, step: 1 }),
       sliderControl("Stock crash %", "stressStockCrash", { min: 0, max: 80, step: 1, suffix: "%" }),
+      toggleControl("Reduced VOO return after crash?", state.stressReducedReturnEnabled, (checked) => {
+        state.stressReducedReturnEnabled = checked;
+        render();
+      }),
       sliderControl("Post-crash VOO return %", "stressPostCrashReturn", { min: -5, max: 15, step: 0.1, suffix: "%" }),
+      toggleControl("Enable high-rate margin squeeze?", state.stressRateSqueezeEnabled, (checked) => {
+        state.stressRateSqueezeEnabled = checked;
+        render();
+      }),
     ]),
-    accordion("4. Job / income", false, [
+    h("h3", { class: "section-title", style: "font-size:18px; margin-top:18px;" }, "4. Job / income"),
+    h("div", { class: "control-grid" }, [
+      toggleControl("Enable primary job loss?", state.stressJobLossEnabled, (checked) => {
+        state.stressJobLossEnabled = checked;
+        render();
+      }),
+      numberInputControl("Job loss start year", "stressJobLossStartYear", { min: 2026, max: 2061, step: 1 }),
+      sliderControl("Job loss months", "stressJobLossMonths", { min: 0, max: 24, step: 1 }),
+      sliderControl("Primary income remaining during stress %", "stressIncomeRemaining", { min: 10, max: 100, step: 1, suffix: "%" }),
+      h("p", { class: "control-note" }, "70% means the household keeps 70% of primary income during stress, not 7000%."),
+      sliderControl("Partner income delay years", "stressPartnerDelayYears", { min: 0, max: 6, step: 1 }),
+    ]),
+    accordion("5. Real estate / rental", false, [
       h("div", { class: "control-grid" }, [
-        sliderControl("Job loss months", "stressJobLossMonths", { min: 0, max: 24, step: 1 }),
-        sliderControl("Primary income remaining during stress %", "stressIncomeRemaining", { min: 10, max: 100, step: 1, suffix: "%" }),
-        sliderControl("Partner income delay years", "stressPartnerDelayYears", { min: 0, max: 6, step: 1 }),
+        sliderControl("Property value drop %", "propertyValueDrop", { min: 0, max: 50, step: 1, suffix: "%" }),
+        sliderControl("Vacancy cash-flow loss %", "vacancyCashflowLoss", { min: 0, max: 100, step: 1, suffix: "%" }),
+        sliderControl("Ongoing rental margin squeeze %", "rentalMarginSqueeze", { min: 0, max: 50, step: 1, suffix: "%" }),
       ]),
-    ]),
-    accordion("5. Real estate / rental", true, [
-      h("p", { class: "section-copy" }, "Real estate stress appears here when investor mode is on."),
     ]),
     h("h3", { class: "section-title", style: "font-size:18px; margin-top:22px;" }, "6. Repair / operating shock"),
     h("p", { class: "section-copy" }, "Use the real estate section above for repair, operating-cost, and vacancy shocks when investor mode is active."),
     h("h3", { class: "section-title", style: "font-size:18px; margin-top:22px;" }, "7. Render results"),
     h("h3", { class: "section-title", style: "font-size:18px;" }, "Stress results"),
-    h("p", { class: "section-copy" }, "Stress results current"),
+    h("p", { class: "section-copy" }, stressResultsStatus),
     h("div", { class: "button-row" }, [
-      h("button", { class: "btn", onclick: () => showToast("Standard stress suite rendered.") }, "Render Standard Stress Suite"),
-      h("button", { class: "btn primary", onclick: () => showToast("Custom stress comparison rendered.") }, "Render Custom Stress Comparison"),
-      h("button", { class: "btn", onclick: () => showToast("Stress results cleared.") }, "Clear Stress Results"),
+      h("button", { class: "btn", onclick: () => renderStress("Standard stress suite rendered.") }, "Render Standard Stress Suite"),
+      h("button", { class: "btn primary", onclick: () => renderStress("Custom stress comparison rendered.") }, "Render Custom Stress Comparison"),
+      h("button", {
+        class: "btn",
+        onclick: () => {
+          state.renderedStress = false;
+          showToast("Stress results cleared.");
+          render();
+        },
+      }, "Clear Stress Results"),
     ]),
     h("h3", { class: "section-title", style: "font-size:18px;" }, "Stress summary"),
-    h("p", { class: "section-copy" }, "Stress results current"),
+    h("p", { class: "section-copy" }, stressResultsStatus),
     h("div", { class: "notice" }, "Choose a stress preset or configure custom stress, then render the comparison."),
-    h("p", { class: "section-copy" }, `Active stress preset/status: ${state.stressSeverity === "None" ? "Stress Off" : state.stressSeverity}`),
-    accordion("Detailed stress results", true, [
-      h("div", { class: "section-stack" }, [
+    h("p", { class: "section-copy" }, `Active stress preset/status: ${stressStatus}`),
+    accordion("Detailed stress results", false, [
+      state.renderedStress ? h("div", { class: "section-stack" }, [
         h("h3", { class: "section-title", style: "font-size:18px;" }, "Standard stress suite"),
         h("p", { class: "section-copy" }, "These presets give a simple starting point without requiring every technical toggle."),
         h("div", { class: "table-card" }, [
@@ -2494,7 +2565,7 @@ function renderStressTests() {
         h("p", { class: "section-copy" }, "Worst year net worth and worst year cash reserve help highlight the most severe stress year in each scenario."),
         h("h3", { class: "section-title", style: "font-size:18px;" }, "Stress-test comparison"),
         h("div", { class: "notice" }, "Choose a stress preset or configure custom stress, then render the comparison."),
-      ]),
+      ]) : h("p", { class: "section-copy" }, "Render the standard suite or custom comparison to see detailed stress results."),
     ]),
   ]);
 }

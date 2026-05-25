@@ -321,6 +321,31 @@ const DEFAULT_PROFILE_BENCHMARKS = [
   },
 ];
 
+const PROFESSION_INCOME_PRESETS = {
+  primary: {
+    "Corporate — Generic W-2": { base: 70000, source: "Captured profile default base salary" },
+    Healthcare: { base: 78000, source: "BLS/Census healthcare planning proxy" },
+    Technology: { base: 105000, source: "BLS/Census technology planning proxy" },
+    "Skilled trades": { base: 68000, source: "BLS/Census skilled-trades planning proxy" },
+    "Business owner": { base: 90000, source: "Small-business planning proxy" },
+    Custom: { base: 77000, source: "Current captured primary income" },
+  },
+  partner: {
+    "Corporate — Generic W-2": { base: 34200, source: "Captured partner default income" },
+    Healthcare: { base: 62000, source: "BLS/Census healthcare planning proxy" },
+    Technology: { base: 85000, source: "BLS/Census technology planning proxy" },
+    Education: { base: 52000, source: "BLS/Census education planning proxy" },
+    Custom: { base: 34200, source: "Current captured partner income" },
+  },
+};
+
+const EXPERIENCE_MULTIPLIER = {
+  "0–2 years": 0.86,
+  "3–5 years": 1,
+  "6–10 years": 1.18,
+  "10+ years": 1.38,
+};
+
 const SEEDED_SAVED_PROFILES = [
   {
     code: "local-working-profile-2026",
@@ -604,6 +629,40 @@ function manualPartnerIncome() {
   return Number(state.manualInputs.partnerIncome2026 ?? state.settings.partner_base_salary_2026 ?? 0);
 }
 
+function professionIncomeEstimate(kind) {
+  const presetKey = kind === "partner" ? state.partnerProfessionPreset : state.primaryProfessionPreset;
+  const experienceKey = kind === "partner" ? state.partnerExperience : state.primaryExperience;
+  const preset = PROFESSION_INCOME_PRESETS[kind]?.[presetKey] || PROFESSION_INCOME_PRESETS[kind]?.Custom;
+  const multiplier = EXPERIENCE_MULTIPLIER[experienceKey] || 1;
+  const estimate = Math.round((Number(preset?.base || 0) * multiplier) / 1000) * 1000;
+  return {
+    preset: presetKey,
+    experience: experienceKey,
+    estimate,
+    source: preset?.source || "Preset estimate",
+    multiplier,
+  };
+}
+
+function applyProfessionIncomePreset(kind, { force = false } = {}) {
+  const key = kind === "partner" ? "partnerIncome2026" : "primaryIncome2026";
+  const settingKey = kind === "partner" ? "partner_base_salary_2026" : "primary_job_salary_bonus_2026";
+  const estimate = professionIncomeEstimate(kind);
+  const previous = Number(state.manualInputs[key] ?? 0);
+  const shouldApply = force || !previous || state.manualInputs[`${key}FromPreset`] === true;
+  if (!shouldApply) return estimate;
+  state.manualInputs[key] = estimate.estimate;
+  state.manualInputs[`${key}FromPreset`] = true;
+  state.settings[settingKey] = estimate.estimate;
+  saveControlPosition(key, estimate.estimate, {
+    label: kind === "partner" ? "Partner annual income 2026" : "Primary annual income 2026",
+    unit: "$",
+    benchmark: estimate.estimate,
+    source: `${estimate.preset}; ${estimate.experience}; ${estimate.source}`,
+  });
+  return estimate;
+}
+
 function applyManualProjectionOverrides(rows) {
   const primary = manualPrimaryIncome();
   const partner = manualPartnerIncome();
@@ -846,13 +905,14 @@ function placeholderCard() {
   return h("div", { class: "metric-card placeholder" });
 }
 
-function selectControl(label, key, options, { showAdvice = true, showHelp = true } = {}) {
+function selectControl(label, key, options, { showAdvice = true, showHelp = true, onChange = null } = {}) {
   const advice = showAdvice ? fieldAdvice(key, state[key], label) : "";
   const select = h("select", {
     class: "select",
     value: state[key],
     onchange: (event) => {
       state[key] = event.target.value;
+      if (onChange) onChange(event.target.value);
       render();
     },
   }, options.map((option) => h("option", { value: option }, option)));
@@ -892,14 +952,15 @@ function numberInputControl(label, key, { min = 0, max = 999999, step = 1, decim
   ]);
 }
 
-function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, copy = "" } = {}) {
+function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, copy = "", estimate = null } = {}) {
   const value = Number(state.manualInputs[key] ?? 0);
   const commitValue = (rawValue) => {
     const next = Math.max(min, Math.min(max, Number(rawValue || 0)));
     state.manualInputs[key] = next;
+    state.manualInputs[`${key}FromPreset`] = false;
     if (key === "primaryIncome2026") state.settings.primary_job_salary_bonus_2026 = next;
     if (key === "partnerIncome2026") state.settings.partner_base_salary_2026 = next;
-    saveControlPosition(key, next, { label, unit: "$", source: "Manual user input" });
+    saveControlPosition(key, next, { label, unit: "$", benchmark: estimate?.estimate, source: "Manual user input" });
     render();
   };
   return h("div", { class: "control" }, [
@@ -922,6 +983,26 @@ function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, co
         onchange: (event) => commitValue(event.target.value),
       }),
     ]),
+    estimate ? h("div", { class: "preset-income-note" }, [
+      h("strong", {}, `Preset suggests ${formatMoney(estimate.estimate)}`),
+      h("span", {}, `${estimate.preset}, ${estimate.experience}. ${estimate.source}.`),
+      h("button", {
+        class: "btn tiny",
+        onclick: () => {
+          state.manualInputs[key] = estimate.estimate;
+          state.manualInputs[`${key}FromPreset`] = true;
+          if (key === "primaryIncome2026") state.settings.primary_job_salary_bonus_2026 = estimate.estimate;
+          if (key === "partnerIncome2026") state.settings.partner_base_salary_2026 = estimate.estimate;
+          saveControlPosition(key, estimate.estimate, {
+            label,
+            unit: "$",
+            benchmark: estimate.estimate,
+            source: `${estimate.preset}; ${estimate.experience}; ${estimate.source}`,
+          });
+          render();
+        },
+      }, "Use preset"),
+    ]) : null,
     h("small", { class: "field-advice" }, copy || "Manual income override. Saved locally and used by the validated projection preview."),
   ]);
 }
@@ -1835,6 +1916,8 @@ function renderDashboardTools() {
 }
 
 function renderSetup() {
+  const primaryIncomeEstimate = professionIncomeEstimate("primary");
+  const partnerIncomeEstimate = professionIncomeEstimate("partner");
   const setupSections = [
     ["Step 1 — Household basics", [
       h("div", { class: "control-grid" }, [
@@ -1861,9 +1944,14 @@ function renderSetup() {
     ]],
     ["Step 4 — Career and income", [
       h("div", { class: "control-grid" }, [
-        selectControl("Primary profession preset", "primaryProfessionPreset", controlsMeta.primaryProfessionPreset),
-        selectControl("Primary years of experience in 2026", "primaryExperience", controlsMeta.primaryExperience),
+        selectControl("Primary profession preset", "primaryProfessionPreset", controlsMeta.primaryProfessionPreset, {
+          onChange: () => applyProfessionIncomePreset("primary", { force: true }),
+        }),
+        selectControl("Primary years of experience in 2026", "primaryExperience", controlsMeta.primaryExperience, {
+          onChange: () => applyProfessionIncomePreset("primary", { force: true }),
+        }),
         moneyInputControl("Primary annual income 2026", "primaryIncome2026", {
+          estimate: primaryIncomeEstimate,
           copy: "Use this when Custom or the preset is not accurate. This value is saved and overrides the 2026 primary income input.",
         }),
         selectControl("Career growth mode", "careerGrowthMode", controlsMeta.careerGrowthMode),
@@ -1873,9 +1961,14 @@ function renderSetup() {
         sliderControl("Work hours/week", "workHoursWeek", { min: 0, max: 90, step: 1 }),
         selectControl("Student loan assumption mode", "studentLoanMode", controlsMeta.studentLoanMode),
         sliderControl("Primary loan interest %", "primaryLoanInterest", { min: 0, max: 15, step: 0.1, suffix: "%" }),
-        selectControl("Partner profession preset", "partnerProfessionPreset", controlsMeta.partnerProfessionPreset),
-        selectControl("Partner years of experience in 2026", "partnerExperience", controlsMeta.partnerExperience),
+        selectControl("Partner profession preset", "partnerProfessionPreset", controlsMeta.partnerProfessionPreset, {
+          onChange: () => applyProfessionIncomePreset("partner", { force: true }),
+        }),
+        selectControl("Partner years of experience in 2026", "partnerExperience", controlsMeta.partnerExperience, {
+          onChange: () => applyProfessionIncomePreset("partner", { force: true }),
+        }),
         moneyInputControl("Partner annual income 2026", "partnerIncome2026", {
+          estimate: partnerIncomeEstimate,
           copy: "Use this when the partner preset is not accurate. Set to 0 if there is no partner income.",
         }),
         selectControl("Partner income mode", "partnerIncomeMode", controlsMeta.partnerIncomeMode),
@@ -2950,6 +3043,8 @@ async function loadData() {
   state.sliders.setupPrimaryAge = Number(profile.config.user_age_current_year || state.sliders.setupPrimaryAge);
   state.sliders.setupPartnerAge = Number(profile.config.partner_age_current_year || state.sliders.setupPartnerAge);
   loadControlPositions();
+  if (!state.manualInputs.primaryIncome2026) applyProfessionIncomePreset("primary", { force: true });
+  if (!state.manualInputs.partnerIncome2026 && state.partnerIncomeMode !== "No income") applyProfessionIncomePreset("partner", { force: true });
   state.settings.primary_job_salary_bonus_2026 = manualPrimaryIncome();
   state.settings.partner_base_salary_2026 = manualPartnerIncome();
   loadFeatureFlags();
