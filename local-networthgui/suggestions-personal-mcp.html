@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal MCP — Full Architecture & Roadmap</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #22263a;
+    --accent: #6c63ff;
+    --accent2: #00d4aa;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e8eaf6;
+    --muted: #8892b0;
+    --border: #2d3154;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --blue: #2196f3;
+    --purple: #9c27b0;
+    --gold: #ffc107;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; line-height: 1.6; }
+
+  .hero {
+    background: linear-gradient(135deg, #1a1d27 0%, #0f1117 40%, #1a0a2e 100%);
+    padding: 48px 32px 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero h1 { font-size: 2.4rem; font-weight: 800; background: linear-gradient(90deg, #6c63ff, #00d4aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .hero p { color: var(--muted); font-size: 1.1rem; margin-top: 8px; max-width: 700px; margin-left: auto; margin-right: auto; }
+  .hero .badge-row { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+  .badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 14px; font-size: .8rem; color: var(--muted); }
+  .badge.free { border-color: var(--green); color: var(--green); }
+  .badge.hot { border-color: var(--accent3); color: var(--accent3); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+  section { margin-bottom: 56px; }
+  h2 { font-size: 1.6rem; font-weight: 700; margin-bottom: 4px; }
+  h2 .icon { font-size: 1.4rem; margin-right: 8px; }
+  .section-sub { color: var(--muted); font-size: .95rem; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+
+  /* Cards */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card.accent-left { border-left: 3px solid var(--accent); }
+  .card.accent-green { border-left: 3px solid var(--green); }
+  .card.accent-orange { border-left: 3px solid var(--orange); }
+  .card.accent-blue { border-left: 3px solid var(--blue); }
+  .card.accent-gold { border-left: 3px solid var(--gold); }
+  .card.accent-purple { border-left: 3px solid var(--purple); }
+  .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .card ul { padding-left: 18px; color: var(--muted); font-size: .88rem; line-height: 1.8; }
+  .card p { color: var(--muted); font-size: .88rem; }
+
+  /* Architecture diagram */
+  .arch { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; overflow-x: auto; }
+  .arch-row { display: flex; align-items: flex-start; justify-content: center; gap: 0; flex-wrap: nowrap; min-width: 800px; }
+  .arch-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .arch-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: .82rem; text-align: center; min-width: 130px; }
+  .arch-box.user { border-color: var(--accent); background: rgba(108,99,255,.12); }
+  .arch-box.secure { border-color: var(--accent3); background: rgba(255,107,107,.1); }
+  .arch-box.mcp { border-color: var(--accent2); background: rgba(0,212,170,.1); }
+  .arch-box.db { border-color: var(--gold); background: rgba(255,193,7,.1); }
+  .arch-box.gui { border-color: var(--blue); background: rgba(33,150,243,.1); }
+  .arch-box.ext { border-color: var(--muted); background: rgba(136,146,176,.06); font-size: .76rem; }
+  .arch-arrow { display: flex; align-items: center; padding: 0 8px; color: var(--muted); font-size: 1.4rem; }
+  .arch-label { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+  .arch-group-label { font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .arch-divider { width: 1px; background: var(--border); height: 100%; margin: 0 4px; }
+
+  /* Two-column */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  /* Comparison table */
+  .cmp-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  .cmp-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .cmp-table td { padding: 9px 14px; border-bottom: 1px solid rgba(45,49,84,.5); color: var(--muted); vertical-align: top; }
+  .cmp-table tr:last-child td { border-bottom: none; }
+  .cmp-table .yes { color: var(--green); font-weight: 600; }
+  .cmp-table .no { color: var(--accent3); }
+  .cmp-table .partial { color: var(--gold); }
+  .cmp-table .label { color: var(--text); font-weight: 500; }
+
+  /* Flow */
+  .flow { display: flex; flex-direction: column; gap: 0; }
+  .flow-step { display: flex; align-items: flex-start; gap: 16px; }
+  .flow-num { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; font-size: .85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .flow-body { flex: 1; padding-bottom: 24px; border-left: 1px dashed var(--border); margin-left: 16px; padding-left: 20px; }
+  .flow-step:last-child .flow-body { border-left: none; }
+  .flow-title { font-weight: 600; font-size: .95rem; }
+  .flow-desc { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+  .flow-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .tag { background: var(--surface2); border-radius: 4px; padding: 2px 8px; font-size: .75rem; }
+  .tag.free { color: var(--green); border: 1px solid rgba(76,175,80,.3); }
+  .tag.phase { color: var(--accent); border: 1px solid rgba(108,99,255,.3); }
+  .tag.paid { color: var(--orange); border: 1px solid rgba(255,152,0,.3); }
+  .tag.crypto { color: var(--gold); border: 1px solid rgba(255,193,7,.3); }
+
+  /* Allocation */
+  .alloc-bar { display: flex; height: 36px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+  .alloc-seg { display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; color: #fff; transition: all .3s; }
+
+  /* Plugin cards */
+  .plugin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .plugin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .plugin-header { padding: 16px 20px 12px; border-bottom: 1px solid var(--border); }
+  .plugin-header h3 { font-size: 1rem; font-weight: 700; }
+  .plugin-header p { color: var(--muted); font-size: .82rem; margin-top: 4px; }
+  .plugin-body { padding: 16px 20px; }
+  .plugin-tool { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(45,49,84,.4); font-size: .83rem; }
+  .plugin-tool:last-child { border-bottom: none; }
+  .plugin-tool .tool-name { font-family: monospace; color: var(--accent2); }
+  .plugin-tool .tool-src { color: var(--muted); font-size: .76rem; }
+
+  /* Roadmap */
+  .roadmap { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  @media (max-width: 900px) { .roadmap { grid-template-columns: repeat(2, 1fr); } }
+  .rm-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .rm-phase { font-size: .72rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+  .rm-title { font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
+  .rm-items { list-style: none; padding: 0; }
+  .rm-items li { font-size: .82rem; color: var(--muted); padding: 3px 0; display: flex; align-items: flex-start; gap: 6px; }
+  .rm-items li::before { content: '▸'; color: var(--accent); flex-shrink: 0; margin-top: 1px; }
+  .rm-card.p1 { border-top: 2px solid var(--accent); }
+  .rm-card.p1 .rm-phase { color: var(--accent); }
+  .rm-card.p2 { border-top: 2px solid var(--accent2); }
+  .rm-card.p2 .rm-phase { color: var(--accent2); }
+  .rm-card.p3 { border-top: 2px solid var(--gold); }
+  .rm-card.p3 .rm-phase { color: var(--gold); }
+  .rm-card.p4 { border-top: 2px solid var(--accent3); }
+  .rm-card.p4 .rm-phase { color: var(--accent3); }
+
+  /* Callout */
+  .callout { border-radius: 10px; padding: 14px 18px; font-size: .88rem; margin: 16px 0; }
+  .callout.info { background: rgba(33,150,243,.1); border: 1px solid rgba(33,150,243,.3); color: #82b4ff; }
+  .callout.warn { background: rgba(255,193,7,.08); border: 1px solid rgba(255,193,7,.3); color: var(--gold); }
+  .callout.success { background: rgba(76,175,80,.08); border: 1px solid rgba(76,175,80,.3); color: #81c784; }
+
+  /* Separator */
+  .sep { height: 1px; background: var(--border); margin: 8px 0 24px; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>Personal MCP — Your Financial Brain</h1>
+  <p>A secure, private, locally-hosted intelligence layer that knows everything about your finances — and plugs into any tool you build.</p>
+  <div class="badge-row">
+    <span class="badge free">100% Free Stack</span>
+    <span class="badge free">Local-First</span>
+    <span class="badge">Cloudflare Secured</span>
+    <span class="badge hot">Connects to NetWorth GUI</span>
+    <span class="badge">Property Analysis</span>
+    <span class="badge">Retirement + Crypto</span>
+    <span class="badge hot">Business Acquisition</span>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🏗️</span>Full Architecture Overview</h2>
+  <div class="section-sub">How every layer connects — from your private data vault to any GUI or AI agent</div>
+
+  <div class="arch">
+    <div style="margin-bottom:20px; text-align:center; font-size:.85rem; color:var(--muted);">
+      Your browser or Claude Code → Cloudflare Access (auth gate) → Personal MCP Server (localhost) → SQLite Vault → External APIs
+    </div>
+    <div class="arch-row">
+
+      <!-- Left: Consumers -->
+      <div class="arch-col" style="min-width:160px">
+        <div class="arch-group-label">Consumers</div>
+        <div class="arch-box gui">🌐 NetWorth GUI<br><span style="font-size:.72rem;color:var(--muted)">default demo MCP</span></div>
+        <div class="arch-box gui">🌐 NetWorth GUI<br><span style="font-size:.72rem;color:var(--muted)">YOUR personal MCP</span></div>
+        <div class="arch-box gui">🤖 Claude Code<br><span style="font-size:.72rem;color:var(--muted)">context-aware AI</span></div>
+        <div class="arch-box gui">📱 Mobile / Web<br><span style="font-size:.72rem;color:var(--muted)">future</span></div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- Security Layer -->
+      <div class="arch-col" style="min-width:150px">
+        <div class="arch-group-label">Auth Gate</div>
+        <div class="arch-box secure">🔐 Cloudflare<br>Access Tunnel<br><span style="font-size:.72rem;color:var(--muted)">free tier</span></div>
+        <div style="font-size:.75rem;color:var(--muted);text-align:center;margin-top:8px">API key +<br>Zero Trust rules</div>
+      </div>
+
+      <div class="arch-arrow">→</div>
+
+      <!-- MCP Server -->
+      <div class="arch-col" style="min-width:180px">
+        <div class="arch-group-label">Personal MCP Server</div>
+        <div class="arch-box mcp">⚙️ Node.js + Express<br>localhost:3333<br><span style="font-size:.72rem;color:var(--muted)">MCP protocol</span></div>
+        <div style="height:8px"></div>
+        <div class="arch-box mcp" style="font-size:.76rem">Plugins:<br>🏠 Property<br>💼 Business<br>📈 Markets<br>🏦 Retirement<br>📄 Tax / Docs</div>
+      </div>
+
+      <div class="arch-arrow">↔</div>
+
+      <!-- Data Vault -->
+      <div class="arch-col" style="min-width:160px">
+        <div class="arch-group-label">Data Vault</div>
+        <div class="arch-box db">🗄️ SQLite<br>Encrypted<br><span style="font-size:.72rem;color:var(--muted)">sqlcipher / better-sqlite3</span></div>
+        <div style="height:8px"></div>
+        <div class="arch-box db" style="font-size:.76rem">Tables:<br>identities · properties<br>accounts · positions<br>entities · documents<br>snapshots · cache</div>
+      </div>
+
+      <div class="arch-arrow">↔</div>
+
+      <!-- External APIs -->
+      <div class="arch-col" style="min-width:160px">
+        <div class="arch-group-label">External Sources</div>
+        <div class="arch-box ext">🏠 Zillow / Rentcast</div>
+        <div class="arch-box ext">📊 Polygon.io / FRED</div>
+        <div class="arch-box ext">₿ CoinGecko</div>
+        <div class="arch-box ext">🏛️ MO SOS / VA SCC</div>
+        <div class="arch-box ext">📑 IRS EFTPS (future)</div>
+        <div class="arch-box ext">🏦 Plaid (future)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="callout info" style="margin-top:16px">
+    <strong>Default vs Personal MCP:</strong> NetWorth GUI ships with a <em>default demo MCP</em> (read-only, no personal data, good for testing). A settings dropdown lets any user swap in their own MCP endpoint. Your personal one, secured behind Cloudflare, is the only one with your real data.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🔐</span>Security Design</h2>
+  <div class="section-sub">Everything private stays on your machine. Cloudflare only proxies auth, never touches your data.</div>
+
+  <div class="two-col">
+    <div>
+      <div class="card accent-left">
+        <h3>🔐 Cloudflare Zero Trust Tunnel (Free)</h3>
+        <ul>
+          <li>Install <code>cloudflared</code> on your machine</li>
+          <li>Creates a named tunnel — no public IP ever exposed</li>
+          <li>Cloudflare Access enforces email OTP or your Google account</li>
+          <li>You get a URL like <code>mcp.yourname.cloudflareaccess.com</code></li>
+          <li>Free for up to 50 users (you only need 1)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card accent-green">
+        <h3>🛡️ Local Encryption</h3>
+        <ul>
+          <li>SQLite encrypted with <strong>sqlcipher</strong> — passphrase on open</li>
+          <li>Documents (PDFs, tax returns) stored with AES-256 at rest</li>
+          <li>API keys never in source code — stored in <code>.env</code> + keychain</li>
+          <li>All personal MCP tool calls logged with timestamp + caller</li>
+          <li>Kill switch: one command disables tunnel and zeroes active sessions</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card accent-orange">
+        <h3>🔑 API Key Management</h3>
+        <ul>
+          <li>Per-tool, per-caller permission scopes</li>
+          <li>Read-only key issued to NetWorth GUI (can't write)</li>
+          <li>Write key only for you locally (or Claude Code when you allow)</li>
+          <li>Keys rotated monthly (script provided)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card accent-blue">
+        <h3>📦 Document Vault</h3>
+        <ul>
+          <li>Upload PDFs: tax returns, pay stubs, bank statements, leases</li>
+          <li>MCP parses them with <strong>pdf-parse</strong> → extracts numbers into SQLite</li>
+          <li>Original files stored encrypted, never sent to external APIs</li>
+          <li>Claude Code can read parsed numbers, not raw files unless you allow</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🏠</span>Property Investment Analysis Plugin</h2>
+  <div class="section-sub">Pick any listed property — single family, multifamily, commercial — and get full investment analysis in seconds.</div>
+
+  <div class="plugin-grid">
+
+    <div class="plugin-card">
+      <div class="plugin-header" style="border-top: 3px solid var(--accent2);">
+        <h3>🔍 Property Lookup & Auto-Fill</h3>
+        <p>Paste a Zillow/Redfin URL or address — MCP fetches everything</p>
+      </div>
+      <div class="plugin-body">
+        <div class="plugin-tool"><span class="tool-name">lookup_property</span><span class="tool-src">Rentcast free API</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_assessor_data</span><span class="tool-src">MO/VA county GIS</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_rent_estimate</span><span class="tool-src">Rentcast + HUD</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_comps</span><span class="tool-src">Redfin scrape (legal)</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_walk_score</span><span class="tool-src">Walk Score free API</span></div>
+      </div>
+    </div>
+
+    <div class="plugin-card">
+      <div class="plugin-header" style="border-top: 3px solid var(--gold);">
+        <h3>📊 Investment Return Calculations</h3>
+        <p>Every metric a serious RE investor needs</p>
+      </div>
+      <div class="plugin-body">
+        <div class="plugin-tool"><span class="tool-name">calc_cap_rate</span><span class="tool-src">NOI / purchase price</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_cash_on_cash</span><span class="tool-src">annual cashflow / down payment</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_grm</span><span class="tool-src">gross rent multiplier</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_dscr</span><span class="tool-src">debt service coverage ratio</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_irr_10yr</span><span class="tool-src">with appreciation + equity</span></div>
+        <div class="plugin-tool"><span class="tool-name">run_stress_test</span><span class="tool-src">vacancy + rate scenarios</span></div>
+      </div>
+    </div>
+
+    <div class="plugin-card">
+      <div class="plugin-header" style="border-top: 3px solid var(--purple);">
+        <h3>🏢 Multifamily Specific</h3>
+        <p>2–50 unit analysis with unit-mix breakdown</p>
+      </div>
+      <div class="plugin-body">
+        <div class="plugin-tool"><span class="tool-name">get_unit_mix</span><span class="tool-src">Rentcast / manual input</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_proforma_noi</span><span class="tool-src">unit-by-unit rent roll</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_market_vacancy</span><span class="tool-src">HUD fair market data</span></div>
+        <div class="plugin-tool"><span class="tool-name">calc_value_add</span><span class="tool-src">reno cost → new cap rate</span></div>
+        <div class="plugin-tool"><span class="tool-name">compare_financing</span><span class="tool-src">conventional vs DSCR vs HUD 221d4</span></div>
+      </div>
+    </div>
+
+    <div class="plugin-card">
+      <div class="plugin-header" style="border-top: 3px solid var(--accent3);">
+        <h3>📍 Market Intelligence</h3>
+        <p>Macro signals for any zip or metro</p>
+      </div>
+      <div class="plugin-body">
+        <div class="plugin-tool"><span class="tool-name">get_rent_trend</span><span class="tool-src">FRED + HUD 5yr history</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_price_trend</span><span class="tool-src">FRED ZHVI (free)</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_employment_data</span><span class="tool-src">BLS API (free)</span></div>
+        <div class="plugin-tool"><span class="tool-name">get_permit_data</span><span class="tool-src">Census Building Permits (free)</span></div>
+        <div class="plugin-tool"><span class="tool-name">rate_forecast</span><span class="tool-src">FRED 10yr treasury spread</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout success" style="margin-top:16px">
+    <strong>How it works in NetWorth GUI:</strong> A new "Property Scout" tab lets you paste a Zillow URL. MCP fetches the data, runs all calcs, and answers: <em>"Should I buy this at this price?"</em> — with a go/no-go score, sensitivity table, and how it affects your total net worth projection.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">💼</span>Business Acquisition & Investment Plugin</h2>
+  <div class="section-sub">Evaluate buying, investing in, or partnering with a business — across multiple valuation methods.</div>
+
+  <div class="card-grid">
+    <div class="card accent-left">
+      <h3>📋 Business Profile Intake</h3>
+      <ul>
+        <li>SOS entity lookup (MO, VA — free)</li>
+        <li>Secretary of State filing history, registered agent, officers</li>
+        <li>EDGAR search for SEC filings (public companies)</li>
+        <li>UCC lien search (public records)</li>
+        <li>Manual P&L / balance sheet upload → PDF parser extracts numbers</li>
+      </ul>
+    </div>
+    <div class="card accent-green">
+      <h3>📐 Valuation Methods</h3>
+      <ul>
+        <li><strong>SDE Multiple</strong> — seller's discretionary earnings × industry multiple</li>
+        <li><strong>EBITDA Multiple</strong> — for larger acquisitions</li>
+        <li><strong>DCF</strong> — discounted cash flow with your growth assumptions</li>
+        <li><strong>Asset-based</strong> — tangible + intangible asset valuation</li>
+        <li><strong>Revenue Multiple</strong> — SaaS, service, e-commerce benchmarks</li>
+      </ul>
+    </div>
+    <div class="card accent-orange">
+      <h3>🔬 Due Diligence Checklist</h3>
+      <ul>
+        <li>Auto-generates DD checklist from business type + size</li>
+        <li>Tracks which items are complete / missing</li>
+        <li>Red flags flagged automatically (liens, officer changes, late filings)</li>
+        <li>Compares deal terms to industry comps (BizBuySell data)</li>
+      </ul>
+    </div>
+    <div class="card accent-blue">
+      <h3>💰 Deal Structure Analysis</h3>
+      <ul>
+        <li>SBA 7(a) loan vs seller financing vs cash deal comparison</li>
+        <li>Earnout modeling over 3–5 years</li>
+        <li>Working capital requirement calculation</li>
+        <li>Break-even time with your cost of capital</li>
+        <li>Impact on total personal net worth over 10 years</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🏦</span>Retirement Accounts + Crypto Holdings</h2>
+  <div class="section-sub">All flavors of retirement — including the new crypto-eligible accounts. Mix long-term BTC/ETH/SOL with traditional holdings.</div>
+
+  <table class="cmp-table" style="background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:20px">
+    <tr>
+      <th>Account Type</th>
+      <th>2025 Contribution Limit</th>
+      <th>Tax Treatment</th>
+      <th>Crypto Allowed?</th>
+      <th>Tracked in MCP?</th>
+    </tr>
+    <tr><td class="label">Traditional IRA</td><td>$7,000 (+$1k if 50+)</td><td>Pre-tax, taxed on withdrawal</td><td class="partial">Via Bitcoin IRA / iTrustCapital</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">Roth IRA</td><td>$7,000 (+$1k if 50+)</td><td>Post-tax, tax-free growth</td><td class="partial">Via Alto IRA / Equity Trust</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">401(k) / Solo 401(k)</td><td>$23,500 / $70k self-employed</td><td>Pre-tax or Roth option</td><td class="partial">Fidelity crypto 401k (pilot)</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">SEP-IRA</td><td>25% compensation up to $70k</td><td>Pre-tax</td><td class="partial">Via self-directed custodian</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">Bitcoin IRA / Crypto IRA</td><td>Same as IRA limits</td><td>Roth or Traditional</td><td class="yes">✓ Native</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">HSA</td><td>$4,300 individual / $8,550 family</td><td>Triple tax-advantaged</td><td class="no">✗ Not allowed</td><td class="yes">✓ Yes</td></tr>
+    <tr><td class="label">Taxable Brokerage</td><td>Unlimited</td><td>Capital gains rates</td><td class="yes">✓ Yes (direct)</td><td class="yes">✓ Yes</td></tr>
+  </table>
+
+  <div class="two-col">
+    <div class="card accent-gold">
+      <h3>₿ Crypto in Retirement Strategy</h3>
+      <ul>
+        <li>BTC / ETH / SOL tracked via CoinGecko (free) — live or daily price</li>
+        <li>Separate columns for <em>retirement crypto</em> vs <em>taxable crypto</em></li>
+        <li>Tracks cost basis per lot for tax-loss harvesting awareness</li>
+        <li>Roth IRA is optimal bucket for high-growth crypto (tax-free at withdrawal)</li>
+        <li>Auto-rebalance suggestion when crypto exceeds target % of portfolio</li>
+        <li>Custodian comparison: Alto, iTrust, Equity Trust, Bitcoin IRA fees vs returns</li>
+      </ul>
+    </div>
+    <div class="card accent-purple">
+      <h3>⚖️ Real Estate ↔ Bitcoin Offset</h3>
+      <p style="margin-bottom:10px;font-size:.85rem">The core idea: RE is inflation-hedged, illiquid, leveraged. BTC is deflation-hedged, liquid, volatile. Together they offset each other's weaknesses.</p>
+      <ul>
+        <li>User sets "comfort % in BTC vs RE" — MCP tracks drift from target</li>
+        <li>Correlation analysis: when RE values dip (rising rates), BTC often independent</li>
+        <li>Liquidity score: RE equity locked vs BTC instantly liquid</li>
+        <li>Model: "If I put $X less in down payment and $X into BTC Roth — what happens at year 10?"</li>
+        <li>Tax drag comparison: RE depreciation vs Roth BTC zero tax</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">📊</span>Portfolio Allocation Engine</h2>
+  <div class="section-sub">User picks time horizon buckets. MCP tracks actual allocation vs target and alerts on drift.</div>
+
+  <div class="card" style="margin-bottom:16px">
+    <h3>Capital Bucket Framework</h3>
+    <p style="margin-bottom:14px;font-size:.85rem;color:var(--muted)">Every dollar belongs in one of four buckets. Drag sliders in NetWorth GUI to set your targets.</p>
+
+    <div class="alloc-bar">
+      <div class="alloc-seg" style="width:35%;background:#2196f3">Long-Term 35%</div>
+      <div class="alloc-seg" style="width:25%;background:#4caf50">Medium 25%</div>
+      <div class="alloc-seg" style="width:25%;background:#ff9800">Short 25%</div>
+      <div class="alloc-seg" style="width:15%;background:#f44336">Risk 15%</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:12px">
+      <div style="font-size:.82rem">
+        <div style="color:#2196f3;font-weight:700">Long-Term (7–30yr)</div>
+        <div style="color:var(--muted)">Primary RE equity<br>Retirement accounts<br>BTC / ETH (Roth)<br>Index funds<br>Business equity</div>
+      </div>
+      <div style="font-size:.82rem">
+        <div style="color:#4caf50;font-weight:700">Medium (2–7yr)</div>
+        <div style="color:var(--muted)">Investment properties<br>I-bonds / TIPS<br>Growth stocks<br>SOL / alt crypto<br>Business loans out</div>
+      </div>
+      <div style="font-size:.82rem">
+        <div style="color:#ff9800;font-weight:700">Short (0–2yr)</div>
+        <div style="color:var(--muted)">HYSA / T-bills<br>CD ladder<br>Options income<br>Flip properties<br>Bridge loans</div>
+      </div>
+      <div style="font-size:.82rem">
+        <div style="color:#f44336;font-weight:700">Risk Capital</div>
+        <div style="color:var(--muted)">Options speculation<br>Futures / commodities<br>Small-cap stocks<br>New business bets<br>Angel / startup</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-grid">
+    <div class="card accent-blue">
+      <h3>📈 Drift Alerts</h3>
+      <ul>
+        <li>MCP computes actual % vs target for each bucket daily</li>
+        <li>Alert when any bucket drifts &gt;5% from target</li>
+        <li>Rebalance suggestion with specific asset move instructions</li>
+        <li>Tax-aware: suggests harvesting losses before rebalancing</li>
+      </ul>
+    </div>
+    <div class="card accent-green">
+      <h3>🔄 Rebalancing Actions</h3>
+      <ul>
+        <li>"RE is 42% but target is 35% — consider selling Investment Property #2"</li>
+        <li>"BTC Roth is under target — contribute $X at next paycheck"</li>
+        <li>"Risk capital at 22% — above 15% limit — reduce options exposure"</li>
+      </ul>
+    </div>
+    <div class="card accent-orange">
+      <h3>📉 Stress Scenarios</h3>
+      <ul>
+        <li>2008 RE crash: -35% property values — net worth impact?</li>
+        <li>2022 crypto winter: BTC -75% — Roth IRA impact?</li>
+        <li>Rate spike +3%: mortgage cash flows, RE cap rate expansion</li>
+        <li>Recession: -20% business revenue + rising vacancies</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">📄</span>Personal Data You Can Feed It</h2>
+  <div class="section-sub">Everything stays encrypted on your machine. MCP extracts the numbers, stores them — raw documents never leave.</div>
+
+  <div class="card-grid">
+    <div class="card accent-left">
+      <h3>📑 Tax Documents</h3>
+      <ul>
+        <li>W-2, 1099s — income parsing</li>
+        <li>1040 — AGI, deductions, effective rate</li>
+        <li>Schedule E — rental property P&L</li>
+        <li>Schedule C — business income</li>
+        <li>K-1 — partnership/S-corp income</li>
+        <li>8949 — capital gains/losses, crypto</li>
+      </ul>
+    </div>
+    <div class="card accent-green">
+      <h3>🏦 Bank & Credit Statements</h3>
+      <ul>
+        <li>Monthly bank statements — income/expense categorization</li>
+        <li>Credit card statements — spending pattern analysis</li>
+        <li>Mortgage statements — balance, rate, payment tracking</li>
+        <li>HELOC statements — available credit, draw history</li>
+        <li>Future: Plaid API for live bank connection</li>
+      </ul>
+    </div>
+    <div class="card accent-orange">
+      <h3>🏠 Property Documents</h3>
+      <ul>
+        <li>Closing disclosures — purchase price, terms, costs</li>
+        <li>Appraisals — historical valuations</li>
+        <li>Lease agreements — rent rolls, term, escalations</li>
+        <li>Property tax bills — annual obligation tracking</li>
+        <li>Insurance declarations — coverage amounts, premiums</li>
+      </ul>
+    </div>
+    <div class="card accent-blue">
+      <h3>💼 Business Documents</h3>
+      <ul>
+        <li>Operating agreements, articles of incorporation</li>
+        <li>P&L statements, balance sheets</li>
+        <li>Business loan documents</li>
+        <li>Buy/sell agreements, shareholder agreements</li>
+        <li>SBA loan disclosures</li>
+      </ul>
+    </div>
+    <div class="card accent-gold">
+      <h3>📈 Investment Statements</h3>
+      <ul>
+        <li>Brokerage statements — positions, cost basis</li>
+        <li>Retirement account statements — balances, contributions</li>
+        <li>Crypto exchange exports — CSV trade history</li>
+        <li>401(k) plan documents — contribution rates, vesting</li>
+      </ul>
+    </div>
+    <div class="card accent-purple">
+      <h3>⚖️ Legal / Family Documents</h3>
+      <ul>
+        <li>Child support orders — obligation amounts, dates</li>
+        <li>Divorce decree — asset division, alimony terms</li>
+        <li>Prenuptial agreements</li>
+        <li>Trust documents — beneficiary, distribution rules</li>
+        <li>Life insurance policies — coverage, beneficiaries</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🔌</span>How NetWorth GUI Connects to Personal MCP</h2>
+  <div class="section-sub">One settings change in the GUI switches from demo data to your personal data.</div>
+
+  <div class="arch" style="margin-bottom:20px">
+    <div style="font-size:.85rem;margin-bottom:16px;color:var(--muted);text-align:center">MCP Endpoint Selector — appears in NetWorth GUI settings panel</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px;max-width:500px;margin:0 auto">
+      <div style="font-size:.82rem;color:var(--muted);margin-bottom:8px">MCP Server</div>
+      <div style="display:flex;gap:8px;align-items:center;background:var(--bg);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;font-family:monospace;font-size:.85rem">
+        <span style="color:var(--accent2)">https://</span><span>mcp.yourname.cloudflareaccess.com</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <div style="flex:1;background:rgba(0,212,170,.1);border:1px solid rgba(0,212,170,.3);border-radius:6px;padding:6px 10px;font-size:.78rem;color:var(--accent2);text-align:center">✓ Connected — Personal MCP</div>
+        <button style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:.78rem;color:var(--muted);cursor:pointer">Use Demo</button>
+      </div>
+      <div style="margin-top:12px;font-size:.78rem;color:var(--muted)">
+        Auto-populates: 7 properties · 3 businesses · 4 retirement accounts · 12 market positions
+      </div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card accent-green">
+      <h3>📥 What Flows Into NetWorth GUI</h3>
+      <ul>
+        <li>All sliders auto-filled from your latest snapshot</li>
+        <li>Property values updated from last assessor cache</li>
+        <li>Crypto balances pulled from last CoinGecko sync</li>
+        <li>Retirement balances from latest statement parse</li>
+        <li>Child support / alimony obligations from legal docs</li>
+        <li>Business equity from last P&L upload</li>
+      </ul>
+    </div>
+    <div class="card accent-left">
+      <h3>📤 What Gets Saved Back</h3>
+      <ul>
+        <li>Every "Save Snapshot" in GUI writes to MCP's snapshots table</li>
+        <li>Decision analysis results stored for history</li>
+        <li>Property scout analyses saved with timestamp</li>
+        <li>Portfolio drift alerts logged</li>
+        <li>All writes require your write-key (not the read-only GUI key)</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🗺️</span>Build Roadmap</h2>
+  <div class="section-sub">All free stack. Build in phases — each phase adds value immediately.</div>
+
+  <div class="roadmap">
+    <div class="rm-card p1">
+      <div class="rm-phase">Phase 1 · Week 1</div>
+      <div class="rm-title">Personal MCP Scaffold</div>
+      <ul class="rm-items">
+        <li>Node.js + Express server on port 3333</li>
+        <li>SQLite with sqlcipher encryption</li>
+        <li>MCP protocol handshake (list_tools, call_tool)</li>
+        <li>Cloudflare tunnel setup + Access auth</li>
+        <li>Basic identity + accounts tables</li>
+        <li>Health check + API key middleware</li>
+      </ul>
+    </div>
+    <div class="rm-card p2">
+      <div class="rm-phase">Phase 2 · Week 2</div>
+      <div class="rm-title">Property + Market Data</div>
+      <ul class="rm-items">
+        <li>Property lookup (Rentcast + county GIS)</li>
+        <li>All RE investment calc tools</li>
+        <li>Multifamily unit-mix analysis</li>
+        <li>FRED / CoinGecko / Polygon.io feeds</li>
+        <li>NetWorth GUI MCP endpoint selector</li>
+        <li>Auto-fill sliders from MCP data</li>
+      </ul>
+    </div>
+    <div class="rm-card p3">
+      <div class="rm-phase">Phase 3 · Week 3</div>
+      <div class="rm-title">Document Vault + Retirement</div>
+      <ul class="rm-items">
+        <li>PDF upload + parsing (pdf-parse)</li>
+        <li>Tax return number extraction</li>
+        <li>Retirement account tracker (all types)</li>
+        <li>Crypto Roth IRA tracking</li>
+        <li>Portfolio allocation engine</li>
+        <li>Drift alerts + rebalance suggestions</li>
+      </ul>
+    </div>
+    <div class="rm-card p4">
+      <div class="rm-phase">Phase 4 · Week 4</div>
+      <div class="rm-title">Business + Advanced</div>
+      <ul class="rm-items">
+        <li>Business acquisition analysis plugin</li>
+        <li>SOS entity + lien lookup</li>
+        <li>RE ↔ BTC offset strategy model</li>
+        <li>Stress scenario engine</li>
+        <li>Property Scout tab in NetWorth GUI</li>
+        <li>Snapshot history + trend charts</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn" style="margin-top:20px">
+    <strong>Scope suggestion:</strong> Build Phase 1 as a standalone project (<code>personal-mcp/</code>) today. NetWorth GUI stays in its own project but gets the MCP endpoint selector in Phase 2. This keeps them independently deployable.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">💡</span>Unique Ideas This Unlocks</h2>
+  <div class="section-sub">Because your MCP knows everything, these become possible — none require external AI services.</div>
+
+  <div class="card-grid">
+    <div class="card accent-left">
+      <h3>🤖 "Ask My Finances" Mode</h3>
+      <p>"What's my effective tax rate if I sell Property #3 this year?" — MCP has your tax bracket, basis, depreciation recapture, and can compute to the dollar.</p>
+    </div>
+    <div class="card accent-green">
+      <h3>🏠→₿ Equity Rotation Tracker</h3>
+      <p>Track HELOC draws → BTC purchases. Monitor whether the strategy is outperforming the interest cost. Auto-alert when the position breaks even.</p>
+    </div>
+    <div class="card accent-orange">
+      <h3>📅 Cash Flow Calendar</h3>
+      <p>Every rent check, mortgage payment, child support payment, estimated tax due date — on one timeline. 90-day cash flow forecast with cushion alerts.</p>
+    </div>
+    <div class="card accent-blue">
+      <h3>👨‍👩‍👧 Blended Family Financial Planner</h3>
+      <p>Models child support through each child's 18th birthday, college costs, remarriage income effects — integrates with your net worth projection automatically.</p>
+    </div>
+    <div class="card accent-gold">
+      <h3>🏢 Business vs Property ROI Race</h3>
+      <p>"Which generates more net worth over 10 years — buying a 6-unit apartment or buying this HVAC business?" — MCP runs both scenarios with your actual numbers.</p>
+    </div>
+    <div class="card accent-purple">
+      <h3>📊 FIRE Number Tracker</h3>
+      <p>Tracks your progress toward financial independence. Accounts for RE cash flow replacing salary, crypto as volatility buffer, business as active income bridge.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section>
+  <h2><span class="icon">🛠️</span>Free Stack Summary</h2>
+  <div class="section-sub">Zero recurring costs to run this. Only pay if you want Zillow Bridge or Plaid live bank feeds.</div>
+
+  <table class="cmp-table" style="background:var(--surface);border-radius:12px;overflow:hidden">
+    <tr>
+      <th>Component</th>
+      <th>Technology</th>
+      <th>Cost</th>
+      <th>Purpose</th>
+    </tr>
+    <tr><td class="label">MCP Server runtime</td><td>Node.js + Express</td><td class="yes">Free</td><td>MCP protocol host</td></tr>
+    <tr><td class="label">Database</td><td>SQLite + better-sqlite3</td><td class="yes">Free</td><td>Local encrypted data vault</td></tr>
+    <tr><td class="label">Encryption</td><td>sqlcipher (npm)</td><td class="yes">Free</td><td>AES-256 database encryption</td></tr>
+    <tr><td class="label">Tunnel / Auth</td><td>Cloudflare Tunnel + Access</td><td class="yes">Free (≤50 users)</td><td>Secure remote access without open ports</td></tr>
+    <tr><td class="label">PDF parsing</td><td>pdf-parse (npm)</td><td class="yes">Free</td><td>Extract numbers from tax docs, statements</td></tr>
+    <tr><td class="label">Property data</td><td>Rentcast free tier</td><td class="yes">Free (500 req/mo)</td><td>Property value + rent estimates</td></tr>
+    <tr><td class="label">Assessor data</td><td>MO / VA county GIS APIs</td><td class="yes">Free (public)</td><td>Tax value, lot size, zoning</td></tr>
+    <tr><td class="label">Mortgage rates</td><td>FRED API</td><td class="yes">Free</td><td>Current 30yr/15yr mortgage rates</td></tr>
+    <tr><td class="label">Crypto prices</td><td>CoinGecko free API</td><td class="yes">Free</td><td>BTC, ETH, SOL live prices</td></tr>
+    <tr><td class="label">Stock prices</td><td>Polygon.io free tier</td><td class="yes">Free (EOD)</td><td>Stock and ETF end-of-day prices</td></tr>
+    <tr><td class="label">Rent market data</td><td>HUD FMR API</td><td class="yes">Free</td><td>Fair market rents by ZIP</td></tr>
+    <tr><td class="label">SOS entity lookup</td><td>MO SOS + VA SCC APIs</td><td class="yes">Free (public)</td><td>Business entity search</td></tr>
+    <tr><td class="label">Employment data</td><td>BLS API</td><td class="yes">Free</td><td>Market employment trends</td></tr>
+    <tr><td class="label">Building permits</td><td>Census API</td><td class="yes">Free</td><td>New supply signal for RE markets</td></tr>
+    <tr><td class="label">Zillow Bridge API</td><td>Zillow</td><td class="paid">~$50/mo</td><td>Real-time Zestimate + listings (optional)</td></tr>
+    <tr><td class="label">Live bank feeds</td><td>Plaid</td><td class="paid">Per-connection</td><td>Auto-import bank/credit data (optional)</td></tr>
+  </table>
+</section>
+
+</div><!-- /container -->
+
+<div style="background:var(--surface);border-top:1px solid var(--border);padding:20px 32px;text-align:center;font-size:.82rem;color:var(--muted)">
+  Personal MCP Architecture — All ideas above are discussion drafts. Build order and scope TBD with user.
+</div>
+
+</body>
+</html>
