@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetWorth GUI — Feature Suggestions by Persona</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue:    #2563eb;
+    --blue-lt: #eff6ff;
+    --green:   #059669;
+    --green-lt:#ecfdf5;
+    --amber:   #d97706;
+    --amber-lt:#fffbeb;
+    --purple:  #7c3aed;
+    --purple-lt:#f5f3ff;
+    --rose:    #e11d48;
+    --rose-lt: #fff1f2;
+    --gray:    #374151;
+    --gray-lt: #f9fafb;
+    --border:  #e5e7eb;
+    --radius:  10px;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f1f5f9;
+    color: var(--gray);
+    line-height: 1.6;
+    padding: 32px 16px 80px;
+  }
+  .page-header {
+    max-width: 1120px; margin: 0 auto 36px;
+    text-align: center;
+  }
+  .page-header h1 { font-size: 28px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+  .page-header p  { color: #6b7280; font-size: 15px; }
+  .personas-grid {
+    max-width: 1120px; margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+    gap: 24px;
+  }
+  .persona-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .persona-header {
+    padding: 18px 20px 14px;
+    display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .persona-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .persona-header h2 { font-size: 16px; font-weight: 700; color: #111827; }
+  .persona-header .subtitle { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .sections { padding: 4px 0 12px; }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #9ca3af;
+    padding: 14px 20px 6px;
+  }
+  .suggestion-list { list-style: none; }
+  .suggestion-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 20px;
+    font-size: 13.5px;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .suggestion-list li:hover { background: var(--gray-lt); }
+  .suggestion-list li .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    margin-top: 6px; flex-shrink: 0;
+  }
+  .suggestion-list li .text { flex: 1; }
+  .suggestion-list li .tag {
+    font-size: 10px; font-weight: 600; letter-spacing: .04em;
+    padding: 2px 7px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0; margin-top: 2px;
+  }
+  .question-note {
+    font-size: 11.5px; color: #6b7280;
+    padding: 2px 20px 0 37px;
+    margin-bottom: 4px;
+  }
+  .divider { height: 1px; background: var(--border); margin: 8px 20px; }
+
+  /* Persona color themes */
+  .re-adv   .persona-icon { background: var(--blue-lt); }
+  .re-adv   .dot           { background: var(--blue); }
+  .re-adv   .tag-new        { background: var(--blue-lt); color: var(--blue); }
+  .re-adv   .tag-calc       { background: #e0e7ff; color: #4338ca; }
+  .re-adv   .tag-data       { background: #dbeafe; color: #1d4ed8; }
+
+  .homeowner .persona-icon { background: var(--green-lt); }
+  .homeowner .dot           { background: var(--green); }
+  .homeowner .tag-new       { background: var(--green-lt); color: var(--green); }
+  .homeowner .tag-calc      { background: #d1fae5; color: #047857; }
+  .homeowner .tag-data      { background: #a7f3d0; color: #065f46; }
+
+  .investor .persona-icon  { background: var(--amber-lt); }
+  .investor .dot            { background: var(--amber); }
+  .investor .tag-new        { background: var(--amber-lt); color: var(--amber); }
+  .investor .tag-calc       { background: #fef3c7; color: #b45309; }
+  .investor .tag-data       { background: #fde68a; color: #92400e; }
+
+  .blended .persona-icon   { background: var(--rose-lt); }
+  .blended .dot             { background: var(--rose); }
+  .blended .tag-new         { background: var(--rose-lt); color: var(--rose); }
+  .blended .tag-calc        { background: #ffe4e6; color: #be123c; }
+  .blended .tag-data        { background: #fecdd3; color: #9f1239; }
+
+  .shared .persona-icon    { background: var(--purple-lt); }
+  .shared .dot              { background: var(--purple); }
+  .shared .tag-new          { background: var(--purple-lt); color: var(--purple); }
+  .shared .tag-calc         { background: #ede9fe; color: #5b21b6; }
+
+  .status-bar {
+    max-width: 1120px; margin: 0 auto 24px;
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .status-pill {
+    font-size: 12px; font-weight: 600; padding: 5px 12px;
+    border-radius: 20px; border: 1px solid var(--border);
+    background: #fff; color: #374151; display: flex; align-items: center; gap: 6px;
+  }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .legend {
+    max-width: 1120px; margin: 0 auto 28px;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 12px; color: #6b7280;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend-tag {
+    font-size: 10px; font-weight: 600;
+    padding: 1px 7px; border-radius: 20px;
+  }
+  .note-footer {
+    max-width: 1120px; margin: 32px auto 0;
+    background: #fff; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 22px;
+    font-size: 13px; color: #6b7280;
+  }
+  .note-footer strong { color: #374151; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>NetWorth GUI — Feature & Question Suggestions by Persona</h1>
+  <p>Review proposed new inputs, calculations, and questions. Click any row to discuss it.</p>
+</div>
+
+<div class="status-bar">
+  <div class="status-pill"><span class="dot" style="background:#2563eb"></span> Real estate advanced investor</div>
+  <div class="status-pill"><span class="dot" style="background:#059669"></span> Regular homeowner</div>
+  <div class="status-pill"><span class="dot" style="background:#d97706"></span> Markets investor (crypto / stocks / options / futures / commodities)</div>
+  <div class="status-pill"><span class="dot" style="background:#e11d48"></span> Blended family / child support</div>
+  <div class="status-pill"><span class="dot" style="background:#7c3aed"></span> All personas</div>
+</div>
+
+<div class="legend">
+  <span><span class="legend-tag" style="background:#eff6ff;color:#2563eb">New field</span> New input / slider / toggle to add</span>
+  <span><span class="legend-tag" style="background:#e0e7ff;color:#4338ca">Calc</span> Calculation or formula to wire up</span>
+  <span><span class="legend-tag" style="background:#dbeafe;color:#1d4ed8">Data</span> Dashboard metric / table / chart to show</span>
+</div>
+
+<div class="personas-grid">
+
+  <!-- ── REAL ESTATE ADVANCED INVESTOR ─────────────────────────────────── -->
+  <div class="persona-card re-adv">
+    <div class="persona-header">
+      <div class="persona-icon">🏢</div>
+      <div>
+        <h2>Real Estate Advanced Investor</h2>
+        <div class="subtitle">Multi-property portfolio, leveraged growth, refinance cycling</div>
+      </div>
+    </div>
+    <div class="sections">
+
+      <div class="section-label">Questions to ask</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">How many investment properties do you currently own?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is the total current market value of your rental portfolio?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is your average gross monthly rent across all units?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is your target cash-on-cash return for new acquisitions?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">At what combined LTV do you plan to stop leveraging?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you plan to do a 1031 exchange when you sell, or pay capital gains?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">At what age do you want to start liquidating the portfolio?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Calculations to add</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Portfolio net operating income (NOI) by year with vacancy and expense growth</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Cash-on-cash return = annual cash flow ÷ total cash invested</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Debt-service coverage ratio (DSCR) per property and portfolio-wide</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Equity growth: appreciation + principal paydown compounded annually</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Refinance trigger: cash-out available when LTV drops below your target</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Tax drag: depreciation recapture and capital gains at liquidation age</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Dashboard metrics to show</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Portfolio equity timeline vs. projected liquidation value</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Annual cash flow waterfall: gross rent → vacancy → expenses → debt service → net</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Milestone table: DSCR ≥ 1.25 years, max leverage year, full pay-off age</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── REGULAR HOMEOWNER ──────────────────────────────────────────────── -->
+  <div class="persona-card homeowner">
+    <div class="persona-header">
+      <div class="persona-icon">🏡</div>
+      <div>
+        <h2>Regular Homeowner</h2>
+        <div class="subtitle">Primary residence equity, mortgage payoff, home improvement ROI</div>
+      </div>
+    </div>
+    <div class="sections">
+
+      <div class="section-label">Questions to ask</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is your home's current estimated market value?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is your remaining mortgage balance?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What is your mortgage interest rate and original term?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you plan to make extra principal payments, or keep to the schedule?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Are you planning a major renovation or addition? If so, at what year and cost?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you expect to sell and downsize, upsize, or stay indefinitely?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Are you paying PMI? If so, at what LTV do you plan to remove it?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Calculations to add</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Home equity by year = appreciated value − remaining mortgage balance</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">PMI removal year: when LTV crosses 80% based on payments + appreciation</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Extra payment scenario: payoff date and total interest saved</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Sell vs. stay: net proceeds after agent fees, taxes, and moving costs</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Renovation ROI: estimated added value vs. out-of-pocket cost</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Dashboard metrics to show</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Home equity as share of total net worth over time</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Amortization chart: principal balance, interest paid, and equity by year</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Break-even year for extra payments vs. investing the same cash in VOO</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── MARKETS INVESTOR ───────────────────────────────────────────────── -->
+  <div class="persona-card investor">
+    <div class="persona-header">
+      <div class="persona-icon">📈</div>
+      <div>
+        <h2>Markets Investor</h2>
+        <div class="subtitle">Crypto · Stocks / ETFs · Options · Futures · Commodities</div>
+      </div>
+    </div>
+    <div class="sections">
+
+      <div class="section-label">Questions to ask — per asset class</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text"><strong>Crypto:</strong> Current balance and average annual return assumption (%)</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text"><strong>Alt stocks / sector ETFs:</strong> Balance and expected annual return beyond your core VOO position</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text"><strong>Options:</strong> Estimated average annual P&L (can be negative) from premium writing or directional trades</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text"><strong>Futures / commodities:</strong> Account balance and average annual return or P&L</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Which markets are active for you? (multi-select: crypto, stocks, options, futures, commodities)</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">What % of new annual surplus do you allocate to each market?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you plan to treat markets gains as re-investable or as spending income?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Calculations to add</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Each market's balance projected annually: balance × (1 + return)^years + contributions</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Options / futures annual P&L added to economic gross income each year</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Combined alt-markets net worth: crypto + alt stocks + commodities + futures</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Short-term vs. long-term capital gains tax on market positions at sale</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Stress scenario: crypto crash −60%, options blow-up year → net worth impact</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Dashboard metrics to show</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Stacked area chart: VOO / crypto / alt-stocks / commodities balance over time</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Market allocation pie: % of investable assets per market today vs. at retirement</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Annual P&L table: options + futures income contribution by year</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── BLENDED FAMILY / CHILD SUPPORT ────────────────────────────────── -->
+  <div class="persona-card blended">
+    <div class="persona-header">
+      <div class="persona-icon">👨‍👧‍👦</div>
+      <div>
+        <h2>Blended Family / Child Support</h2>
+        <div class="subtitle">Remarried with prior-relationship children, child support obligations</div>
+      </div>
+    </div>
+    <div class="sections">
+
+      <div class="section-label">Questions to ask</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Are you paying or receiving child support? If paying, monthly amount?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">How many children from a prior relationship? Ages?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">At what age does your child support obligation end per court order?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Are you contributing to college savings (529) for prior children? Monthly amount?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you share health insurance costs for prior children with your ex?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">How many children in your current household? Do you anticipate more?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Do you have a prenuptial or post-nuptial agreement that affects asset ownership?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Are there any shared debt obligations from the prior marriage (joint loans, HELOC)?</span>
+          <span class="tag tag-new">New field</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Calculations to add</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Child support annual drag: monthly × 12, ends at court-ordered age cutoff year</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Post-child-support surplus boost: cash freed up when obligation ends</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">529 / college savings accumulation vs. estimated cost at each child's age 18</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Blended household childcare cost: current children + prior children's custody days</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Net worth sensitivity: how much does ending child support in Y years change the 20-year projection?</span>
+          <span class="tag tag-calc">Calc</span>
+        </li>
+      </ul>
+
+      <div class="divider"></div>
+      <div class="section-label">Dashboard metrics to show</div>
+      <ul class="suggestion-list">
+        <li>
+          <span class="dot"></span>
+          <span class="text">Child support obligation timeline: monthly cost by year with end date marker</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">Before/after child support end: net worth at retirement under both scenarios</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+        <li>
+          <span class="dot"></span>
+          <span class="text">College funding gap: 529 projected balance vs. estimated full cost at age 18</span>
+          <span class="tag tag-data">Data</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── PROPERTY PORTFOLIO (BOTH HOMEOWNER + INVESTOR) ────────────────── -->
+  <div class="persona-card shared" style="grid-column: 1 / -1;">
+    <div class="persona-header">
+      <div class="persona-icon">🗂️</div>
+      <div>
+        <h2>Property Portfolio Tracker — All Personas</h2>
+        <div class="subtitle">Primary home + investment properties + land — unified backend model</div>
+      </div>
+    </div>
+    <div class="sections">
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0;">
+
+        <div>
+          <div class="section-label">Property types to support</div>
+          <ul class="suggestion-list">
+            <li><span class="dot"></span><span class="text">Primary residence</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Single-family rental</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Multi-family rental</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Vacation / short-term rental</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Raw land / undeveloped lot</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Commercial / mixed-use</span><span class="tag tag-new">New field</span></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="section-label">Per-property inputs</div>
+          <ul class="suggestion-list">
+            <li><span class="dot"></span><span class="text">Current market value</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Mortgage balance, rate, and remaining term</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Monthly gross rent (rentals)</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Annual property tax + insurance</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Appreciation rate (can differ per property)</span><span class="tag tag-new">New field</span></li>
+            <li><span class="dot"></span><span class="text">Planned sale year (optional)</span><span class="tag tag-new">New field</span></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="section-label">Portfolio-level outputs</div>
+          <ul class="suggestion-list">
+            <li><span class="dot"></span><span class="text">Total real estate equity by year (all properties combined)</span><span class="tag tag-calc">Calc</span></li>
+            <li><span class="dot"></span><span class="text">Net rental income vs. total debt service ratio</span><span class="tag tag-calc">Calc</span></li>
+            <li><span class="dot"></span><span class="text">Real estate as % of total net worth over the projection</span><span class="tag tag-data">Data</span></li>
+            <li><span class="dot"></span><span class="text">Table: each property's equity, balance, value, and cash flow</span><span class="tag tag-data">Data</span></li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note-footer">
+  <strong>How these suggestions connect to the existing app:</strong> The new slider keys
+  (<code>primaryHomeValue</code>, <code>investmentPropertyCount</code>, <code>childSupportMonthly</code>,
+  <code>cryptoBalance</code>, <code>optionsAnnualPL</code>, etc.) are already added to the backend
+  <code>state.sliders</code> object and wired into <code>recomputeProjectionRows()</code> when the
+  validated model is on. The items above are the <strong>UI controls and display cards</strong> that still
+  need to be added to the Setup, Real Estate, Decision Lab, and Dashboard pages so users can actually see
+  and change those values.
+</div>
+
+</body>
+</html>
