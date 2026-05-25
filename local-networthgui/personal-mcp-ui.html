@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal MCP — Full UI Design</title>
+<style>
+:root {
+  --bg: #0b0d14;
+  --surface: #131722;
+  --surface2: #1a2035;
+  --surface3: #212840;
+  --border: #252d4a;
+  --border2: #2e3a5c;
+  --accent: #7c6fff;
+  --accent2: #00e5b0;
+  --accent3: #ff5f7a;
+  --accent4: #ffb830;
+  --blue: #3d8ef8;
+  --purple: #b06bff;
+  --green: #3ecf8e;
+  --orange: #ff9040;
+  --text: #e2e8f5;
+  --muted: #7a85a3;
+  --muted2: #4a5478;
+  --sidebar-w: 240px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto;}
+.sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid var(--border);}
+.logo-mark{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.logo-text{font-weight:800;font-size:1rem;letter-spacing:-.02em;}
+.logo-sub{font-size:.7rem;color:var(--muted);margin-top:2px;}
+.online-dot{width:7px;height:7px;background:var(--green);border-radius:50%;margin-left:auto;box-shadow:0 0 6px var(--green);}
+
+.sidebar-user{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.avatar{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;}
+.user-name{font-size:.82rem;font-weight:600;}
+.user-tier{font-size:.7rem;color:var(--accent2);}
+
+.nav-section{padding:8px 10px 4px;font-size:.65rem;font-weight:700;letter-spacing:.1em;color:var(--muted2);text-transform:uppercase;margin-top:8px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;margin:1px 8px;cursor:pointer;font-size:.84rem;color:var(--muted);transition:all .15s;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:rgba(124,111,255,.15);color:var(--accent);font-weight:600;}
+.nav-item .nav-icon{font-size:1rem;width:18px;text-align:center;}
+.nav-item .nav-badge{margin-left:auto;background:var(--accent);color:#fff;border-radius:10px;padding:1px 6px;font-size:.65rem;font-weight:700;}
+.nav-item .nav-badge.green{background:var(--green);}
+.nav-item .nav-badge.orange{background:var(--orange);}
+.nav-item .nav-badge.red{background:var(--accent3);}
+
+.sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
+.sync-status{display:flex;align-items:center;gap:8px;font-size:.75rem;color:var(--muted);}
+.pulse{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(.8);}}
+
+/* ── MAIN AREA ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.topbar-title{font-weight:700;font-size:1.05rem;}
+.topbar-crumb{color:var(--muted);font-size:.82rem;}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.btn{padding:6px 14px;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#6a5fe0;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border2);}
+.btn-ghost:hover{color:var(--text);border-color:var(--muted);}
+.btn-green{background:var(--green);color:#0b0d14;}
+.search-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:.82rem;color:var(--text);width:200px;outline:none;}
+.search-box::placeholder{color:var(--muted2);}
+
+.content{flex:1;overflow-y:auto;padding:24px;}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:2px;background:var(--surface2);border-radius:8px;padding:3px;margin-bottom:20px;width:fit-content;}
+.tab{padding:6px 16px;border-radius:6px;font-size:.82rem;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;}
+.tab.active{background:var(--surface3);color:var(--text);font-weight:600;}
+
+/* ── CARDS ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;}
+.card-sm{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.card-title{font-weight:700;font-size:.9rem;display:flex;align-items:center;gap:8px;}
+.card-action{font-size:.75rem;color:var(--accent);cursor:pointer;}
+
+/* stat cards */
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+.stat-value{font-size:1.5rem;font-weight:800;letter-spacing:-.02em;}
+.stat-delta{font-size:.75rem;margin-top:4px;}
+.stat-delta.up{color:var(--green);}
+.stat-delta.down{color:var(--accent3);}
+
+/* module plugin cards */
+.plugin-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s;}
+.plugin-card:hover{border-color:var(--border2);}
+.plugin-top{padding:16px;display:flex;align-items:flex-start;gap:12px;}
+.plugin-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;}
+.plugin-meta h3{font-size:.88rem;font-weight:700;margin-bottom:3px;}
+.plugin-meta p{font-size:.76rem;color:var(--muted);line-height:1.4;}
+.plugin-footer{padding:10px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.plugin-status{font-size:.72rem;display:flex;align-items:center;gap:5px;}
+.dot{width:6px;height:6px;border-radius:50%;}
+.dot.green{background:var(--green);}
+.dot.orange{background:var(--orange);}
+.dot.gray{background:var(--muted2);}
+.plugin-toggle{margin-left:auto;width:34px;height:18px;background:var(--green);border-radius:9px;position:relative;cursor:pointer;}
+.plugin-toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;right:2px;transition:.2s;}
+.plugin-toggle.off{background:var(--muted2);}
+.plugin-toggle.off::after{right:unset;left:2px;}
+
+/* data rows */
+.data-row{display:flex;align-items:center;padding:9px 0;border-bottom:1px solid rgba(37,45,74,.5);gap:12px;font-size:.83rem;}
+.data-row:last-child{border-bottom:none;}
+.data-row-icon{font-size:1rem;width:22px;text-align:center;flex-shrink:0;}
+.data-row-label{flex:1;color:var(--muted);}
+.data-row-value{font-weight:600;text-align:right;}
+.data-row-delta{font-size:.72rem;color:var(--green);margin-left:6px;}
+
+/* tags */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600;}
+.tag-accent{background:rgba(124,111,255,.15);color:var(--accent);}
+.tag-green{background:rgba(62,207,142,.12);color:var(--green);}
+.tag-orange{background:rgba(255,144,64,.12);color:var(--orange);}
+.tag-red{background:rgba(255,95,122,.12);color:var(--accent3);}
+.tag-blue{background:rgba(61,142,248,.12);color:var(--blue);}
+.tag-purple{background:rgba(176,107,255,.12);color:var(--purple);}
+.tag-gold{background:rgba(255,184,48,.12);color:var(--accent4);}
+.tag-muted{background:rgba(122,133,163,.12);color:var(--muted);}
+
+/* progress bars */
+.progress-bar{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:6px;}
+.progress-fill{height:100%;border-radius:3px;transition:width .3s;}
+
+/* timeline */
+.timeline-item{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(37,45,74,.4);}
+.timeline-item:last-child{border-bottom:none;}
+.tl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.tl-body{flex:1;}
+.tl-title{font-size:.84rem;font-weight:600;}
+.tl-meta{font-size:.75rem;color:var(--muted);margin-top:2px;}
+.tl-time{font-size:.72rem;color:var(--muted2);flex-shrink:0;margin-top:4px;}
+
+/* RAG sync panel */
+.rag-flow{display:flex;align-items:center;gap:0;margin:16px 0;}
+.rag-node{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center;flex:1;}
+.rag-node h4{font-size:.82rem;font-weight:700;margin-bottom:4px;}
+.rag-node p{font-size:.72rem;color:var(--muted);}
+.rag-arrow{padding:0 12px;color:var(--muted2);font-size:1.1rem;text-align:center;flex-shrink:0;}
+.rag-arrow.bi{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:.8rem;}
+
+/* tables */
+.data-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.data-table th{background:var(--surface2);padding:8px 12px;text-align:left;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;}
+.data-table td{padding:9px 12px;border-bottom:1px solid rgba(37,45,74,.4);vertical-align:top;}
+.data-table tr:last-child td{border-bottom:none;}
+.data-table tr:hover td{background:rgba(255,255,255,.02);}
+
+/* section labels */
+.section-label{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+
+/* callout */
+.callout{border-radius:8px;padding:12px 16px;font-size:.82rem;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
+.callout-icon{font-size:1rem;flex-shrink:0;margin-top:1px;}
+.callout.info{background:rgba(61,142,248,.08);border:1px solid rgba(61,142,248,.25);color:#82b4ff;}
+.callout.warn{background:rgba(255,184,48,.06);border:1px solid rgba(255,184,48,.25);color:var(--accent4);}
+.callout.success{background:rgba(62,207,142,.06);border:1px solid rgba(62,207,142,.25);color:var(--green);}
+
+/* Notion blocks */
+.notion-page{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.notion-page:hover{border-color:var(--border2);}
+.notion-icon{font-size:1.1rem;width:26px;text-align:center;flex-shrink:0;}
+.notion-title{font-size:.85rem;font-weight:600;flex:1;}
+.notion-meta{font-size:.72rem;color:var(--muted);}
+.notion-badge{font-size:.7rem;}
+
+/* Allocation chart */
+.alloc-visual{display:flex;height:32px;border-radius:6px;overflow:hidden;margin:10px 0;}
+.alloc-seg{display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;color:rgba(255,255,255,.85);}
+
+/* Screens */
+.screen{display:none;}
+.screen.active{display:block;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">🧠</div>
+      <div>
+        <div class="logo-text">Personal MCP</div>
+        <div class="logo-sub">v1.0 · localhost:3333</div>
+      </div>
+      <div class="online-dot"></div>
+    </div>
+  </div>
+
+  <div class="sidebar-user">
+    <div class="avatar">H</div>
+    <div>
+      <div class="user-name">Hamza</div>
+      <div class="user-tier">Owner · Full Access</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Core</div>
+  <div class="nav-item active" onclick="showScreen('dashboard')"><span class="nav-icon">⚡</span>Dashboard</div>
+  <div class="nav-item" onclick="showScreen('rag')"><span class="nav-icon">🧬</span>Claude RAG Sync <span class="nav-badge green">Live</span></div>
+  <div class="nav-item" onclick="showScreen('vault')"><span class="nav-icon">🔐</span>Document Vault</div>
+
+  <div class="nav-section">Finance</div>
+  <div class="nav-item" onclick="showScreen('networth')"><span class="nav-icon">📊</span>Net Worth</div>
+  <div class="nav-item" onclick="showScreen('properties')"><span class="nav-icon">🏠</span>Properties <span class="nav-badge">4</span></div>
+  <div class="nav-item" onclick="showScreen('retirement')"><span class="nav-icon">🏦</span>Retirement & Crypto</div>
+  <div class="nav-item" onclick="showScreen('cashflow')"><span class="nav-icon">💵</span>Cash Flow</div>
+  <div class="nav-item" onclick="showScreen('tax')"><span class="nav-icon">📑</span>Tax Center <span class="nav-badge orange">2 docs</span></div>
+  <div class="nav-item" onclick="showScreen('business')"><span class="nav-icon">💼</span>Business</div>
+
+  <div class="nav-section">Work & Projects</div>
+  <div class="nav-item" onclick="showScreen('projects')"><span class="nav-icon">🚀</span>Projects <span class="nav-badge">6</span></div>
+  <div class="nav-item" onclick="showScreen('notion')"><span class="nav-icon">📓</span>Notion Sync</div>
+  <div class="nav-item" onclick="showScreen('longterm')"><span class="nav-icon">🗺️</span>Long-Term Plans</div>
+  <div class="nav-item" onclick="showScreen('goals')"><span class="nav-icon">🎯</span>Goals & Milestones</div>
+
+  <div class="nav-section">Analysis</div>
+  <div class="nav-item" onclick="showScreen('scout')"><span class="nav-icon">🔍</span>Property Scout</div>
+  <div class="nav-item" onclick="showScreen('bizeval')"><span class="nav-icon">📐</span>Business Evaluator</div>
+  <div class="nav-item" onclick="showScreen('scenarios')"><span class="nav-icon">🌡️</span>Stress Scenarios</div>
+
+  <div class="nav-section">System</div>
+  <div class="nav-item" onclick="showScreen('plugins')"><span class="nav-icon">🔌</span>Plugins</div>
+  <div class="nav-item" onclick="showScreen('connections')"><span class="nav-icon">🔗</span>Connections</div>
+  <div class="nav-item" onclick="showScreen('settings')"><span class="nav-icon">⚙️</span>Settings</div>
+
+  <div class="sidebar-footer">
+    <div class="sync-status"><div class="pulse"></div> RAG sync: 2 min ago · 847 docs indexed</div>
+  </div>
+</div>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main">
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div>
+    <span class="topbar-crumb" id="topbar-crumb">Personal MCP /</span>
+    <span class="topbar-title" id="topbar-title"> Dashboard</span>
+  </div>
+  <div class="topbar-actions">
+    <input class="search-box" placeholder="⌕  Search everything…">
+    <button class="btn btn-ghost" onclick="showScreen('vault')">+ Upload Doc</button>
+    <button class="btn btn-primary">💾 Snapshot</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════ DASHBOARD ═══════════ -->
+<div class="screen active" id="screen-dashboard">
+
+  <div class="callout success"><div class="callout-icon">✓</div><div><strong>All systems nominal.</strong> Cloudflare tunnel active · SQLite encrypted · 6 plugins running · RAG sync healthy · NetWorth GUI connected (read-only key)</div></div>
+
+  <!-- Stat bar -->
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card">
+      <div class="stat-label">Total Net Worth</div>
+      <div class="stat-value" style="color:var(--accent2)">$1.24M</div>
+      <div class="stat-delta up">▲ $38k this month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Monthly Cash Flow</div>
+      <div class="stat-value" style="color:var(--green)">+$4,210</div>
+      <div class="stat-delta up">▲ $310 vs last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Documents Indexed</div>
+      <div class="stat-value">847</div>
+      <div class="stat-delta" style="color:var(--muted)">Across 12 categories</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Projects</div>
+      <div class="stat-value" style="color:var(--purple)">6</div>
+      <div class="stat-delta" style="color:var(--muted)">2 this session</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- Portfolio snapshot -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📊 Portfolio Allocation</div>
+        <span class="card-action">Edit targets →</span>
+      </div>
+      <div class="alloc-visual">
+        <div class="alloc-seg" style="width:38%;background:var(--blue)">Long 38%</div>
+        <div class="alloc-seg" style="width:26%;background:var(--green)">Med 26%</div>
+        <div class="alloc-seg" style="width:22%;background:var(--orange)">Short 22%</div>
+        <div class="alloc-seg" style="width:14%;background:var(--accent3)">Risk 14%</div>
+      </div>
+      <div class="data-row"><div class="data-row-icon">🏠</div><div class="data-row-label">Real Estate (4 properties)</div><div class="data-row-value">$620k</div><div class="data-row-delta">50%</div></div>
+      <div class="data-row"><div class="data-row-icon">🏦</div><div class="data-row-label">Retirement Accounts</div><div class="data-row-value">$218k</div><div class="data-row-delta">18%</div></div>
+      <div class="data-row"><div class="data-row-icon">₿</div><div class="data-row-label">Crypto (BTC+ETH+SOL)</div><div class="data-row-value">$94k</div><div class="data-row-delta">8%</div></div>
+      <div class="data-row"><div class="data-row-icon">📈</div><div class="data-row-label">Stocks & ETFs</div><div class="data-row-value">$182k</div><div class="data-row-delta">15%</div></div>
+      <div class="data-row"><div class="data-row-icon">💼</div><div class="data-row-label">Business Equity</div><div class="data-row-value">$126k</div><div class="data-row-delta">10%</div></div>
+    </div>
+
+    <!-- Activity + alerts -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔔 Recent Activity</div>
+        <span class="card-action">View all →</span>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--accent3)"></div>
+        <div class="tl-body"><div class="tl-title">⚠ Portfolio drift: RE at 50%, target 38%</div><div class="tl-meta">Consider deferring next purchase or rebalancing into index funds</div></div>
+        <div class="tl-time">Now</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--green)"></div>
+        <div class="tl-body"><div class="tl-title">RAG sync completed — 847 docs indexed</div><div class="tl-meta">Notion (34 pages), Projects (12 files), Finance docs (28)</div></div>
+        <div class="tl-time">2m ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--blue)"></div>
+        <div class="tl-body"><div class="tl-title">Property Scout: 4224 Magnolia — analysis ready</div><div class="tl-meta">Cap rate 6.8% · Cash-on-cash 9.1% · DSCR 1.24 → <span style="color:var(--green);font-weight:600">BUY</span></div></div>
+        <div class="tl-time">14m ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--accent4)"></div>
+        <div class="tl-body"><div class="tl-title">Child support payment logged — June</div><div class="tl-meta">$1,200 scheduled Jun 1 · Annual obligation: $14,400</div></div>
+        <div class="tl-time">1d ago</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--purple)"></div>
+        <div class="tl-body"><div class="tl-title">NetWorth GUI connected via read-only key</div><div class="tl-meta">Sliders auto-populated from latest snapshot</div></div>
+        <div class="tl-time">3d ago</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick access modules -->
+  <div class="section-label" style="margin-top:8px">Quick Access — All Modules</div>
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px">
+    <div onclick="showScreen('networth')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">📊</div><div style="font-size:.75rem;color:var(--muted)">Net Worth</div>
+    </div>
+    <div onclick="showScreen('properties')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">🏠</div><div style="font-size:.75rem;color:var(--muted)">Properties</div>
+    </div>
+    <div onclick="showScreen('retirement')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">🏦</div><div style="font-size:.75rem;color:var(--muted)">Retirement</div>
+    </div>
+    <div onclick="showScreen('projects')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">🚀</div><div style="font-size:.75rem;color:var(--muted)">Projects</div>
+    </div>
+    <div onclick="showScreen('rag')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">🧬</div><div style="font-size:.75rem;color:var(--muted)">RAG Sync</div>
+    </div>
+    <div onclick="showScreen('scout')" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s" onmouseover="this.style.borderColor='var(--border2)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.4rem;margin-bottom:6px">🔍</div><div style="font-size:.75rem;color:var(--muted)">Scout</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ RAG SYNC ═══════════ -->
+<div class="screen" id="screen-rag">
+  <div class="callout info"><div class="callout-icon">🧬</div><div><strong>Claude RAG Sync</strong> — Your Personal MCP is the ground truth. RAG indexes everything so any Claude session can answer questions about your finances, projects, plans, and life — without you re-explaining it every time.</div></div>
+
+  <!-- Flow diagram -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-title">Bidirectional Sync Architecture</div></div>
+    <div class="rag-flow">
+      <div class="rag-node" style="border-color:var(--accent);background:rgba(124,111,255,.08)">
+        <h4 style="color:var(--accent)">🧠 Personal MCP</h4>
+        <p>SQLite vault<br>847 structured records<br>localhost:3333</p>
+      </div>
+      <div class="rag-arrow bi">
+        <div style="color:var(--accent2)">→ push chunks →</div>
+        <div style="height:4px"></div>
+        <div style="color:var(--accent4)">← pull answers ←</div>
+      </div>
+      <div class="rag-node" style="border-color:var(--accent2);background:rgba(0,229,176,.06)">
+        <h4 style="color:var(--accent2)">🗃️ Vector Store (RAG)</h4>
+        <p>Embeddings + chunks<br>ChromaDB / local<br>Searchable by Claude</p>
+      </div>
+      <div class="rag-arrow bi">
+        <div style="color:var(--blue)">→ context inject →</div>
+        <div style="height:4px"></div>
+        <div style="color:var(--purple)">← store new info ←</div>
+      </div>
+      <div class="rag-node" style="border-color:var(--blue);background:rgba(61,142,248,.08)">
+        <h4 style="color:var(--blue)">🤖 Claude Code Sessions</h4>
+        <p>Reads RAG context<br>Writes new learnings back<br>Any session, any device</p>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.8rem">
+        <div style="color:var(--accent2);font-weight:700;margin-bottom:6px">MCP → RAG (Push)</div>
+        <div style="color:var(--muted)">• Financial snapshots chunked + embedded<br>• Project notes and status converted to RAG docs<br>• Notion pages synced as searchable chunks<br>• Long-term plans broken into retrievable facts<br>• Document summaries (not raw PDFs) indexed</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;font-size:.8rem">
+        <div style="color:var(--accent4);font-weight:700;margin-bottom:6px">RAG → MCP (Pull / Write-back)</div>
+        <div style="color:var(--muted)">• Claude discoveries update MCP records<br>• New property analysis saved to properties table<br>• Business intel stored in entities table<br>• Rate/price cache refreshed after Claude fetches<br>• Session notes stored as new RAG documents</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync status table -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">📦 Index Status by Category</div><button class="btn btn-primary" style="font-size:.75rem;padding:4px 12px">Sync Now</button></div>
+    <table class="data-table">
+      <tr><th>Category</th><th>Documents</th><th>Chunks</th><th>Last Sync</th><th>Status</th></tr>
+      <tr><td>💰 Financial Snapshots</td><td>24</td><td>312</td><td>2 min ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>🏠 Property Records</td><td>18</td><td>204</td><td>2 min ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>📓 Notion Pages</td><td>34</td><td>187</td><td>8 min ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>🚀 Project Notes & Code</td><td>12</td><td>98</td><td>12 min ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>🗺️ Long-Term Plans</td><td>7</td><td>63</td><td>1 hr ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>📑 Tax Documents (summaries)</td><td>8</td><td>44</td><td>1 day ago</td><td><span class="tag tag-blue">● Stable</span></td></tr>
+      <tr><td>⚖️ Legal Documents (summaries)</td><td>5</td><td>28</td><td>3 days ago</td><td><span class="tag tag-blue">● Stable</span></td></tr>
+      <tr><td>💼 Business Intelligence</td><td>6</td><td>38</td><td>2 hr ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>🏦 Retirement + Crypto</td><td>11</td><td>64</td><td>4 min ago</td><td><span class="tag tag-green">● Live</span></td></tr>
+      <tr><td>👨‍👩‍👧 Family & Obligations</td><td>4</td><td>22</td><td>1 day ago</td><td><span class="tag tag-blue">● Stable</span></td></tr>
+    </table>
+  </div>
+
+  <!-- What Claude can now answer -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-header"><div class="card-title">💬 What Claude Can Answer (with RAG context)</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--accent2)">"What's my effective tax rate if I sell the Magnolia property this year?"</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--blue)">"Which project is closest to generating revenue and what's left to do?"</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--purple)">"How much more can I contribute to my Roth this year?"</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--accent4)">"What are my child support obligations through each child's 18th birthday?"</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--green)">"Compare my long-term plan from 6 months ago to now — what changed?"</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;font-size:.8rem;border-left:2px solid var(--orange)">"What's the status of the NetWorth GUI project and what's next?"</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PROJECTS ═══════════ -->
+<div class="screen" id="screen-projects">
+  <div class="callout info"><div class="callout-icon">🚀</div><div>All projects stored in MCP and synced to RAG. Claude Code can read project context in any session without you re-explaining the codebase or goals.</div></div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px">
+
+    <div class="plugin-card">
+      <div class="plugin-top">
+        <div class="plugin-icon" style="background:rgba(124,111,255,.15)">📊</div>
+        <div class="plugin-meta">
+          <h3>NetWorth GUI</h3>
+          <p>Vanilla JS financial projection SPA. calc bugs fixed, persona sliders added. Branch: claude/nifty-keller-AojX5</p>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-green">Active</span><span class="tag tag-accent">In Progress</span><span class="tag tag-muted">JavaScript</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px 12px">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Progress</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:68%;background:var(--accent)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px"><span>Calc engine ✓ · MCP plugin connector next</span><span>68%</span></div>
+      </div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Committed · 3 commits ahead</span><button class="btn btn-ghost" style="margin-left:auto;font-size:.72rem;padding:3px 8px">Open →</button></div>
+    </div>
+
+    <div class="plugin-card">
+      <div class="plugin-top">
+        <div class="plugin-icon" style="background:rgba(0,229,176,.12)">🧠</div>
+        <div class="plugin-meta">
+          <h3>Personal MCP</h3>
+          <p>This server. Node.js + SQLite + Cloudflare tunnel. Financial brain for all projects and AI sessions.</p>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-green">Phase 1 — Today</span><span class="tag tag-muted">Node.js</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px 12px">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Progress</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:15%;background:var(--accent2)"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-top:4px"><span>Design complete · Scaffold next</span><span>15%</span></div>
+      </div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot orange"></div>Planning → Build today</span><button class="btn btn-primary" style="margin-left:auto;font-size:.72rem;padding:3px 8px">Start Build →</button></div>
+    </div>
+
+    <div class="plugin-card">
+      <div class="plugin-top">
+        <div class="plugin-icon" style="background:rgba(176,107,255,.12)">⚖️</div>
+        <div class="plugin-meta">
+          <h3>[Legal Platform]</h3>
+          <p>Project from Notion long-term plan. Details synced from Notion. RAG has full context.</p>
+          <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+            <span class="tag tag-orange">Planned</span><span class="tag tag-muted">TBD stack</span>
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 16px 12px">
+        <div style="font-size:.72rem;color:var(--muted);margin-bottom:4px">Progress</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:5%;background:var(--purple)"></div></div>
+        <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Ideation phase · See Notion for details</div>
+      </div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot gray"></div>Planned · From Notion</span><button class="btn btn-ghost" style="margin-left:auto;font-size:.72rem;padding:3px 8px">Notion →</button></div>
+    </div>
+
+    <div class="plugin-card" style="border:1px dashed var(--border2);opacity:.6">
+      <div class="plugin-top">
+        <div class="plugin-icon" style="background:rgba(255,184,48,.1)">🏢</div>
+        <div class="plugin-meta">
+          <h3>Business Acquisitions</h3>
+          <p>Track deal pipeline. Due diligence checklists, valuations, LOIs, SBA loan tracking.</p>
+          <div style="margin-top:8px"><span class="tag tag-gold">Queue</span></div>
+        </div>
+      </div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot gray"></div>Not started</span><button class="btn btn-ghost" style="margin-left:auto;font-size:.72rem;padding:3px 8px">+ Add</button></div>
+    </div>
+
+    <div class="plugin-card" style="border:1px dashed var(--border2);opacity:.6">
+      <div class="plugin-top">
+        <div class="plugin-icon" style="background:rgba(61,142,248,.1)">📱</div>
+        <div class="plugin-meta">
+          <h3>[Mobile App / Web]</h3>
+          <p>Placeholder from long-term plan. Synced from Notion roadmap. No active code yet.</p>
+          <div style="margin-top:8px"><span class="tag tag-muted">Future</span></div>
+        </div>
+      </div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot gray"></div>From Notion plan</span><button class="btn btn-ghost" style="margin-left:auto;font-size:.72rem;padding:3px 8px">+ Add</button></div>
+    </div>
+
+    <div onclick="showScreen('projects')" style="background:var(--surface2);border:1px dashed var(--border);border-radius:12px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;cursor:pointer;min-height:160px;color:var(--muted);font-size:.85rem;transition:.15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:1.8rem">+</div><div>New Project</div>
+    </div>
+  </div>
+
+  <!-- Project Context for Claude -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">🤖 Project Context — What Claude Knows</div><span class="card-action">Edit context →</span></div>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">Each project stores a structured context block that gets injected into any Claude Code session working on that project.</p>
+    <div style="background:var(--surface2);border-radius:8px;padding:14px;font-family:monospace;font-size:.78rem;color:var(--accent2);line-height:1.7">
+      <div style="color:var(--muted)"># NetWorth GUI — Claude Context Block</div>
+      <div>project: networthgui</div>
+      <div>repo: gitSITTI/Hamza · branch: claude/nifty-keller-AojX5</div>
+      <div>stack: vanilla JS, single state object, render() pattern</div>
+      <div>rule: no UI changes without discussion · back up before editing</div>
+      <div>personas: RE investor, homeowner, markets investor, blended family</div>
+      <div>mcp_endpoint: https://mcp.hamza.cloudflareaccess.com</div>
+      <div>last_session: calc bugs fixed, property+crypto sliders added</div>
+      <div>next: MCP endpoint selector in settings panel</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ NOTION SYNC ═══════════ -->
+<div class="screen" id="screen-notion">
+  <div class="callout info"><div class="callout-icon">📓</div><div><strong>Notion Sync</strong> — Bidirectional. MCP pulls pages from your Notion workspace. Any Claude session can read them. You can also push MCP-generated summaries back to Notion.</div></div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔗 Connection</div></div>
+      <div class="data-row"><div class="data-row-icon">🔑</div><div class="data-row-label">Notion API key</div><div class="data-row-value"><span class="tag tag-green">Connected</span></div></div>
+      <div class="data-row"><div class="data-row-icon">📓</div><div class="data-row-label">Workspace</div><div class="data-row-value">Hamza's Workspace</div></div>
+      <div class="data-row"><div class="data-row-icon">🗂️</div><div class="data-row-label">Pages accessible</div><div class="data-row-value">34 pages</div></div>
+      <div class="data-row"><div class="data-row-icon">🔄</div><div class="data-row-label">Sync frequency</div><div class="data-row-value">Every 15 min</div></div>
+      <div class="data-row"><div class="data-row-icon">⏱️</div><div class="data-row-label">Last sync</div><div class="data-row-value" style="color:var(--green)">8 min ago</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📤 Push to Notion</div></div>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:12px">MCP can write back to Notion — keeping your workspace up to date automatically.</p>
+      <div class="data-row"><div class="data-row-icon">📊</div><div class="data-row-label">Monthly net worth snapshot</div><div class="data-row-value"><span class="tag tag-green">Auto</span></div></div>
+      <div class="data-row"><div class="data-row-icon">🏠</div><div class="data-row-label">Property analysis reports</div><div class="data-row-value"><span class="tag tag-green">Auto</span></div></div>
+      <div class="data-row"><div class="data-row-icon">🎯</div><div class="data-row-label">Goal progress updates</div><div class="data-row-value"><span class="tag tag-accent">Manual</span></div></div>
+      <div class="data-row"><div class="data-row-icon">🚀</div><div class="data-row-label">Project status updates</div><div class="data-row-value"><span class="tag tag-accent">Manual</span></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Synced Notion Pages</div>
+  <div class="notion-page"><div class="notion-icon">🗺️</div><div class="notion-title">Long-Term Master Plan 2025–2035</div><div class="notion-meta">Updated 2 days ago · 8 sub-pages</div><span class="tag tag-accent notion-badge">RAG ✓</span></div>
+  <div class="notion-page"><div class="notion-icon">💼</div><div class="notion-title">Active Projects Tracker</div><div class="notion-meta">Updated today · 6 projects</div><span class="tag tag-green notion-badge">RAG ✓</span></div>
+  <div class="notion-page"><div class="notion-icon">🏠</div><div class="notion-title">Real Estate Acquisition Pipeline</div><div class="notion-meta">Updated 3 days ago · 12 entries</div><span class="tag tag-green notion-badge">RAG ✓</span></div>
+  <div class="notion-page"><div class="notion-icon">📊</div><div class="notion-title">Financial Goals & Milestones</div><div class="notion-meta">Updated 1 week ago</div><span class="tag tag-blue notion-badge">RAG ✓</span></div>
+  <div class="notion-page"><div class="notion-icon">👨‍👩‍👧</div><div class="notion-title">Family Financial Planning</div><div class="notion-meta">Updated 2 weeks ago · Private</div><span class="tag tag-blue notion-badge">RAG ✓</span></div>
+  <div class="notion-page"><div class="notion-icon">🔧</div><div class="notion-title">Tech Stack Decisions & Notes</div><div class="notion-meta">Updated 5 days ago</div><span class="tag tag-green notion-badge">RAG ✓</span></div>
+</div>
+
+<!-- ═══════════ LONG TERM PLANS ═══════════ -->
+<div class="screen" id="screen-longterm">
+  <div class="callout success"><div class="callout-icon">🗺️</div><div>Long-term plans are stored structured in MCP, indexed in RAG, and synced from Notion. Claude can reference them in any session to keep decisions aligned with your 10-year vision.</div></div>
+
+  <div class="grid-2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">🎯 10-Year Financial Targets</div><span class="card-action">Edit →</span></div>
+      <div class="data-row"><div class="data-row-icon">💰</div><div class="data-row-label">Net Worth Target (2035)</div><div class="data-row-value" style="color:var(--accent2)">$5M+</div></div>
+      <div class="data-row"><div class="data-row-icon">🏠</div><div class="data-row-label">RE Portfolio Goal</div><div class="data-row-value">10 doors</div></div>
+      <div class="data-row"><div class="data-row-icon">💵</div><div class="data-row-label">Passive Income Target</div><div class="data-row-value">$20k/mo</div></div>
+      <div class="data-row"><div class="data-row-icon">₿</div><div class="data-row-label">Crypto Allocation Target</div><div class="data-row-value">10% of NW</div></div>
+      <div class="data-row"><div class="data-row-icon">💼</div><div class="data-row-label">Business Revenue Target</div><div class="data-row-value">$2M ARR</div></div>
+      <div class="data-row"><div class="data-row-icon">🏦</div><div class="data-row-label">Retirement Funded %</div><div class="data-row-value">100% by 55</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📅 Major Milestones</div><span class="card-action">+ Add →</span></div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--accent)"></div>
+        <div class="tl-body"><div class="tl-title">Personal MCP v1 live</div><div class="tl-meta">Q2 2026 — all financial data centralized</div></div>
+        <div class="tl-time">This week</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--green)"></div>
+        <div class="tl-body"><div class="tl-title">5th investment property closed</div><div class="tl-meta">Q3 2026 — targeting MF 4-plex in MO</div></div>
+        <div class="tl-time">~4 mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--blue)"></div>
+        <div class="tl-body"><div class="tl-title">First SaaS product revenue</div><div class="tl-meta">Q4 2026 — target $5k MRR</div></div>
+        <div class="tl-time">~7 mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--purple)"></div>
+        <div class="tl-body"><div class="tl-title">Roth IRA maxed + BTC allocation hit</div><div class="tl-meta">End of 2026 tax year</div></div>
+        <div class="tl-time">~7 mo</div>
+      </div>
+      <div class="timeline-item">
+        <div class="tl-dot" style="background:var(--accent4)"></div>
+        <div class="tl-body"><div class="tl-title">Business acquisition (HVAC or similar)</div><div class="tl-meta">2027 — SBA 7(a) — $500k–$1M target</div></div>
+        <div class="tl-time">~18 mo</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PROPERTY SCOUT ═══════════ -->
+<div class="screen" id="screen-scout">
+  <div class="callout info"><div class="callout-icon">🔍</div><div>Paste a Zillow URL or street address. MCP fetches property data, runs all investment calcs, and gives you a go/no-go verdict with full sensitivity analysis.</div></div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header"><div class="card-title">🏠 Property Lookup</div></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+      <input class="search-box" style="flex:1;max-width:none" placeholder="Paste Zillow URL, Redfin URL, or full street address…" value="4224 Magnolia Ave, St. Louis, MO 63110">
+      <button class="btn btn-primary">Analyze →</button>
+      <button class="btn btn-ghost">Save to Pipeline</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <span class="tag tag-muted">SFH</span><span class="tag tag-muted">Multifamily</span><span class="tag tag-muted">Commercial</span><span class="tag tag-muted">Land</span><span class="tag tag-muted">Mixed Use</span>
+    </div>
+  </div>
+
+  <!-- Analysis result -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-header">
+      <div class="card-title">📋 4224 Magnolia Ave — Analysis Results</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="tag tag-green" style="font-size:.85rem;padding:4px 12px">✓ BUY</span>
+        <span style="font-size:.75rem;color:var(--muted)">Score: 78/100</span>
+      </div>
+    </div>
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-label">List Price</div><div class="stat-value">$285k</div></div>
+      <div class="stat-card"><div class="stat-label">Cap Rate</div><div class="stat-value" style="color:var(--green)">6.8%</div><div class="stat-delta up">Above 6% threshold</div></div>
+      <div class="stat-card"><div class="stat-label">Cash-on-Cash</div><div class="stat-value" style="color:var(--green)">9.1%</div><div class="stat-delta up">20% down assumed</div></div>
+      <div class="stat-card"><div class="stat-label">DSCR</div><div class="stat-value" style="color:var(--green)">1.24</div><div class="stat-delta up">Above 1.2 min</div></div>
+    </div>
+    <div class="grid-2">
+      <div>
+        <div class="section-label">Income / Expense</div>
+        <div class="data-row"><div class="data-row-label">Gross Monthly Rent</div><div class="data-row-value">$2,200</div></div>
+        <div class="data-row"><div class="data-row-label">Vacancy (8%)</div><div class="data-row-value" style="color:var(--accent3)">-$176</div></div>
+        <div class="data-row"><div class="data-row-label">Property Tax</div><div class="data-row-value" style="color:var(--accent3)">-$290</div></div>
+        <div class="data-row"><div class="data-row-label">Insurance</div><div class="data-row-value" style="color:var(--accent3)">-$95</div></div>
+        <div class="data-row"><div class="data-row-label">CapEx + Repairs (10%)</div><div class="data-row-value" style="color:var(--accent3)">-$220</div></div>
+        <div class="data-row"><div class="data-row-label">Mortgage P&I (20% down, 7%)</div><div class="data-row-value" style="color:var(--accent3)">-$1,520</div></div>
+        <div class="data-row" style="font-weight:700"><div class="data-row-label">Monthly Cash Flow</div><div class="data-row-value" style="color:var(--green)">+$199</div></div>
+      </div>
+      <div>
+        <div class="section-label">10-Year Projection</div>
+        <div class="data-row"><div class="data-row-label">Appreciation (3%/yr)</div><div class="data-row-value">$383k</div></div>
+        <div class="data-row"><div class="data-row-label">Equity at year 10</div><div class="data-row-value">$181k</div></div>
+        <div class="data-row"><div class="data-row-label">Total cash flow (10yr)</div><div class="data-row-value">$23,880</div></div>
+        <div class="data-row"><div class="data-row-label">Depreciation tax shield</div><div class="data-row-value" style="color:var(--green)">~$8,200</div></div>
+        <div class="data-row"><div class="data-row-label">IRR (10yr)</div><div class="data-row-value" style="color:var(--green)">14.2%</div></div>
+        <div class="data-row"><div class="data-row-label">Impact on Net Worth</div><div class="data-row-value" style="color:var(--green)">+$181k</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PLUGINS ═══════════ -->
+<div class="screen" id="screen-plugins">
+  <div class="callout info"><div class="callout-icon">🔌</div><div>Each plugin adds tools to the MCP. Enable/disable without restarting. Third-party plugins can be added by dropping a plugin.js file into the /plugins directory.</div></div>
+
+  <div class="section-label">Core Financial Plugins</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(62,207,142,.12)">🏠</div><div class="plugin-meta"><h3>Property Intelligence</h3><p>Rentcast, MO/VA assessors, cap rate, DSCR, multifamily pro-forma, comps, Walk Score</p><div style="margin-top:6px"><span class="tag tag-green">8 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · Free APIs</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(61,142,248,.12)">📈</div><div class="plugin-meta"><h3>Market Data</h3><p>FRED, CoinGecko, Polygon.io, HUD rent data, BLS employment, Census permits</p><div style="margin-top:6px"><span class="tag tag-green">6 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · Free APIs</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(255,184,48,.12)">₿</div><div class="plugin-meta"><h3>Crypto & Retirement</h3><p>BTC/ETH/SOL prices, IRA tracking, Roth contribution limits, crypto-in-retirement calcs</p><div style="margin-top:6px"><span class="tag tag-green">5 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · CoinGecko free</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(176,107,255,.12)">💼</div><div class="plugin-meta"><h3>Business Intelligence</h3><p>SOS entity lookup (MO+VA), UCC lien search, valuation calcs, due diligence tracker</p><div style="margin-top:6px"><span class="tag tag-green">7 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · Public APIs</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(255,95,122,.12)">📑</div><div class="plugin-meta"><h3>Document Vault</h3><p>PDF upload, tax doc parser, number extraction, encrypted storage, summary export to RAG</p><div style="margin-top:6px"><span class="tag tag-green">4 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · Local only</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(0,229,176,.1)">🧬</div><div class="plugin-meta"><h3>Claude RAG Sync</h3><p>ChromaDB embeddings, bidirectional sync, Notion bridge, project context injection</p><div style="margin-top:6px"><span class="tag tag-green">3 tools active</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · Local ChromaDB</span><div class="plugin-toggle"></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Work & Productivity Plugins</div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(124,111,255,.12)">📓</div><div class="plugin-meta"><h3>Notion Bridge</h3><p>Bidirectional Notion sync. Pull pages, push snapshots & reports back. Long-term plans always current.</p><div style="margin-top:6px"><span class="tag tag-green">Connected</span><span class="tag tag-muted">Free API</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Syncing every 15 min</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(255,144,64,.12)">🚀</div><div class="plugin-meta"><h3>Project Manager</h3><p>Git status, branch tracking, Claude context blocks per project. Keeps Claude aligned session-to-session.</p><div style="margin-top:6px"><span class="tag tag-green">6 projects tracked</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot green"></div>Running · GitHub API</span><div class="plugin-toggle"></div></div>
+    </div>
+    <div class="plugin-card">
+      <div class="plugin-top"><div class="plugin-icon" style="background:rgba(61,142,248,.12)">🗓️</div><div class="plugin-meta"><h3>Cash Flow Calendar</h3><p>All payment obligations on one timeline: rent, mortgage, child support, estimated taxes, IRA contributions.</p><div style="margin-top:6px"><span class="tag tag-orange">Coming Phase 3</span></div></div></div>
+      <div class="plugin-footer"><span class="plugin-status"><div class="dot orange"></div>Not yet built</span><div class="plugin-toggle off"></div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Future / Queue</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+    <div class="card-sm" style="opacity:.6;border-style:dashed"><div style="font-size:1.1rem;margin-bottom:6px">🏦</div><div style="font-size:.82rem;font-weight:600">Plaid Live Bank Feeds</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">Auto-import transactions · Paid per connection</div></div>
+    <div class="card-sm" style="opacity:.6;border-style:dashed"><div style="font-size:1.1rem;margin-bottom:6px">📧</div><div style="font-size:.82rem;font-weight:600">Email Document Parser</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">Auto-detect statements in Gmail, parse to vault</div></div>
+    <div class="card-sm" style="opacity:.6;border-style:dashed"><div style="font-size:1.1rem;margin-bottom:6px">📱</div><div style="font-size:.82rem;font-weight:600">Mobile Companion</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">iOS/Android app for on-the-go MCP access</div></div>
+    <div class="card-sm" style="opacity:.6;border-style:dashed"><div style="font-size:1.1rem;margin-bottom:6px">🧾</div><div style="font-size:.82rem;font-weight:600">IRS EFTPS Bridge</div><div style="font-size:.75rem;color:var(--muted);margin-top:4px">Quarterly estimated tax tracking & scheduling</div></div>
+  </div>
+</div>
+
+<!-- ═══════════ CONNECTIONS ═══════════ -->
+<div class="screen" id="screen-connections">
+  <div class="section-label">Active Connections</div>
+  <table class="data-table" style="background:var(--surface);border-radius:12px;overflow:hidden;margin-bottom:20px">
+    <tr><th>Service</th><th>Type</th><th>Auth Method</th><th>Scope</th><th>Status</th><th>Last Used</th></tr>
+    <tr><td>🌐 NetWorth GUI</td><td>Consumer</td><td>Read-only API key</td><td>Read snapshots, sliders</td><td><span class="tag tag-green">● Live</span></td><td>Now</td></tr>
+    <tr><td>🤖 Claude Code</td><td>Consumer</td><td>Session token</td><td>Read + Write (with approval)</td><td><span class="tag tag-green">● Live</span></td><td>2 min ago</td></tr>
+    <tr><td>🧬 ChromaDB RAG</td><td>Internal</td><td>Local socket</td><td>Full read/write</td><td><span class="tag tag-green">● Live</span></td><td>2 min ago</td></tr>
+    <tr><td>📓 Notion API</td><td>External</td><td>Integration token</td><td>Read pages, write reports</td><td><span class="tag tag-green">● Live</span></td><td>8 min ago</td></tr>
+    <tr><td>🏠 Rentcast</td><td>External API</td><td>API key (free tier)</td><td>Property lookup, rent estimates</td><td><span class="tag tag-green">● Live</span></td><td>14 min ago</td></tr>
+    <tr><td>📊 FRED API</td><td>External API</td><td>API key (free)</td><td>Mortgage rates, economic data</td><td><span class="tag tag-green">● Live</span></td><td>1 hr ago</td></tr>
+    <tr><td>₿ CoinGecko</td><td>External API</td><td>No key (free tier)</td><td>Crypto prices</td><td><span class="tag tag-green">● Live</span></td><td>4 min ago</td></tr>
+    <tr><td>📈 Polygon.io</td><td>External API</td><td>API key (free tier)</td><td>Stock EOD prices</td><td><span class="tag tag-blue">● Stable</span></td><td>1 day ago</td></tr>
+    <tr><td>🏛️ HUD API</td><td>External API</td><td>API key (free)</td><td>Fair market rents, AMI</td><td><span class="tag tag-blue">● Stable</span></td><td>2 days ago</td></tr>
+    <tr><td>🏛️ MO SOS</td><td>External API</td><td>Public (no key)</td><td>Business entity search</td><td><span class="tag tag-blue">● Stable</span></td><td>On demand</td></tr>
+    <tr><td>🏛️ VA SCC</td><td>External API</td><td>Public (no key)</td><td>Business entity search</td><td><span class="tag tag-blue">● Stable</span></td><td>On demand</td></tr>
+    <tr><td>🔐 Cloudflare Tunnel</td><td>Security</td><td>Zero Trust cert</td><td>Auth gate (external access)</td><td><span class="tag tag-green">● Live</span></td><td>Always on</td></tr>
+  </table>
+
+  <div class="callout warn"><div class="callout-icon">⏳</div><div><strong>Coming later:</strong> Plaid (live bank feeds), Gmail doc parser, IRS EFTPS, Zillow Bridge (paid), BizBuySell (deal comparables)</div></div>
+</div>
+
+<!-- ═══════════ SETTINGS ═══════════ -->
+<div class="screen" id="screen-settings">
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header"><div class="card-title">⚙️ Server Settings</div></div>
+      <div class="data-row"><div class="data-row-label">Server port</div><div class="data-row-value">3333</div></div>
+      <div class="data-row"><div class="data-row-label">DB location</div><div class="data-row-value" style="font-family:monospace;font-size:.78rem">~/personal-mcp/data.db</div></div>
+      <div class="data-row"><div class="data-row-label">Encryption</div><div class="data-row-value" style="color:var(--green)">AES-256 (sqlcipher)</div></div>
+      <div class="data-row"><div class="data-row-label">Log retention</div><div class="data-row-value">30 days</div></div>
+      <div class="data-row"><div class="data-row-label">Backup schedule</div><div class="data-row-value">Daily to ~/Backups</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔑 API Keys</div></div>
+      <div class="data-row"><div class="data-row-label">Rentcast</div><div class="data-row-value"><span class="tag tag-green">Set ✓</span></div></div>
+      <div class="data-row"><div class="data-row-label">FRED</div><div class="data-row-value"><span class="tag tag-green">Set ✓</span></div></div>
+      <div class="data-row"><div class="data-row-label">Polygon.io</div><div class="data-row-value"><span class="tag tag-green">Set ✓</span></div></div>
+      <div class="data-row"><div class="data-row-label">HUD</div><div class="data-row-value"><span class="tag tag-green">Set ✓</span></div></div>
+      <div class="data-row"><div class="data-row-label">Notion</div><div class="data-row-value"><span class="tag tag-green">Set ✓</span></div></div>
+      <div class="data-row"><div class="data-row-label">Zillow Bridge</div><div class="data-row-value"><span class="tag tag-muted">Not set (paid)</span></div></div>
+      <div class="data-row"><div class="data-row-label">Plaid</div><div class="data-row-value"><span class="tag tag-muted">Not set (future)</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Placeholder screens -->
+<div class="screen" id="screen-networth"><div class="callout info"><div class="callout-icon">📊</div><div>Net Worth module — full breakdown from all sources, historical snapshots, projection link to NetWorth GUI. <strong>Wired in Phase 1.</strong></div></div></div>
+<div class="screen" id="screen-properties"><div class="callout info"><div class="callout-icon">🏠</div><div>Properties module — all 4 properties with live valuations, mortgage balances, equity, cash flow, maintenance logs. <strong>Wired in Phase 2.</strong></div></div></div>
+<div class="screen" id="screen-retirement"><div class="callout info"><div class="callout-icon">🏦</div><div>Retirement & Crypto module — IRA, Roth, 401k, HSA, BTC/ETH/SOL in Roth, allocation targets, contribution tracking. <strong>Wired in Phase 3.</strong></div></div></div>
+<div class="screen" id="screen-cashflow"><div class="callout info"><div class="callout-icon">💵</div><div>Cash Flow Calendar — 90-day outlook for all income and obligations. <strong>Wired in Phase 3.</strong></div></div></div>
+<div class="screen" id="screen-tax"><div class="callout info"><div class="callout-icon">📑</div><div>Tax Center — parsed tax returns, effective rate, Schedule E rental P&L, capital gains tracker. <strong>Wired in Phase 3.</strong></div></div></div>
+<div class="screen" id="screen-business"><div class="callout info"><div class="callout-icon">💼</div><div>Business module — entity tracking, P&L uploads, acquisition pipeline, deal structures. <strong>Wired in Phase 4.</strong></div></div></div>
+<div class="screen" id="screen-goals"><div class="callout info"><div class="callout-icon">🎯</div><div>Goals & Milestones — progress tracking, target dates, gap analysis. Synced from Notion. <strong>Wired in Phase 2.</strong></div></div></div>
+<div class="screen" id="screen-bizeval"><div class="callout info"><div class="callout-icon">📐</div><div>Business Evaluator — paste financials, get SDE/EBITDA/DCF/revenue multiples, DD checklist, deal structure comparison. <strong>Wired in Phase 4.</strong></div></div></div>
+<div class="screen" id="screen-scenarios"><div class="callout info"><div class="callout-icon">🌡️</div><div>Stress Scenarios — RE crash, crypto winter, rate spike, recession — full portfolio impact across all holdings. <strong>Wired in Phase 4.</strong></div></div></div>
+<div class="screen" id="screen-vault"><div class="callout info"><div class="callout-icon">🔐</div><div>Document Vault — encrypted PDF upload, parser extracts numbers into SQLite, originals stored AES-256, summaries fed to RAG. <strong>Wired in Phase 3.</strong></div></div></div>
+
+</div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+const titles = {
+  dashboard:'Dashboard',rag:'Claude RAG Sync',vault:'Document Vault',
+  networth:'Net Worth',properties:'Properties',retirement:'Retirement & Crypto',
+  cashflow:'Cash Flow',tax:'Tax Center',business:'Business',
+  projects:'Projects',notion:'Notion Sync',longterm:'Long-Term Plans',goals:'Goals & Milestones',
+  scout:'Property Scout',bizeval:'Business Evaluator',scenarios:'Stress Scenarios',
+  plugins:'Plugins',connections:'Connections',settings:'Settings'
+};
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('screen-' + id);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'" + id + "'")) {
+      n.classList.add('active');
+    }
+  });
+  document.getElementById('topbar-title').textContent = ' ' + (titles[id] || id);
+}
+</script>
+</body>
+</html>
