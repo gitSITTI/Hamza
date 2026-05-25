@@ -86,6 +86,7 @@ const state = {
   profileBenchmarks: [],
   savedProfiles: [],
   apiKeyDrafts: {},
+  accordionOpen: {},
   featureFlags: {
     useValidatedProjectionModel: false,
     useGovernmentBenchmarks: true,
@@ -2515,10 +2516,21 @@ function chartSection(title, copy, series) {
   ]);
 }
 
+function stopAccordionToggle(event) {
+  event.stopPropagation();
+}
+
 function accordion(title, open, bodyChildren) {
   const details = h("details", { class: "accordion" });
-  if (open) details.open = true;
-  details.append(h("summary", {}, title), h("div", { class: "accordion-body" }, bodyChildren));
+  details.open = state.accordionOpen[title] ?? open;
+  details.addEventListener("toggle", () => {
+    state.accordionOpen[title] = details.open;
+  });
+  const body = h("div", { class: "accordion-body" }, bodyChildren);
+  ["click", "pointerdown", "mousedown", "touchstart", "keydown"].forEach((eventName) => {
+    body.addEventListener(eventName, stopAccordionToggle, true);
+  });
+  details.append(h("summary", {}, title), body);
   return details;
 }
 

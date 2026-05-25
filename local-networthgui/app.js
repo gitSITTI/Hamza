@@ -87,6 +87,8 @@ const state = {
   savedProfiles: [],
   apiKeyDrafts: {},
   accordionOpen: {},
+  controlPositions: {},
+  manualInputs: {},
   featureFlags: {
     useValidatedProjectionModel: false,
     useGovernmentBenchmarks: true,
@@ -439,6 +441,49 @@ async function importFirst(paths) {
   return { loadError: errors.join(" | ") };
 }
 
+function loadControlPositions() {
+  try {
+    const stored = JSON.parse(localStorage.getItem("nwgui-control-positions") || "{}");
+    state.controlPositions = stored.controlPositions || {};
+    state.manualInputs = stored.manualInputs || {};
+    state.sliders = { ...state.sliders, ...(stored.sliders || {}) };
+  } catch {
+    state.controlPositions = {};
+    state.manualInputs = {};
+  }
+}
+
+function saveControlPosition(key, value, meta = {}) {
+  const entry = {
+    key,
+    value,
+    label: meta.label || key,
+    unit: meta.unit || "",
+    benchmark: meta.benchmark ?? null,
+    source: meta.source || "",
+    updatedAt: new Date().toISOString(),
+  };
+  state.controlPositions[key] = entry;
+  localStorage.setItem("nwgui-control-positions", JSON.stringify({
+    schemaVersion: 1,
+    sliders: state.sliders,
+    manualInputs: state.manualInputs,
+    controlPositions: state.controlPositions,
+  }));
+}
+
+function sliderBenchmark(key, min, max) {
+  const benchmark = state.govData.benchmarks?.[key];
+  const value = Number(benchmark?.nationalAverage);
+  if (!Number.isFinite(value) || value < min || value > max) return null;
+  return {
+    value,
+    pct: ((value - min) / Math.max(1, max - min)) * 100,
+    source: benchmark.source || "Reference dataset",
+    label: `${formatBenchmark(value, benchmark.unit || "")} ref`,
+  };
+}
+
 function formatBenchmark(value, unit = "") {
   if (typeof value === "number") {
     const display = Number.isInteger(value) ? String(value) : value.toFixed(1);
@@ -551,9 +596,38 @@ function getRowByYear(year) {
   return state.auditRows.find((row) => row.Year === String(year));
 }
 
+function manualPrimaryIncome() {
+  return Number(state.manualInputs.primaryIncome2026 ?? state.settings.primary_job_salary_bonus_2026 ?? 0);
+}
+
+function manualPartnerIncome() {
+  return Number(state.manualInputs.partnerIncome2026 ?? state.settings.partner_base_salary_2026 ?? 0);
+}
+
+function applyManualProjectionOverrides(rows) {
+  const primary = manualPrimaryIncome();
+  const partner = manualPartnerIncome();
+  if (!Number.isFinite(primary) && !Number.isFinite(partner)) return rows;
+  return rows.map((row) => {
+    if (String(row.Year) !== "2026") return row;
+    const originalPrimary = Number(row["Primary Job Salary + Bonus"] || 0);
+    const originalPartner = Number(row["Partner Income"] || 0);
+    const nextPrimary = Number.isFinite(primary) && primary > 0 ? primary : originalPrimary;
+    const nextPartner = Number.isFinite(partner) && partner >= 0 ? partner : originalPartner;
+    const incomeDelta = nextPrimary + nextPartner - originalPrimary - originalPartner;
+    return {
+      ...row,
+      "Primary Job Salary + Bonus": nextPrimary,
+      "Partner Income": nextPartner,
+      "Economic Gross Income": Number(row["Economic Gross Income"] || 0) + incomeDelta,
+      "Surplus Cash After Tax/Spend": Number(row["Surplus Cash After Tax/Spend"] || 0) + incomeDelta,
+    };
+  });
+}
+
 function recomputeProjectionRows() {
   if (!state.featureFlags.useValidatedProjectionModel || !state.baseAuditRows.length || state.freezeUpdates) {
-    state.auditRows = [...state.baseAuditRows];
+    state.auditRows = applyManualProjectionOverrides([...state.baseAuditRows]);
     return;
   }
   const start = state.baseAuditRows[0] || {};
@@ -561,8 +635,8 @@ function recomputeProjectionRows() {
   const startNetWorth = Number(start["Ending Net Worth"] || state.settings.starting_net_worth_2026 || 0);
   const startInvestments = Number(start["VOO / Investment Balance"] || 0);
   const startCash = Number(start["Cash Reserve"] || 0);
-  const basePrimaryIncome = Number(start["Primary Job Salary + Bonus"] || state.settings.primary_job_salary_bonus_2026 || 0);
-  const basePartnerIncome = Number(start["Partner Income"] || state.settings.partner_base_salary_2026 || 0);
+  const basePrimaryIncome = manualPrimaryIncome() || Number(start["Primary Job Salary + Bonus"] || state.settings.primary_job_salary_bonus_2026 || 0);
+  const basePartnerIncome = Number.isFinite(manualPartnerIncome()) ? manualPartnerIncome() : Number(start["Partner Income"] || state.settings.partner_base_salary_2026 || 0);
   const baseSpending = Number(start["Personal Spending"] || 0);
   const taxRate = Number(state.settings.federal_effective_tax_rate || 0.18) + Number(state.settings.state_local_effective_tax_rate || 0.03);
   const incomeGrowth = state.sliders.primaryJobCompGrowth / 100;
@@ -818,27 +892,110 @@ function numberInputControl(label, key, { min = 0, max = 999999, step = 1, decim
   ]);
 }
 
+function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, copy = "" } = {}) {
+  const value = Number(state.manualInputs[key] ?? 0);
+  const commitValue = (rawValue) => {
+    const next = Math.max(min, Math.min(max, Number(rawValue || 0)));
+    state.manualInputs[key] = next;
+    if (key === "primaryIncome2026") state.settings.primary_job_salary_bonus_2026 = next;
+    if (key === "partnerIncome2026") state.settings.partner_base_salary_2026 = next;
+    saveControlPosition(key, next, { label, unit: "$", source: "Manual user input" });
+    render();
+  };
+  return h("div", { class: "control" }, [
+    h("div", { class: "label label-row" }, [
+      h("span", {}, label),
+      h("span", { class: "help-icon", title: `Help for ${label}` }, "?"),
+    ]),
+    h("div", { class: "money-entry" }, [
+      h("span", { class: "money-prefix" }, "$"),
+      h("input", {
+        class: "text-input",
+        type: "number",
+        min,
+        max,
+        step,
+        value,
+        oninput: (event) => {
+          state.manualInputs[key] = Number(event.target.value || 0);
+        },
+        onchange: (event) => commitValue(event.target.value),
+      }),
+    ]),
+    h("small", { class: "field-advice" }, copy || "Manual income override. Saved locally and used by the validated projection preview."),
+  ]);
+}
+
 function sliderControl(label, key, { min = 0, max = 100, step = 1, suffix = "", copy = "", showAdvice = true } = {}) {
   const value = state.sliders[key];
   const advice = showAdvice ? (copy || fieldAdvice(key, value, label)) : "";
   const pct = max === min ? 0 : Math.max(0, Math.min(100, ((Number(value) - min) / (max - min)) * 100));
+  const benchmark = sliderBenchmark(key, min, max);
+  const commitValue = (rawValue, shouldRender = true) => {
+    const next = Math.max(min, Math.min(max, Number(rawValue)));
+    state.sliders[key] = next;
+    if (key === "inflationRate") state.settings.inflation_rate = next / 100;
+    saveControlPosition(key, next, {
+      label,
+      unit: suffix,
+      benchmark: benchmark?.value,
+      source: benchmark?.source,
+    });
+    if (shouldRender) render();
+  };
+  const updateVisual = (event) => {
+    const next = Number(event.target.value);
+    const nextPct = max === min ? 0 : Math.max(0, Math.min(100, ((next - min) / (max - min)) * 100));
+    const wrap = event.target.closest(".range-wrap");
+    wrap?.style.setProperty("--range-progress", `${nextPct}%`);
+    const valueNode = wrap?.querySelector(".range-value");
+    if (valueNode) {
+      valueNode.textContent = `${next}${suffix}`;
+      valueNode.style.left = `${nextPct}%`;
+    }
+    const numberNode = wrap?.querySelector(".range-number");
+    if (numberNode && numberNode !== event.target) numberNode.value = String(next);
+    state.sliders[key] = next;
+  };
   return h("div", { class: "control" }, [
-    h("div", { class: "range-wrap" }, [
+    h("div", { class: "range-wrap", style: `--range-progress:${pct}%` }, [
       h("div", { class: "range-head" }, [h("span", {}, label)]),
       h("div", { class: "range-value", style: `left:${pct}%` }, `${value}${suffix}`),
+      benchmark ? h("div", {
+        class: "range-benchmark",
+        style: `left:${benchmark.pct}%`,
+        title: `${benchmark.label}. Source: ${benchmark.source}`,
+      }, [h("span", {}, benchmark.label)]) : null,
       h("input", {
         type: "range",
         min,
         max,
         step,
         value,
-        style: `--range-progress:${pct}%`,
         oninput: (event) => {
-          state.sliders[key] = Number(event.target.value);
-          if (key === "inflationRate") state.settings.inflation_rate = state.sliders[key] / 100;
-          render();
+          updateVisual(event);
+          saveControlPosition(key, Number(event.target.value), {
+            label,
+            unit: suffix,
+            benchmark: benchmark?.value,
+            source: benchmark?.source,
+          });
         },
+        onchange: (event) => commitValue(event.target.value),
       }),
+      h("label", { class: "range-entry" }, [
+        h("span", {}, "Enter value"),
+        h("input", {
+          class: "text-input range-number",
+          type: "number",
+          min,
+          max,
+          step,
+          value,
+          onchange: (event) => commitValue(event.target.value),
+          oninput: updateVisual,
+        }),
+      ]),
       advice ? h("small", { class: "field-advice" }, advice) : null,
     ]),
   ]);
@@ -1123,6 +1280,36 @@ function formulaValidationSection() {
       h("a", { href: "./data/formula-validation.json", target: "_blank" }, "Open validation JSON"),
     ]),
   ]), "Validation currently flags simplifications instead of silently replacing behavior. Tax is intentionally marked review because the app still uses effective-rate taxes.");
+}
+
+function savedControlPositionsSection() {
+  const rows = Object.values(state.controlPositions || {})
+    .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))
+    .slice(0, 30);
+  return sectionCard("Saved control positions", h("div", { class: "section-stack" }, [
+    rows.length ? makeTable(
+      [
+        { label: "Control", render: (row) => row.label },
+        { label: "Saved value", render: (row) => `${row.unit === "$" ? "$" : ""}${row.value}${row.unit && row.unit !== "$" ? row.unit : ""}` },
+        { label: "Dataset/reference", render: (row) => row.benchmark === null || row.benchmark === undefined ? "Manual" : String(row.benchmark) },
+        { label: "Source", render: (row) => row.source || "Local saved control" },
+        { label: "Updated", render: (row) => new Date(row.updatedAt).toLocaleString() },
+      ],
+      rows
+    ) : h("div", { class: "notice" }, "No slider or income overrides saved yet. Move a slider or enter an income amount to create a reference record."),
+    h("div", { class: "button-row" }, [
+      h("button", {
+        class: "btn",
+        onclick: () => {
+          localStorage.removeItem("nwgui-control-positions");
+          state.controlPositions = {};
+          state.manualInputs = {};
+          showToast("Saved control positions cleared.");
+          render();
+        },
+      }, "Clear saved positions"),
+    ]),
+  ]), "Every slider move and manual income entry is saved locally with the visible value and any available government/reference marker.");
 }
 
 function featureFlagSection() {
@@ -1580,6 +1767,7 @@ function renderDashboardTools() {
     ]),
     assumptionQualitySection(),
     formulaValidationSection(),
+    savedControlPositionsSection(),
     profileCrossReferenceSection("Current profile cross-reference", "Compare the active dashboard numbers against saved profiles before applying scenario changes."),
     h("details", { class: "accordion", open: true }, [
       h("summary", {}, "Advanced assumption inventory"),
@@ -1675,6 +1863,9 @@ function renderSetup() {
       h("div", { class: "control-grid" }, [
         selectControl("Primary profession preset", "primaryProfessionPreset", controlsMeta.primaryProfessionPreset),
         selectControl("Primary years of experience in 2026", "primaryExperience", controlsMeta.primaryExperience),
+        moneyInputControl("Primary annual income 2026", "primaryIncome2026", {
+          copy: "Use this when Custom or the preset is not accurate. This value is saved and overrides the 2026 primary income input.",
+        }),
         selectControl("Career growth mode", "careerGrowthMode", controlsMeta.careerGrowthMode),
         sliderControl("Bonus % of base salary", "bonusPct", { min: 0, max: 80, step: 1, suffix: "%" }),
         sliderControl("Retirement age", "retirementAge", { min: 35, max: 95, step: 1 }),
@@ -1684,6 +1875,9 @@ function renderSetup() {
         sliderControl("Primary loan interest %", "primaryLoanInterest", { min: 0, max: 15, step: 0.1, suffix: "%" }),
         selectControl("Partner profession preset", "partnerProfessionPreset", controlsMeta.partnerProfessionPreset),
         selectControl("Partner years of experience in 2026", "partnerExperience", controlsMeta.partnerExperience),
+        moneyInputControl("Partner annual income 2026", "partnerIncome2026", {
+          copy: "Use this when the partner preset is not accurate. Set to 0 if there is no partner income.",
+        }),
         selectControl("Partner income mode", "partnerIncomeMode", controlsMeta.partnerIncomeMode),
         selectControl("Student loan assumption mode (partner)", "partnerStudentLoanMode", controlsMeta.partnerStudentLoanMode),
         sliderControl("Partner bonus % of base salary", "partnerBonusPct", { min: 0, max: 50, step: 1, suffix: "%" }),
@@ -1733,6 +1927,7 @@ function renderSetup() {
       h("button", { class: "btn", onclick: () => showToast("Quick setup flow opened.") }, "Start quick setup"),
     ]),
     h("div", { class: "setup-step-stack" }, setupSections.map(([step, children]) => accordion(step, false, children))),
+    savedControlPositionsSection(),
   ]);
 }
 
@@ -2484,6 +2679,7 @@ function renderModelNotes() {
       ]),
     ]),
     formulaValidationSection(),
+    savedControlPositionsSection(),
     accordion("JSON backup", true, [
       h("p", { class: "section-copy" }, "JSON restores compatible profiles and migrates older files when possible. Keep a CSV export too."),
       h("button", { class: "btn full", onclick: () => window.open("../deep-interactions/downloads/profile.json", "_blank") }, "Download profile JSON"),
@@ -2528,7 +2724,7 @@ function accordion(title, open, bodyChildren) {
   });
   const body = h("div", { class: "accordion-body" }, bodyChildren);
   ["click", "pointerdown", "mousedown", "touchstart", "keydown"].forEach((eventName) => {
-    body.addEventListener(eventName, stopAccordionToggle, true);
+    body.addEventListener(eventName, stopAccordionToggle);
   });
   details.append(h("summary", {}, title), body);
   return details;
@@ -2723,6 +2919,8 @@ async function loadData() {
   ]);
   state.profileMeta = profile;
   state.settings = profile.config || {};
+  state.manualInputs.primaryIncome2026 = Number(state.manualInputs.primaryIncome2026 ?? state.settings.primary_job_salary_bonus_2026 ?? 0);
+  state.manualInputs.partnerIncome2026 = Number(state.manualInputs.partnerIncome2026 ?? state.settings.partner_base_salary_2026 ?? 0);
   state.reports.deep = deep;
   state.reports.audit = auditReport;
   if (govModule?.loadError) {
@@ -2751,6 +2949,9 @@ async function loadData() {
   state.sliders.setupProjectionEndAge = 80;
   state.sliders.setupPrimaryAge = Number(profile.config.user_age_current_year || state.sliders.setupPrimaryAge);
   state.sliders.setupPartnerAge = Number(profile.config.partner_age_current_year || state.sliders.setupPartnerAge);
+  loadControlPositions();
+  state.settings.primary_job_salary_bonus_2026 = manualPrimaryIncome();
+  state.settings.partner_base_salary_2026 = manualPartnerIncome();
   loadFeatureFlags();
   loadSavedProfiles();
   loadApiKeyDrafts();
