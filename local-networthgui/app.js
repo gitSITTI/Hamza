@@ -188,6 +188,18 @@ const state = {
     emergencyReserveMonths: 3,
     primaryJobHoursWeek: 40,
     adminHoursMonth: 2,
+    startingVooBalance: 47000,
+    startingBondBalance: 7500,
+    startingHysaBalance: 7500,
+    startingNonInterestCash: 3000,
+    startingRetirementBalance: 73500,
+    startingOtherAssets: 19000,
+    startingCashReserve: 10500,
+    minimumCashReserveTarget: 10000,
+    consumerDebtBalance: 0,
+    otherDebtBalance: 0,
+    primaryStudentLoanBalance: 0,
+    partnerStudentLoanBalance: 0,
     stressStockCrash: 0,
     stressPostCrashReturn: 10,
     stressJobLossMonths: 0,
@@ -1087,6 +1099,42 @@ function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, co
   ]);
 }
 
+function hydrateAssetDebtSlidersFromSettings() {
+  const mappings = {
+    startingVooBalance: "starting_voo_balance_2026",
+    startingBondBalance: "starting_bond_balance_2026",
+    startingHysaBalance: "starting_hysa_balance_2026",
+    startingNonInterestCash: "starting_non_interest_cash_2026",
+    startingRetirementBalance: "starting_retirement_account_balance_2026",
+    startingOtherAssets: "starting_other_assets_2026",
+    startingCashReserve: "starting_cash_reserve_2026",
+    minimumCashReserveTarget: "minimum_cash_reserve_target",
+    consumerDebtBalance: "consumer_debt_balance",
+    otherDebtBalance: "other_debt_balance",
+    primaryStudentLoanBalance: "primary_student_loan_balance",
+    partnerStudentLoanBalance: "partner_student_loan_balance",
+  };
+  Object.entries(mappings).forEach(([sliderKey, settingKey]) => {
+    const value = Number(state.settings[settingKey]);
+    if (Number.isFinite(value)) state.sliders[sliderKey] = value;
+  });
+}
+
+function syncAssetDebtSettingsFromSliders() {
+  state.settings.starting_voo_balance_2026 = state.sliders.startingVooBalance;
+  state.settings.starting_bond_balance_2026 = state.sliders.startingBondBalance;
+  state.settings.starting_hysa_balance_2026 = state.sliders.startingHysaBalance;
+  state.settings.starting_non_interest_cash_2026 = state.sliders.startingNonInterestCash;
+  state.settings.starting_retirement_account_balance_2026 = state.sliders.startingRetirementBalance;
+  state.settings.starting_other_assets_2026 = state.sliders.startingOtherAssets;
+  state.settings.starting_cash_reserve_2026 = state.sliders.startingCashReserve;
+  state.settings.minimum_cash_reserve_target = state.sliders.minimumCashReserveTarget;
+  state.settings.consumer_debt_balance = state.sliders.consumerDebtBalance;
+  state.settings.other_debt_balance = state.sliders.otherDebtBalance;
+  state.settings.primary_student_loan_balance = state.sliders.primaryStudentLoanBalance;
+  state.settings.partner_student_loan_balance = state.sliders.partnerStudentLoanBalance;
+}
+
 function sliderControl(label, key, { min = 0, max = 100, step = 1, suffix = "", copy = "", showAdvice = true } = {}) {
   const value = state.sliders[key];
   const advice = showAdvice ? (copy || fieldAdvice(key, value, label)) : "";
@@ -1096,6 +1144,7 @@ function sliderControl(label, key, { min = 0, max = 100, step = 1, suffix = "", 
     const next = Math.max(min, Math.min(max, Number(rawValue)));
     state.sliders[key] = next;
     if (key === "inflationRate") state.settings.inflation_rate = next / 100;
+    syncAssetDebtSettingsFromSliders();
     saveControlPosition(key, next, {
       label,
       unit: suffix,
@@ -1502,6 +1551,7 @@ function createProfileCode() {
 }
 
 function currentProfileSnapshot() {
+  syncAssetDebtSettingsFromSliders();
   const topLevelState = {};
   PROFILE_STATE_KEYS.forEach((key) => {
     if (state[key] !== undefined) topLevelState[key] = Array.isArray(state[key]) ? [...state[key]] : state[key];
@@ -1522,6 +1572,7 @@ function applyProfileSnapshot(snapshot = {}) {
   });
   if (snapshot.settings) state.settings = { ...state.settings, ...snapshot.settings };
   if (snapshot.manualInputs) state.manualInputs = { ...state.manualInputs, ...snapshot.manualInputs };
+  hydrateAssetDebtSlidersFromSettings();
   if (snapshot.featureFlags) state.featureFlags = { ...state.featureFlags, ...snapshot.featureFlags };
   saveFeatureFlags();
   saveControlPositions();
@@ -2146,6 +2197,20 @@ function renderSetup() {
     ]],
     ["Step 5 — Assets and debts", [
       h("p", { class: "section-copy" }, "Captured as projection inputs and profile export values in this local rebuild."),
+      h("div", { class: "control-grid" }, [
+        sliderControl("Starting VOO / S&P 500 balance", "startingVooBalance", { min: 0, max: 500000, step: 500 }),
+        sliderControl("Starting bond balance", "startingBondBalance", { min: 0, max: 250000, step: 500 }),
+        sliderControl("Starting HYSA balance", "startingHysaBalance", { min: 0, max: 250000, step: 500 }),
+        sliderControl("Starting non-interest cash", "startingNonInterestCash", { min: 0, max: 100000, step: 500 }),
+        sliderControl("Starting retirement account balance", "startingRetirementBalance", { min: 0, max: 1000000, step: 1000 }),
+        sliderControl("Starting other assets", "startingOtherAssets", { min: 0, max: 500000, step: 500 }),
+        sliderControl("Starting cash reserve", "startingCashReserve", { min: 0, max: 250000, step: 500 }),
+        sliderControl("Minimum cash reserve target", "minimumCashReserveTarget", { min: 0, max: 100000, step: 500 }),
+        sliderControl("Consumer debt balance", "consumerDebtBalance", { min: 0, max: 250000, step: 500 }),
+        sliderControl("Other debt balance", "otherDebtBalance", { min: 0, max: 500000, step: 500 }),
+        sliderControl("Primary student loan balance", "primaryStudentLoanBalance", { min: 0, max: 500000, step: 500 }),
+        sliderControl("Partner student loan balance", "partnerStudentLoanBalance", { min: 0, max: 500000, step: 500 }),
+      ]),
     ]],
     ["Step 6 — Taxes, Social Security, and advanced assumptions", [
       h("div", { class: "control-grid" }, [
@@ -3237,6 +3302,7 @@ async function loadData() {
   state.sliders.setupProjectionEndAge = 80;
   state.sliders.setupPrimaryAge = Number(profile.config.user_age_current_year || state.sliders.setupPrimaryAge);
   state.sliders.setupPartnerAge = Number(profile.config.partner_age_current_year || state.sliders.setupPartnerAge);
+  hydrateAssetDebtSlidersFromSettings();
   loadControlPositions();
   if (!state.manualInputs.primaryIncome2026) applyProfessionIncomePreset("primary", { force: true });
   if (!state.manualInputs.partnerIncome2026 && state.partnerIncomeMode !== "No income") applyProfessionIncomePreset("partner", { force: true });

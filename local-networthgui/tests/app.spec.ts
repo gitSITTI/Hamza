@@ -75,6 +75,33 @@ test.describe("local net worth GUI", () => {
     await expect(page.getByRole("slider").first()).toHaveValue("67");
   });
 
+  test("populates setup assets and debts and exports them", async ({ page }) => {
+    await openApp({ page });
+
+    await openSidebar(page);
+    await page.getByRole("radio", { name: "Setup" }).check();
+    await closeSidebarIfOpen(page);
+    await page.getByText("Step 5").click();
+    await expect(page.getByText("Starting VOO / S&P 500 balance")).toBeVisible();
+    await expect(page.getByText("Starting retirement account balance")).toBeVisible();
+    await expect(page.getByText("Primary student loan balance")).toBeVisible();
+    await expect(page.locator(".range-wrap").filter({ hasText: "Starting VOO / S&P 500 balance" }).getByRole("slider")).toHaveValue("47000");
+    await page.locator(".range-wrap").filter({ hasText: "Consumer debt balance" }).getByRole("spinbutton").fill("12500");
+    await page.locator(".range-wrap").filter({ hasText: "Consumer debt balance" }).getByRole("spinbutton").press("Enter");
+
+    await openSidebar(page);
+    await page.getByRole("radio", { name: "Profile & Export" }).check();
+    await closeSidebarIfOpen(page);
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download profile JSON" }).click();
+    const download = await downloadPromise;
+    const path = await download.path();
+    expect(path).toBeTruthy();
+    const payload = JSON.parse(await import("node:fs/promises").then((fs) => fs.readFile(path!, "utf8")));
+    expect(payload.snapshot.settings.starting_voo_balance_2026).toBe(47000);
+    expect(payload.snapshot.settings.consumer_debt_balance).toBe(12500);
+  });
+
   test("matches scenario and stress year selector inventory", async ({ page }) => {
     await openApp({ page });
 

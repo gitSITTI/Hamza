@@ -2233,6 +2233,12 @@ function renderAssumptions() {
       h("button", { class: "btn", onclick: () => showToast("Assumption draft applied.") }, "Apply"),
       h("button", { class: "btn", onclick: () => showToast("Assumption draft reset.") }, "Reset"),
     ]),
+    h("div", { class: "stats-grid four assumption-metrics" }, [
+      metricCard("VOO nominal return", formatPercent(state.sliders.vooReturn, 2)),
+      metricCard("Inflation", formatPercent(state.sliders.inflationRate, 2)),
+      metricCard("Implied real VOO return", formatPercent(((1 + state.sliders.vooReturn / 100) / (1 + state.sliders.inflationRate / 100) - 1) * 100, 2)),
+      metricCard("Display basis", state.dollarBasis),
+    ]),
     h("div", { class: "setup-step-stack" }, assumptionSections.map((section) => accordion(section, false, [
       h("p", { class: "section-copy" }, "Expand this section to edit the assumption draft."),
     ]))),
@@ -2248,9 +2254,9 @@ function renderRealEstate() {
     h("div", { class: "realestate-toolbar" }, [
       h("div", { class: "toolbar-copy" }, "Draft has unapplied changes"),
       h("div", { class: "button-row" }, [
-        h("button", { class: "btn", onclick: () => showToast("Real estate draft applied.") }, "Apply Real Estate Changes"),
-        h("button", { class: "btn", onclick: () => showToast("Real estate draft reset.") }, "Cancel Real Estate Changes"),
-        h("button", { class: "btn", onclick: () => showToast("Real estate draft copied from active profile.") }, "Reset Real Estate Draft from Active"),
+        h("button", { class: "btn", onclick: () => showToast("Real estate draft applied.") }, "Apply"),
+        h("button", { class: "btn", onclick: () => showToast("Real estate draft reset.") }, "Cancel"),
+        h("button", { class: "btn", onclick: () => showToast("Real estate draft copied from active profile.") }, "Reset"),
       ]),
     ]),
     selectControl("Real estate setup mode", "realEstateMode", controlsMeta.realEstateMode),
@@ -2586,10 +2592,10 @@ function renderStressTests() {
     h("p", { class: "section-copy" }, "Choose a stress preset or configure custom stress, then render results."),
     h("p", { class: "section-copy" }, "No active decision is applied. Use the commit controls above to update the projection and sidebar net worth panel."),
     h("div", { class: "toolbar-row wide-copy" }, [
-      h("div", { class: "toolbar-copy" }, "Stress draft has unapplied changes"),
-      h("button", { class: "btn primary", onclick: () => showToast("Stress sandbox applied.") }, "Apply Stress Sandbox"),
-      h("button", { class: "btn", onclick: () => showToast("Stress draft reset.") }, "Cancel Stress Changes"),
-      h("button", { class: "btn", onclick: () => showToast("Stress draft copied from active projection.") }, "Reset Stress Draft from Active"),
+      h("div", { class: "toolbar-copy" }, "Stress draft matches active projection"),
+      h("button", { class: "btn primary", onclick: () => showToast("Stress sandbox applied.") }, "Apply"),
+      h("button", { class: "btn", onclick: () => showToast("Stress draft reset.") }, "Cancel"),
+      h("button", { class: "btn", onclick: () => showToast("Stress draft copied from active projection.") }, "Reset"),
     ]),
     toggleControl("Stress Enabled", state.stressSeverity !== "None", (checked) => {
       state.stressSeverity = checked ? "Base" : "None";
@@ -2632,7 +2638,7 @@ function renderStressTests() {
       numberInputControl("Job loss start year", "stressJobLossStartYear", { min: 2026, max: 2061, step: 1 }),
       sliderControl("Job loss months", "stressJobLossMonths", { min: 0, max: 24, step: 1 }),
       sliderControl("Primary income remaining during stress %", "stressIncomeRemaining", { min: 10, max: 100, step: 1, suffix: "%" }),
-      h("p", { class: "control-note" }, "70% means the household keeps 70% of primary income during stress, not 7000%."),
+      h("p", { class: "control-note" }, "70% means the primary earner keeps 70% of normal income during the stress period, not 7000%."),
       sliderControl("Partner income delay years", "stressPartnerDelayYears", { min: 0, max: 6, step: 1 }),
     ]),
     accordion("5. Real estate / rental", false, [
@@ -2661,7 +2667,7 @@ function renderStressTests() {
     ]),
     h("h3", { class: "section-title", style: "font-size:18px;" }, "Stress summary"),
     h("p", { class: "section-copy" }, stressResultsStatus),
-    h("div", { class: "notice" }, "Choose a stress preset or configure custom stress, then render the comparison."),
+    h("div", { class: "notice" }, "Choose a stress preset or configure custom stress, then render results."),
     h("p", { class: "section-copy" }, `Active stress preset/status: ${stressStatus}`),
     accordion("Detailed stress results", false, [
       state.renderedStress ? h("div", { class: "section-stack" }, [
@@ -2793,7 +2799,6 @@ function renderProfileExport() {
     h("p", { class: "section-copy" }, "Applied changes are saved to the profile in your URL. Draft edits are not saved until Apply."),
     accordion("Saved profiles", true, [
       h("p", { class: "section-copy" }, "Create, save, or load a public saved profile code."),
-      h("p", { class: "section-copy" }, `Current code: ${state.profileCodeInput || "none"}`),
       h("div", { class: "control-grid single" }, [
         h("div", { class: "control" }, [
           h("label", { class: "label" }, "Profile code"),
@@ -2836,20 +2841,6 @@ function renderProfileExport() {
             },
           }, "Save profile"),
         ]),
-      ]),
-      accordion("Local saved profile inventory", false, [
-        makeTable(
-          [
-            { label: "Profile code", render: (row) => row.code },
-            { label: "Profile", render: (row) => row.label },
-            { label: "Reference", render: (row) => row.benchmark },
-            { label: "Retirement age", render: (row) => String(row.retirementAge) },
-            { label: "Inflation", render: (row) => formatPercent(row.inflationRate, 1) },
-            { label: "Equity return", render: (row) => formatPercent(row.equityReturn, 1) },
-            { label: "Updated", render: (row) => new Date(row.updatedAt).toLocaleDateString() },
-          ],
-          profileRows
-        ),
       ]),
     ]),
     accordion("JSON backup", true, [
