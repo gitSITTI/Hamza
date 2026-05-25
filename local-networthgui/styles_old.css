@@ -1485,6 +1485,10 @@ body.theme-dark .profile-lock .text-input {
   min-width: 102px;
 }
 
+.file-input-hidden {
+  display: none;
+}
+
 .upload-icon {
   position: relative;
   display: inline-block;

@@ -104,6 +104,8 @@ test.describe("local net worth GUI", () => {
     await expect(page.getByRole("heading", { name: "Assumptions" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Apply" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Reset" })).toBeVisible();
+    await expect(page.getByText("VOO nominal return")).toBeVisible();
+    await expect(page.getByText("Implied real VOO return")).toBeVisible();
     await expect(page.getByText("Surplus / Investment Strategy")).toBeVisible();
     await openSidebar(page);
     await page.getByRole("radio", { name: "Profile & Export" }).check();
@@ -118,9 +120,7 @@ test.describe("local net worth GUI", () => {
     await page.getByRole("button", { name: "Download profile JSON" }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toContain(profileCode);
-    await page.getByText("Local saved profile inventory").click();
-    await expect(page.getByRole("cell", { name: "local-working-profile-2026" })).toBeVisible();
-    await expect(page.getByRole("cell", { name: "Local working profile" }).first()).toBeVisible();
+    await expect(page.getByText("Local saved profile inventory")).toHaveCount(0);
     await page.getByTestId("profile-upload-input").setInputFiles({
       name: "uploaded-profile.json",
       mimeType: "application/json",
