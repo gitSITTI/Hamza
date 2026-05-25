@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NetWorth GUI — Data Collection & Local MCP Server Plan</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --blue:#2563eb;--blue-lt:#eff6ff;--blue-md:#dbeafe;
+  --green:#059669;--green-lt:#ecfdf5;--green-md:#d1fae5;
+  --amber:#d97706;--amber-lt:#fffbeb;--amber-md:#fef3c7;
+  --purple:#7c3aed;--purple-lt:#f5f3ff;--purple-md:#ede9fe;
+  --rose:#e11d48;--rose-lt:#fff1f2;
+  --teal:#0d9488;--teal-lt:#f0fdfa;--teal-md:#ccfbf1;
+  --gray:#374151;--gray-lt:#f9fafb;--border:#e5e7eb;
+  --r:10px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;color:var(--gray);line-height:1.6;padding:32px 16px 80px}
+
+/* ── HEADER ── */
+.page-header{max-width:1160px;margin:0 auto 32px;text-align:center}
+.page-header h1{font-size:26px;font-weight:700;color:#111827;margin-bottom:6px}
+.page-header p{color:#6b7280;font-size:14px;max-width:680px;margin:0 auto}
+
+/* ── SECTION WRAPPER ── */
+.section{max-width:1160px;margin:0 auto 36px}
+.section-title{font-size:13px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#6b7280;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── FLOW DIAGRAM ── */
+.flow{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-bottom:8px}
+.flow-step{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;min-width:160px;font-size:13px;position:relative}
+.flow-step .label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9ca3af;margin-bottom:2px}
+.flow-step .name{font-weight:600;color:#111827;font-size:14px}
+.flow-step .sub{font-size:11.5px;color:#6b7280;margin-top:2px}
+.flow-arrow{font-size:20px;color:#9ca3af;padding:0 10px;flex-shrink:0}
+.flow-note{font-size:11.5px;color:#6b7280;margin-top:6px;padding-left:4px}
+
+/* ── CARD GRID ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px}
+.card-grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card-head{padding:14px 18px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.card-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.card-head h3{font-size:14px;font-weight:700;color:#111827}
+.card-head .sub{font-size:11.5px;color:#6b7280;margin-top:1px}
+.card-body{padding:14px 18px}
+
+/* ── SOURCE TABLE ── */
+.src-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.src-table th{text-align:left;font-weight:600;color:#6b7280;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;padding:6px 8px;border-bottom:1px solid var(--border)}
+.src-table td{padding:8px 8px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+.src-table tr:last-child td{border-bottom:none}
+.src-table .field{font-weight:600;color:#111827}
+.src-table .source{color:#6b7280}
+.src-table .method{font-family:monospace;font-size:11px;background:#f3f4f6;padding:2px 6px;border-radius:4px;white-space:nowrap}
+
+/* ── PILL TAGS ── */
+.pill{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.pill-free{background:#d1fae5;color:#065f46}
+.pill-key{background:#fef3c7;color:#92400e}
+.pill-paid{background:#fee2e2;color:#991b1b}
+.pill-local{background:var(--purple-md);color:#5b21b6}
+.pill-ajax{background:var(--blue-md);color:#1d4ed8}
+.pill-scrape{background:#f3f4f6;color:#374151}
+.pill-mo{background:#fce7f3;color:#9d174d}
+.pill-va{background:#e0f2fe;color:#0369a1}
+.pill-both{background:#ecfdf5;color:#065f46}
+
+/* ── MCP SCHEMA BOX ── */
+.schema-box{background:#0f172a;color:#e2e8f0;border-radius:8px;padding:16px 18px;font-family:monospace;font-size:12px;line-height:1.8;overflow-x:auto}
+.schema-box .k{color:#7dd3fc}
+.schema-box .v{color:#86efac}
+.schema-box .s{color:#fca5a5}
+.schema-box .c{color:#94a3b8}
+.schema-box .n{color:#fb923c}
+
+/* ── ARCH DIAGRAM ── */
+.arch{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:start;margin:8px 0}
+.arch-col{display:flex;flex-direction:column;gap:10px}
+.arch-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 20px;gap:6px;min-width:120px}
+.arch-mid .box{background:var(--purple);color:#fff;border-radius:var(--r);padding:14px 18px;text-align:center;font-weight:700;font-size:14px;width:120px;box-shadow:0 4px 12px rgba(124,58,237,.35)}
+.arch-mid .box .sub{font-size:10px;font-weight:400;opacity:.85;margin-top:2px}
+.arch-mid .arrow{color:#9ca3af;font-size:22px}
+.arch-item{background:#fff;border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:12.5px}
+.arch-item .name{font-weight:600;color:#111827;font-size:13px}
+.arch-item .desc{color:#6b7280;font-size:11.5px;margin-top:2px}
+.arch-item .method-tag{margin-top:5px}
+
+/* ── ENDPOINT LIST ── */
+.ep-list{list-style:none}
+.ep-list li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f3f4f6;font-size:13px}
+.ep-list li:last-child{border-bottom:none}
+.ep-list .method{font-family:monospace;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px}
+.ep-list .get{background:#d1fae5;color:#065f46}
+.ep-list .post{background:#dbeafe;color:#1d4ed8}
+.ep-list .put{background:#fef3c7;color:#92400e}
+.ep-list .ep-text{flex:1}
+.ep-list .ep-path{font-family:monospace;font-size:11.5px;color:var(--blue);display:block;margin-top:1px}
+
+/* ── STEP LIST ── */
+.steps{counter-reset:step;list-style:none;display:flex;flex-direction:column;gap:12px}
+.steps li{display:flex;gap:12px;align-items:flex-start;counter-increment:step;font-size:13px}
+.steps li::before{content:counter(step);width:24px;height:24px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.steps li .step-text{flex:1}
+.steps li .step-text strong{color:#111827;display:block;margin-bottom:2px}
+.steps li .step-text span{color:#6b7280}
+
+/* ── ADDRESS UX MOCK ── */
+.addr-mock{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:20px;display:flex;flex-direction:column;gap:14px}
+.addr-mock .addr-row{display:flex;gap:10px;align-items:center}
+.addr-mock input{flex:1;border:1.5px solid var(--border);border-radius:6px;padding:9px 13px;font-size:14px;color:#374151;outline:none}
+.addr-mock input:focus{border-color:var(--blue)}
+.addr-mock .btn-fetch{background:var(--blue);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.addr-mock .result-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.addr-mock .result-card{background:var(--gray-lt);border-radius:7px;padding:10px 12px}
+.addr-mock .result-card .rlabel{font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em}
+.addr-mock .result-card .rval{font-size:16px;font-weight:700;color:#111827;margin-top:2px}
+.addr-mock .result-card .rsrc{font-size:10.5px;color:#6b7280;margin-top:1px}
+.addr-mock .status{font-size:11.5px;color:var(--green);display:flex;align-items:center;gap:5px}
+.addr-mock .status::before{content:'●';font-size:8px}
+
+/* ── NOTE BOX ── */
+.note{background:#fff;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--r);padding:14px 18px;font-size:13px;color:#374151;margin-top:8px}
+.note strong{color:#111827}
+.warn-note{border-left-color:var(--amber);background:var(--amber-lt)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>NetWorth GUI — Smart Data Collection &amp; Local MCP Server Plan</h1>
+  <p>Auto-fill property values from Zillow, county assessors, MO &amp; VA SOS records — plus a local MCP plugin that stores and retrieves all your personal financial data.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     1. ADDRESS-DRIVEN AUTO-FILL FLOW
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">1 — How address auto-fill works (user flow)</div>
+
+  <div class="flow">
+    <div class="flow-step" style="border-color:var(--blue)">
+      <div class="label">Step 1</div>
+      <div class="name">User types address</div>
+      <div class="sub">e.g. 123 Main St, St. Louis MO</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:var(--purple)">
+      <div class="label">Step 2</div>
+      <div class="name">Local MCP Server</div>
+      <div class="sub">Check cache first</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:var(--amber)">
+      <div class="label">Step 3</div>
+      <div class="name">API / scrape calls</div>
+      <div class="sub">Zillow · County · SOS</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:var(--green)">
+      <div class="label">Step 4</div>
+      <div class="name">Results returned</div>
+      <div class="sub">Auto-fill sliders</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step" style="border-color:var(--teal)">
+      <div class="label">Step 5</div>
+      <div class="name">Stored locally</div>
+      <div class="sub">SQLite / JSON cache</div>
+    </div>
+  </div>
+  <div class="flow-note">Cache TTL: property values refresh every 30 days · SOS records refresh every 90 days · mortgage rates refresh daily</div>
+
+  <!-- Address UX mockup -->
+  <div style="margin-top:20px">
+    <div style="font-size:12px;font-weight:700;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">UI Mockup — Address lookup widget</div>
+    <div class="addr-mock">
+      <div class="addr-row">
+        <input type="text" placeholder="Enter property address (e.g. 4821 Lindell Blvd, St. Louis, MO 63108)" />
+        <button class="btn-fetch">Fetch Data →</button>
+      </div>
+      <div class="status">Live data fetched from Zillow + St. Louis City Assessor + MO SOS · Last refreshed: today</div>
+      <div class="result-row">
+        <div class="result-card">
+          <div class="rlabel">Zestimate</div>
+          <div class="rval">$387,400</div>
+          <div class="rsrc">Zillow API</div>
+        </div>
+        <div class="result-card">
+          <div class="rlabel">Assessed Value</div>
+          <div class="rval">$342,000</div>
+          <div class="rsrc">St. Louis City Assessor</div>
+        </div>
+        <div class="result-card">
+          <div class="rlabel">Annual Tax</div>
+          <div class="rval">$4,812</div>
+          <div class="rsrc">County tax records</div>
+        </div>
+        <div class="result-card">
+          <div class="rlabel">Last Sale Price</div>
+          <div class="rval">$295,000</div>
+          <div class="rsrc">Zillow / public record</div>
+        </div>
+        <div class="result-card">
+          <div class="rlabel">Property Type</div>
+          <div class="rval">SFR</div>
+          <div class="rsrc">Assessor</div>
+        </div>
+        <div class="result-card">
+          <div class="rlabel">Sq Ft / Year Built</div>
+          <div class="rval">1,840 / 1962</div>
+          <div class="rsrc">Assessor + Zillow</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#6b7280">↑ These values auto-fill <code>primaryHomeValue</code>, <code>investmentPropertyValue</code>, and annual property tax sliders in the app.</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     2. DATA SOURCES — PROPERTY
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">2 — Property data sources (Missouri &amp; Virginia)</div>
+  <div class="card-grid">
+
+    <!-- Zillow -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:#eff6ff">🏠</div>
+        <div>
+          <h3>Zillow / Bridge API</h3>
+          <div class="sub">Property value, rent estimates, sale history</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="src-table">
+          <tr><th>Field</th><th>How</th><th>Cost</th></tr>
+          <tr><td class="field">Zestimate (home value)</td><td><span class="method">GET /zestimate</span></td><td><span class="pill pill-key">API key</span></td></tr>
+          <tr><td class="field">Rent Zestimate</td><td><span class="method">GET /rentZestimate</span></td><td><span class="pill pill-key">API key</span></td></tr>
+          <tr><td class="field">Last sale price + date</td><td><span class="method">GET /property</span></td><td><span class="pill pill-key">API key</span></td></tr>
+          <tr><td class="field">Sq ft, beds, baths, year</td><td><span class="method">GET /property</span></td><td><span class="pill pill-key">API key</span></td></tr>
+          <tr><td class="field">Comp sales nearby</td><td><span class="method">GET /comps</span></td><td><span class="pill pill-paid">Paid tier</span></td></tr>
+        </table>
+        <div class="note" style="margin-top:12px;font-size:12px"><strong>Note:</strong> Zillow's official API (Bridge Interactive) requires account approval. Free alternative: <strong>RapidAPI Zillow scraper</strong> (~$10/mo) or <strong>Rentcast</strong> (free tier available).</div>
+      </div>
+    </div>
+
+    <!-- Missouri -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:#fce7f3">🏛️</div>
+        <div>
+          <h3>Missouri Property Sources</h3>
+          <div class="sub">SOS · County assessors · Tax records</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="src-table">
+          <tr><th>Field</th><th>Source</th><th>Access</th></tr>
+          <tr>
+            <td class="field">Assessed value, owner, parcel</td>
+            <td class="source">St. Louis City Assessor<br><small>stlouis-mo.gov/government/departments/assessor</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-scrape">Scrape / API</span></td>
+          </tr>
+          <tr>
+            <td class="field">St. Louis County parcels</td>
+            <td class="source">SLC Assessor GIS<br><small>revenue.stlouisco.com</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Property tax history</td>
+            <td class="source">MO State Tax Commission<br><small>stc.mo.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-scrape">Scrape</span></td>
+          </tr>
+          <tr>
+            <td class="field">Business entity filings</td>
+            <td class="source">MO SOS<br><small>businessfilings.sos.mo.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST API</span></td>
+          </tr>
+          <tr>
+            <td class="field">LLC / deed ownership chain</td>
+            <td class="source">MO SOS + Recorder of Deeds</td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-scrape">Scrape</span></td>
+          </tr>
+          <tr>
+            <td class="field">MO statewide parcel data</td>
+            <td class="source">MoGIS / MSDIS<br><small>msdis.missouri.edu</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">GeoJSON</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Virginia -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:#e0f2fe">🏛️</div>
+        <div>
+          <h3>Virginia Property Sources</h3>
+          <div class="sub">SCC · County assessors · Tax records</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="src-table">
+          <tr><th>Field</th><th>Source</th><th>Access</th></tr>
+          <tr>
+            <td class="field">Assessed value, owner, parcel</td>
+            <td class="source">Fairfax County GIS<br><small>gis.fairfaxcounty.gov/realproperty</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Arlington parcels + value</td>
+            <td class="source">Arlington GeoSearch<br><small>gis.arlingtonva.us</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">VA statewide parcels</td>
+            <td class="source">VGIN Open Data<br><small>vgin.vdem.virginia.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">GeoJSON</span></td>
+          </tr>
+          <tr>
+            <td class="field">Business entity filings</td>
+            <td class="source">VA SCC Clerk's Office<br><small>cis.scc.virginia.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST API</span></td>
+          </tr>
+          <tr>
+            <td class="field">VA property tax relief</td>
+            <td class="source">VA Dept of Tax<br><small>tax.virginia.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-scrape">Scrape</span></td>
+          </tr>
+          <tr>
+            <td class="field">Deed / title records</td>
+            <td class="source">VA Circuit Court Land Records</td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-scrape">Scrape</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Additional financial sources -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--green-lt)">💰</div>
+        <div>
+          <h3>Financial &amp; Market Data</h3>
+          <div class="sub">Rates · Crypto · Stocks · Mortgage</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <table class="src-table">
+          <tr><th>Field</th><th>Source</th><th>Access</th></tr>
+          <tr>
+            <td class="field">Current mortgage rates</td>
+            <td class="source">FRED (Federal Reserve)<br><small>fred.stlouisfed.org/series/MORTGAGE30US</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Crypto prices (BTC/ETH/etc)</td>
+            <td class="source">CoinGecko API</td>
+            <td><span class="pill pill-free">Free tier</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Stock / ETF prices</td>
+            <td class="source">Yahoo Finance / Polygon.io</td>
+            <td><span class="pill pill-free">Free tier</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Inflation (CPI)</td>
+            <td class="source">BLS API<br><small>api.bls.gov</small></td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">Area median income</td>
+            <td class="source">HUD API / Census ACS</td>
+            <td><span class="pill pill-key">API key</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+          <tr>
+            <td class="field">County-level rent averages</td>
+            <td class="source">HUD FMR data + Rentcast</td>
+            <td><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     3. LOCAL MCP SERVER ARCHITECTURE
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">3 — Local MCP server architecture</div>
+
+  <div class="arch">
+    <!-- LEFT: external data sources -->
+    <div class="arch-col">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">External Sources (fetched on demand)</div>
+      <div class="arch-item">
+        <div class="name">Zillow / Rentcast</div>
+        <div class="desc">Property values, rent estimates, comp sales</div>
+        <div class="method-tag"><span class="pill pill-ajax">AJAX</span> <span class="pill pill-key">API key</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">MO SOS + County Assessors</div>
+        <div class="desc">Ownership, parcel data, assessed value, tax</div>
+        <div class="method-tag"><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST / scrape</span> <span class="pill pill-mo">MO</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">VA SCC + County Assessors</div>
+        <div class="desc">Business filings, deed records, property tax</div>
+        <div class="method-tag"><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST / scrape</span> <span class="pill pill-va">VA</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">FRED / BLS / Census</div>
+        <div class="desc">Mortgage rates, CPI, AMI, wage benchmarks</div>
+        <div class="method-tag"><span class="pill pill-free">Free</span> <span class="pill pill-ajax">REST</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">CoinGecko / Polygon</div>
+        <div class="desc">Crypto prices, stock/ETF quotes</div>
+        <div class="method-tag"><span class="pill pill-free">Free tier</span> <span class="pill pill-ajax">REST</span></div>
+      </div>
+    </div>
+
+    <!-- CENTER: local MCP server -->
+    <div class="arch-mid">
+      <div class="arrow">←→</div>
+      <div class="box">Local MCP<br>Server<div class="sub">localhost:3333<br>Node.js + SQLite</div></div>
+      <div class="arrow">↕</div>
+      <div style="font-size:11px;color:#9ca3af;text-align:center">reads / writes<br>SQLite DB</div>
+    </div>
+
+    <!-- RIGHT: consumers -->
+    <div class="arch-col">
+      <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Consumers (read / write)</div>
+      <div class="arch-item">
+        <div class="name">NetWorth GUI (browser)</div>
+        <div class="desc">Calls <code>localhost:3333/api/…</code> to auto-fill sliders and fetch projections</div>
+        <div class="method-tag"><span class="pill pill-ajax">fetch() calls</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">Claude Code / Claude AI</div>
+        <div class="desc">MCP tool calls — read your profile, update properties, run projections</div>
+        <div class="method-tag"><span class="pill pill-local">MCP tools</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">CLI / scripts</div>
+        <div class="desc"><code>npm run refresh</code> — batch refresh all cached data</div>
+        <div class="method-tag"><span class="pill pill-local">Local only</span></div>
+      </div>
+      <div class="arch-item">
+        <div class="name">Mobile (optional future)</div>
+        <div class="desc">Tailscale / ngrok tunnel for secure remote access</div>
+        <div class="method-tag"><span class="pill pill-key">Auth required</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     4. MCP SERVER — TOOLS + API ENDPOINTS
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">4 — MCP tools the server exposes</div>
+  <div class="card-grid">
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--purple-lt)">🔌</div>
+        <div>
+          <h3>Property Tools</h3>
+          <div class="sub">Address lookup, value refresh, portfolio read</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="ep-list">
+          <li><span class="method get">GET</span><div class="ep-text">Lookup property by address — returns Zestimate, assessed value, taxes, parcel ID<span class="ep-path">/api/property/lookup?address=…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Get full property portfolio — all saved properties with latest values<span class="ep-path">/api/property/portfolio</span></div></li>
+          <li><span class="method post">POST</span><div class="ep-text">Add a property to your portfolio (saves to local DB)<span class="ep-path">/api/property/add</span></div></li>
+          <li><span class="method put">PUT</span><div class="ep-text">Update property details (balance, rent, mortgage rate)<span class="ep-path">/api/property/:id</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Refresh cached values from live sources (Zillow + assessor)<span class="ep-path">/api/property/:id/refresh</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--teal-lt)">🏛️</div>
+        <div>
+          <h3>SOS / Entity Tools</h3>
+          <div class="sub">MO + VA business entity &amp; deed lookups</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="ep-list">
+          <li><span class="method get">GET</span><div class="ep-text">Look up MO SOS business entity by name or entity number<span class="ep-path">/api/sos/mo/entity?name=…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Look up VA SCC entity — annual reports, registered agent, status<span class="ep-path">/api/sos/va/entity?name=…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Search deed / title records by address (MO Recorder of Deeds)<span class="ep-path">/api/deed/mo?address=…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Search VA Circuit Court land records by parcel / owner<span class="ep-path">/api/deed/va?parcel=…</span></div></li>
+          <li><span class="method post">POST</span><div class="ep-text">Save entity to local profile (LLC ownership, registered agent, state)<span class="ep-path">/api/entity/save</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--amber-lt)">📊</div>
+        <div>
+          <h3>Market Data Tools</h3>
+          <div class="sub">Rates, crypto, stocks — cached locally</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="ep-list">
+          <li><span class="method get">GET</span><div class="ep-text">Current 30-yr fixed mortgage rate (FRED, refreshes daily)<span class="ep-path">/api/rates/mortgage</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">CPI / inflation rate — latest BLS release<span class="ep-path">/api/rates/inflation</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Crypto prices for your tracked coins<span class="ep-path">/api/market/crypto?symbols=BTC,ETH,…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Stock / ETF quotes for your tracked positions<span class="ep-path">/api/market/stocks?symbols=VOO,…</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">HUD fair-market rent for a zip code<span class="ep-path">/api/rent/fmr?zip=63108</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-icon" style="background:var(--blue-lt)">👤</div>
+        <div>
+          <h3>Profile / Snapshot Tools</h3>
+          <div class="sub">Store &amp; restore all personal financial data</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <ul class="ep-list">
+          <li><span class="method get">GET</span><div class="ep-text">Get full current profile snapshot (all sliders, properties, market positions)<span class="ep-path">/api/profile/current</span></div></li>
+          <li><span class="method post">POST</span><div class="ep-text">Save profile snapshot — versioned with timestamp<span class="ep-path">/api/profile/save</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">List all saved profile versions<span class="ep-path">/api/profile/history</span></div></li>
+          <li><span class="method post">POST</span><div class="ep-text">Restore profile from a past snapshot<span class="ep-path">/api/profile/restore/:id</span></div></li>
+          <li><span class="method get">GET</span><div class="ep-text">Export full data package (JSON + CSV) for backup<span class="ep-path">/api/profile/export</span></div></li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     5. LOCAL DB SCHEMA (SQLite)
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">5 — Local SQLite schema (what gets stored)</div>
+  <div class="card-grid">
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:#f3f4f6">🗄️</div><div><h3>properties table</h3></div></div>
+      <div class="card-body">
+        <div class="schema-box">
+<span class="c">-- One row per owned property</span>
+<br><span class="k">id</span>            <span class="n">INTEGER</span> PRIMARY KEY
+<br><span class="k">address</span>       <span class="v">TEXT</span>         <span class="c">-- full street address</span>
+<br><span class="k">state</span>         <span class="v">TEXT</span>         <span class="c">-- MO | VA</span>
+<br><span class="k">type</span>          <span class="v">TEXT</span>         <span class="c">-- primary | rental | land</span>
+<br><span class="k">parcel_id</span>     <span class="v">TEXT</span>         <span class="c">-- county parcel number</span>
+<br><span class="k">zestimate</span>     <span class="n">REAL</span>
+<br><span class="k">assessed_value</span><span class="n">REAL</span>
+<br><span class="k">annual_tax</span>    <span class="n">REAL</span>
+<br><span class="k">mortgage_balance</span> <span class="n">REAL</span>
+<br><span class="k">mortgage_rate</span> <span class="n">REAL</span>
+<br><span class="k">mortgage_term</span> <span class="n">INTEGER</span>      <span class="c">-- years remaining</span>
+<br><span class="k">monthly_rent</span>  <span class="n">REAL</span>         <span class="c">-- 0 for primary</span>
+<br><span class="k">last_refreshed</span><span class="v">DATETIME</span>
+<br><span class="k">raw_zillow</span>    <span class="v">JSON</span>         <span class="c">-- full API response</span>
+<br><span class="k">raw_assessor</span>  <span class="v">JSON</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:#f3f4f6">🗄️</div><div><h3>market_positions table</h3></div></div>
+      <div class="card-body">
+        <div class="schema-box">
+<span class="c">-- Crypto, stocks, options, futures</span>
+<br><span class="k">id</span>             <span class="n">INTEGER</span> PRIMARY KEY
+<br><span class="k">asset_class</span>    <span class="v">TEXT</span>  <span class="c">-- crypto|stock|option|futures|commodity</span>
+<br><span class="k">symbol</span>         <span class="v">TEXT</span>  <span class="c">-- BTC, VOO, /ES, GLD…</span>
+<br><span class="k">balance_usd</span>    <span class="n">REAL</span>  <span class="c">-- current $ value</span>
+<br><span class="k">cost_basis</span>     <span class="n">REAL</span>
+<br><span class="k">annual_return_pct</span> <span class="n">REAL</span> <span class="c">-- assumption</span>
+<br><span class="k">annual_pl</span>      <span class="n">REAL</span>  <span class="c">-- for options/futures</span>
+<br><span class="k">last_price</span>     <span class="n">REAL</span>
+<br><span class="k">last_refreshed</span> <span class="v">DATETIME</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:#f3f4f6">🗄️</div><div><h3>entities + rate_cache tables</h3></div></div>
+      <div class="card-body">
+        <div class="schema-box">
+<span class="c">-- SOS entities (LLCs, corps)</span>
+<br><span class="k">id</span>          <span class="n">INTEGER</span> PRIMARY KEY
+<br><span class="k">state</span>       <span class="v">TEXT</span>     <span class="c">-- MO | VA</span>
+<br><span class="k">entity_name</span> <span class="v">TEXT</span>
+<br><span class="k">entity_num</span>  <span class="v">TEXT</span>     <span class="c">-- SOS registration #</span>
+<br><span class="k">status</span>      <span class="v">TEXT</span>     <span class="c">-- active | dissolved</span>
+<br><span class="k">registered_agent</span> <span class="v">TEXT</span>
+<br><span class="k">raw_sos</span>     <span class="v">JSON</span>
+<br>
+<br><span class="c">-- Live rate cache</span>
+<br><span class="k">key</span>         <span class="v">TEXT</span> PRIMARY KEY <span class="c">-- e.g. mortgage_30yr</span>
+<br><span class="k">value</span>       <span class="n">REAL</span>
+<br><span class="k">source</span>      <span class="v">TEXT</span>
+<br><span class="k">fetched_at</span>  <span class="v">DATETIME</span>
+<br><span class="k">ttl_hours</span>   <span class="n">INTEGER</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     6. BUILD STEPS
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">6 — Build plan (step by step)</div>
+  <div class="card-grid">
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:var(--blue-lt)">📦</div><div><h3>Phase 1 — Local MCP server scaffold</h3><div class="sub">~2–3 hours, Node.js + Express + SQLite</div></div></div>
+      <div class="card-body">
+        <ol class="steps">
+          <li><div class="step-text"><strong>Create <code>mcp-server/</code> folder</strong><span>Express app, SQLite via <code>better-sqlite3</code>, CORS enabled for localhost</span></div></li>
+          <li><div class="step-text"><strong>Define SQLite schema</strong><span>Run migration on startup — creates all 4 tables if missing</span></div></li>
+          <li><div class="step-text"><strong>Wire profile endpoints</strong><span>GET/POST <code>/api/profile</code> — read and write the full app state JSON</span></div></li>
+          <li><div class="step-text"><strong>Add MCP tool manifest</strong><span><code>GET /mcp/tools</code> — returns tool list so Claude can discover and call them</span></div></li>
+          <li><div class="step-text"><strong>Add to Claude Code MCP config</strong><span>Point <code>~/.claude/settings.json</code> mcpServers at <code>http://localhost:3333/mcp</code></span></div></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:var(--amber-lt)">🏠</div><div><h3>Phase 2 — Property address auto-fill</h3><div class="sub">~3–4 hours, first real data integration</div></div></div>
+      <div class="card-body">
+        <ol class="steps">
+          <li><div class="step-text"><strong>Zillow / Rentcast API key</strong><span>Register at Rentcast (free tier) — returns Zestimate-equivalent + rent estimate</span></div></li>
+          <li><div class="step-text"><strong>MO county assessor fetch</strong><span>St. Louis City and County have REST/GIS APIs — query by address, cache in <code>properties</code> table</span></div></li>
+          <li><div class="step-text"><strong>VA county assessor fetch</strong><span>Fairfax + Arlington REST APIs — same pattern</span></div></li>
+          <li><div class="step-text"><strong>Address input widget in app.js</strong><span>Text input + "Fetch" button → calls <code>localhost:3333/api/property/lookup</code> → auto-fills sliders</span></div></li>
+          <li><div class="step-text"><strong>Cache + TTL logic</strong><span>Skip fetch if <code>last_refreshed</code> &lt; 30 days ago; show "last updated" label in UI</span></div></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:var(--green-lt)">📈</div><div><h3>Phase 3 — Market data + SOS lookups</h3><div class="sub">~2–3 hours, mostly free APIs</div></div></div>
+      <div class="card-body">
+        <ol class="steps">
+          <li><div class="step-text"><strong>FRED mortgage rate refresh</strong><span>Daily cron — <code>MORTGAGE30US</code> series, auto-updates rate slider default</span></div></li>
+          <li><div class="step-text"><strong>CoinGecko crypto prices</strong><span>Refresh on demand; store in <code>rate_cache</code>; no API key needed for free tier</span></div></li>
+          <li><div class="step-text"><strong>MO SOS entity search</strong><span>Query <code>businessfilings.sos.mo.gov</code> API — save LLC details to <code>entities</code> table</span></div></li>
+          <li><div class="step-text"><strong>VA SCC entity search</strong><span>Query <code>cis.scc.virginia.gov</code> — same pattern</span></div></li>
+          <li><div class="step-text"><strong>Bulk refresh script</strong><span><code>npm run refresh</code> — hits all sources, updates all cached values, logs changes</span></div></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="card-icon" style="background:var(--purple-lt)">🤖</div><div><h3>Phase 4 — Claude MCP plugin wiring</h3><div class="sub">~1–2 hours, makes Claude fully aware of your data</div></div></div>
+      <div class="card-body">
+        <ol class="steps">
+          <li><div class="step-text"><strong>Expose tool manifest at <code>/mcp/tools</code></strong><span>JSON array of tool names, descriptions, and input schemas — Claude discovers these on connect</span></div></li>
+          <li><div class="step-text"><strong>Handle tool calls at <code>/mcp/call</code></strong><span>Route each tool name to its handler function — returns structured JSON result</span></div></li>
+          <li><div class="step-text"><strong>Add server to Claude settings</strong><span><code>~/.claude/settings.json</code> → <code>mcpServers: { "nwgui-local": { type: "http", url: "http://localhost:3333/mcp" } }</code></span></div></li>
+          <li><div class="step-text"><strong>Test: ask Claude "what's my property portfolio worth today?"</strong><span>Claude calls <code>get_portfolio</code> → reads SQLite → answers with live data</span></div></li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     7. API KEYS NEEDED
+═══════════════════════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-title">7 — API keys &amp; accounts needed</div>
+  <div class="card">
+    <div class="card-body">
+      <table class="src-table">
+        <tr>
+          <th>Service</th><th>What you get</th><th>Cost</th><th>Sign-up URL</th>
+        </tr>
+        <tr>
+          <td class="field">Rentcast</td>
+          <td>Property values, rent estimates, comps — Zillow alternative with real API</td>
+          <td><span class="pill pill-free">Free tier (50 calls/mo)</span></td>
+          <td><code>app.rentcast.io</code></td>
+        </tr>
+        <tr>
+          <td class="field">FRED (St. Louis Fed)</td>
+          <td>Mortgage rates, CPI, economic indicators</td>
+          <td><span class="pill pill-free">Free</span></td>
+          <td><code>fred.stlouisfed.org/docs/api</code></td>
+        </tr>
+        <tr>
+          <td class="field">CoinGecko</td>
+          <td>Crypto prices, market caps, historical</td>
+          <td><span class="pill pill-free">Free (no key for basic)</span></td>
+          <td><code>coingecko.com/api</code></td>
+        </tr>
+        <tr>
+          <td class="field">Polygon.io</td>
+          <td>Stock / ETF EOD prices, options data</td>
+          <td><span class="pill pill-free">Free tier (EOD data)</span></td>
+          <td><code>polygon.io</code></td>
+        </tr>
+        <tr>
+          <td class="field">HUD API</td>
+          <td>Fair market rents by zip, area median income</td>
+          <td><span class="pill pill-free">Free</span></td>
+          <td><code>huduser.gov/portal/dataset/fmr</code></td>
+        </tr>
+        <tr>
+          <td class="field">MO SOS API</td>
+          <td>Business entity search — no key, public REST API</td>
+          <td><span class="pill pill-free">Free, no key</span></td>
+          <td><code>businessfilings.sos.mo.gov</code></td>
+        </tr>
+        <tr>
+          <td class="field">VA SCC Clerk</td>
+          <td>Business entity search — no key, public REST API</td>
+          <td><span class="pill pill-free">Free, no key</span></td>
+          <td><code>cis.scc.virginia.gov</code></td>
+        </tr>
+        <tr>
+          <td class="field">Zillow Bridge (optional)</td>
+          <td>Official Zestimate data — requires partner approval</td>
+          <td><span class="pill pill-paid">Paid / approval</span></td>
+          <td><code>bridgeinteractive.com</code></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="note warn-note">
+    <strong>Privacy note:</strong> The local MCP server runs entirely on your machine — no financial data, property values, or personal information ever leaves localhost unless you explicitly enable remote access. The SQLite database is stored at <code>~/.nwgui/data.db</code> (or a path you choose) and is never synced to GitHub or cloud storage automatically.
+  </div>
+</div>
+
+</body>
+</html>
