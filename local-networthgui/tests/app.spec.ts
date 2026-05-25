@@ -102,15 +102,38 @@ test.describe("local net worth GUI", () => {
     await page.getByRole("radio", { name: "Assumptions" }).check();
     await closeSidebarIfOpen(page);
     await expect(page.getByRole("heading", { name: "Assumptions" })).toBeVisible();
-    await expect(selectForControl(page, "Investment strategy")).toHaveValue("Invest annual surplus in VOO/index");
+    await expect(page.getByRole("button", { name: "Apply" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Reset" })).toBeVisible();
+    await expect(page.getByText("Surplus / Investment Strategy")).toBeVisible();
     await openSidebar(page);
     await page.getByRole("radio", { name: "Profile & Export" }).check();
     await closeSidebarIfOpen(page);
+    await expect(page.getByText("Saved profile codes can also live in the URL.")).toBeVisible();
     await page.getByRole("button", { name: "Create profile" }).click();
     await expect(page.getByText(/Created profile/)).toBeVisible();
-    await expect(page.getByRole("textbox").last()).toHaveValue(/[a-z]+-[a-z]+-\d+/);
+    const profileCode = await page.getByRole("textbox").last().inputValue();
+    expect(profileCode).toMatch(/[a-z]+-[a-z]+-\d+/);
+    await expect(page).toHaveURL(new RegExp(`profile=${profileCode}`));
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download profile JSON" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toContain(profileCode);
+    await page.getByText("Local saved profile inventory").click();
     await expect(page.getByRole("cell", { name: "local-working-profile-2026" })).toBeVisible();
     await expect(page.getByRole("cell", { name: "Local working profile" }).first()).toBeVisible();
+    await page.getByTestId("profile-upload-input").setInputFiles({
+      name: "uploaded-profile.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({
+        profile_code: "uploaded-test-profile",
+        snapshot: {
+          sliders: { retirementAge: 61, inflationRate: 2.5 },
+          lifestyleStyle: "Balanced household â€” ~$76k/yr (~$6.3k/mo)",
+        },
+      })),
+    });
+    await expect(page.getByText("Uploaded profile uploaded-test-profile.")).toBeVisible();
+    await expect(page.getByRole("textbox").last()).toHaveValue("uploaded-test-profile");
   });
 
   test("loads government data registry and saved public benchmark source page", async ({ page }) => {

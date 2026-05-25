@@ -409,6 +409,61 @@ const SEEDED_SAVED_PROFILES = [
   },
 ];
 
+const PROFILE_STATE_KEYS = [
+  "relationshipStatus",
+  "childcareMode",
+  "partnerChildWorkImpact",
+  "quickStart",
+  "primaryProfessionPreset",
+  "primaryExperience",
+  "careerGrowthMode",
+  "studentLoanMode",
+  "partnerProfessionPreset",
+  "partnerExperience",
+  "partnerIncomeMode",
+  "partnerStudentLoanMode",
+  "filingStatus",
+  "primaryJobWorkMode",
+  "partnerWorkMode",
+  "investmentStrategy",
+  "scenarioMilestoneSelect",
+  "stressImpactYearSelect",
+  "dollarBasis",
+  "complexityMode",
+  "realEstateMode",
+  "scenarioBasis",
+  "stressYear",
+  "stressSeverity",
+  "auditViewMode",
+  "decisionPurchaseType",
+  "decisionFrequency",
+  "decisionFunding",
+  "decisionAmount",
+  "decisionStartYear",
+  "decisionCreatesAsset",
+  "decisionLoanType",
+  "decisionLoanRate",
+  "decisionLoanTerm",
+  "decisionDownPayment",
+  "decisionAssetValueAtPurchase",
+  "decisionDepreciationMethod",
+  "decisionHoldingPeriod",
+  "decisionResidualValue",
+  "decisionOperatingCost",
+  "lifestyleBaseline",
+  "lifestyleStyle",
+  "lifestyleGrowth",
+  "profileBenchmarkKey",
+  "milestoneYears",
+  "scenarioMilestones",
+  "stressImpactYears",
+  "overlayName",
+  "activeDecisionName",
+  "stressEventYear",
+  "stressStockCrashYear",
+  "stressJobLossStartYear",
+];
+
 function cleanText(value = "") {
   return String(value)
     .replaceAll("\u00c2\u00b7", "\u00b7")
@@ -505,6 +560,15 @@ function saveControlPosition(key, value, meta = {}) {
     updatedAt: new Date().toISOString(),
   };
   state.controlPositions[key] = entry;
+  localStorage.setItem("nwgui-control-positions", JSON.stringify({
+    schemaVersion: 1,
+    sliders: state.sliders,
+    manualInputs: state.manualInputs,
+    controlPositions: state.controlPositions,
+  }));
+}
+
+function saveControlPositions() {
   localStorage.setItem("nwgui-control-positions", JSON.stringify({
     schemaVersion: 1,
     sliders: state.sliders,
@@ -1438,50 +1502,29 @@ function createProfileCode() {
 }
 
 function currentProfileSnapshot() {
+  const topLevelState = {};
+  PROFILE_STATE_KEYS.forEach((key) => {
+    if (state[key] !== undefined) topLevelState[key] = Array.isArray(state[key]) ? [...state[key]] : state[key];
+  });
   return {
+    ...topLevelState,
     sliders: { ...state.sliders },
-    profileBenchmarkKey: state.profileBenchmarkKey,
-    decisionPurchaseType: state.decisionPurchaseType,
-    decisionFrequency: state.decisionFrequency,
-    decisionFunding: state.decisionFunding,
-    decisionAmount: state.decisionAmount,
-    decisionStartYear: state.decisionStartYear,
-    decisionCreatesAsset: state.decisionCreatesAsset,
-    decisionLoanType: state.decisionLoanType,
-    decisionLoanRate: state.decisionLoanRate,
-    decisionLoanTerm: state.decisionLoanTerm,
-    decisionDownPayment: state.decisionDownPayment,
-    decisionOperatingCost: state.decisionOperatingCost,
-    lifestyleBaseline: state.lifestyleBaseline,
-    lifestyleStyle: state.lifestyleStyle,
-    lifestyleGrowth: state.lifestyleGrowth,
+    settings: { ...state.settings },
+    manualInputs: { ...state.manualInputs },
     featureFlags: { ...state.featureFlags },
   };
 }
 
 function applyProfileSnapshot(snapshot = {}) {
   if (snapshot.sliders) state.sliders = { ...state.sliders, ...snapshot.sliders };
-  [
-    "profileBenchmarkKey",
-    "decisionPurchaseType",
-    "decisionFrequency",
-    "decisionFunding",
-    "decisionAmount",
-    "decisionStartYear",
-    "decisionCreatesAsset",
-    "decisionLoanType",
-    "decisionLoanRate",
-    "decisionLoanTerm",
-    "decisionDownPayment",
-    "decisionOperatingCost",
-    "lifestyleBaseline",
-    "lifestyleStyle",
-    "lifestyleGrowth",
-  ].forEach((key) => {
-    if (snapshot[key] !== undefined) state[key] = snapshot[key];
+  PROFILE_STATE_KEYS.forEach((key) => {
+    if (snapshot[key] !== undefined) state[key] = Array.isArray(snapshot[key]) ? [...snapshot[key]] : snapshot[key];
   });
+  if (snapshot.settings) state.settings = { ...state.settings, ...snapshot.settings };
+  if (snapshot.manualInputs) state.manualInputs = { ...state.manualInputs, ...snapshot.manualInputs };
   if (snapshot.featureFlags) state.featureFlags = { ...state.featureFlags, ...snapshot.featureFlags };
   saveFeatureFlags();
+  saveControlPositions();
   recomputeProjectionRows();
 }
 
@@ -1504,6 +1547,7 @@ function createSavedProfile() {
   let code = createProfileCode();
   while (state.savedProfiles.some((profile) => profile.code === code)) code = createProfileCode();
   saveCurrentProfile(code);
+  writeProfileToUrl(code);
   return code;
 }
 
@@ -1517,6 +1561,7 @@ function saveCurrentProfile(code) {
   if (existingIndex >= 0) state.savedProfiles[existingIndex] = profile;
   else state.savedProfiles.push(profile);
   persistSavedProfiles();
+  writeProfileToUrl(code);
 }
 
 function savedProfileRows() {
@@ -1542,7 +1587,93 @@ function loadSavedProfile(code) {
   const profile = state.savedProfiles.find((item) => item.code === code);
   if (!profile) return false;
   applyProfileSnapshot(profile.snapshot);
+  state.profileCodeInput = code;
+  writeProfileToUrl(code);
   return true;
+}
+
+function profileCodeFromUrl() {
+  try {
+    return new URLSearchParams(window.location.search).get("profile") || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeProfileToUrl(code) {
+  if (!code) return;
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("profile", code);
+    window.history.replaceState({}, "", url);
+  } catch {
+    // Profile persistence still works through localStorage and JSON downloads.
+  }
+}
+
+function applyProfileFromUrl() {
+  const code = profileCodeFromUrl();
+  if (code) {
+    state.profileCodeInput = code;
+    loadSavedProfile(code);
+  }
+}
+
+function currentProfileExportPayload() {
+  const code = state.profileCodeInput || "local-unsaved-profile";
+  return {
+    app_version: state.profileMeta?.app_version || "0.8.0",
+    model_version: state.profileMeta?.model_version || "0.4.0",
+    profile_code: code,
+    exported_at: new Date().toISOString(),
+    snapshot: currentProfileSnapshot(),
+  };
+}
+
+function downloadTextFile(filename, text, type = "text/plain") {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = h("a", { href: url, download: filename });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 250);
+}
+
+function downloadProfileJson() {
+  const payload = currentProfileExportPayload();
+  const safeCode = String(payload.profile_code || "profile").replaceAll(/[^a-z0-9_-]+/gi, "-").toLowerCase();
+  downloadTextFile(`${safeCode}.json`, JSON.stringify(payload, null, 2), "application/json");
+}
+
+function downloadCurrentSettingsCsv() {
+  const snapshot = currentProfileSnapshot();
+  const rows = [
+    ["section", "key", "value"],
+    ...Object.entries(snapshot)
+      .filter(([, value]) => value === null || typeof value !== "object")
+      .map(([key, value]) => ["profile", key, value]),
+    ...Object.entries(snapshot.sliders || {}).map(([key, value]) => ["sliders", key, value]),
+    ...Object.entries(snapshot.manualInputs || {}).map(([key, value]) => ["manualInputs", key, value]),
+  ];
+  const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
+  downloadTextFile("networthgui-settings.csv", csv, "text/csv");
+}
+
+async function importProfileFile(file) {
+  if (!file) return;
+  try {
+    const payload = JSON.parse(await file.text());
+    const snapshot = payload.snapshot || payload.config || payload;
+    applyProfileSnapshot(snapshot);
+    const code = payload.profile_code || payload.code || state.profileCodeInput || createProfileCode();
+    state.profileCodeInput = code;
+    saveCurrentProfile(code);
+    showToast(`Uploaded profile ${code}.`);
+    render();
+  } catch (error) {
+    showToast(`Profile upload failed: ${error.message}`);
+  }
 }
 
 function saveFeatureFlags() {
@@ -2099,18 +2230,8 @@ function renderAssumptions() {
     h("p", { class: "section-copy" }, "Modeling assumptions are estimates about the world. Edits here stay in a draft until you apply them."),
     h("p", { class: "section-copy" }, "Assumption draft has unapplied changes"),
     h("div", { class: "assumption-action-row" }, [
-      h("button", { class: "btn", onclick: () => showToast("Assumption draft applied.") }, "Apply Assumption Changes"),
-      h("button", { class: "btn", onclick: () => showToast("Assumption draft reset.") }, "Reset Draft from Active"),
-    ]),
-    h("div", { class: "stats-grid four assumption-metrics" }, [
-      metricCard("VOO nominal return", formatPercent(state.sliders.vooReturn, 2)),
-      metricCard("Inflation", formatPercent(state.sliders.inflationRate, 2)),
-      metricCard("Implied real VOO return", formatPercent(((1 + state.sliders.vooReturn / 100) / (1 + state.sliders.inflationRate / 100) - 1) * 100, 2)),
-      metricCard("Display basis", state.dollarBasis),
-    ]),
-    h("div", { class: "control-grid" }, [
-      selectControl("Investment strategy", "investmentStrategy", controlsMeta.investmentStrategy),
-      selectControl("Dollar display basis", "dollarBasis", controlsMeta.dollarBasis),
+      h("button", { class: "btn", onclick: () => showToast("Assumption draft applied.") }, "Apply"),
+      h("button", { class: "btn", onclick: () => showToast("Assumption draft reset.") }, "Reset"),
     ]),
     h("div", { class: "setup-step-stack" }, assumptionSections.map((section) => accordion(section, false, [
       h("p", { class: "section-copy" }, "Expand this section to edit the assumption draft."),
@@ -2637,9 +2758,17 @@ function renderProjectionAudit() {
 
 function uploadProfileControl() {
   return h("div", { class: "upload-control" }, [
-    h("button", { class: "btn upload-btn", onclick: () => showToast(`Uploaded profile ${state.profileMeta?.profile_code || state.profileCodeInput || "JSON"}.`) }, [
+    h("label", { class: "btn upload-btn" }, [
       h("span", { class: "upload-icon", "aria-hidden": "true" }),
       h("span", {}, "Upload"),
+      h("input", {
+        class: "file-input-hidden",
+        "data-testid": "profile-upload-input",
+        type: "file",
+        accept: "application/json,.json",
+        oninput: (event) => importProfileFile(event.target.files?.[0]),
+        onchange: (event) => importProfileFile(event.target.files?.[0]),
+      }),
     ]),
     h("span", {}, "200MB per file • JSON"),
   ]);
@@ -2656,12 +2785,15 @@ function renderProfileExport() {
     h("h2", { class: "section-title", style: "font-size:24px" }, "Profile & Export"),
     h("div", { class: "summary-trio" }, [
       h("div", { class: "summary-col" }, [h("div", { class: "meta" }, "Profile mode"), h("strong", {}, "Public/default")]),
-      h("div", { class: "summary-col" }, [h("div", { class: "meta" }, "Profile code"), h("strong", {}, "none")]),
+      h("div", { class: "summary-col" }, [h("div", { class: "meta" }, "Profile code"), h("strong", {}, state.profileCodeInput || "none")]),
       h("div", { class: "summary-col" }, [h("div", { class: "meta" }, "Version"), h("strong", {}, `App v${state.profileMeta?.app_version || "0.8.0"} · Model v${state.profileMeta?.model_version || "0.4.0"}`)]),
     ]),
     h("p", { class: "section-copy" }, "Automatic browser autosave is disabled for reliability. Use saved profile code, JSON, or CSV backup to preserve settings."),
+    h("p", { class: "section-copy" }, "Saved profile codes can also live in the URL. If your URL has ?profile=..., refreshing the site will reload that profile. JSON and CSV are still the safest backups across app updates."),
+    h("p", { class: "section-copy" }, "Applied changes are saved to the profile in your URL. Draft edits are not saved until Apply."),
     accordion("Saved profiles", true, [
       h("p", { class: "section-copy" }, "Create, save, or load a public saved profile code."),
+      h("p", { class: "section-copy" }, `Current code: ${state.profileCodeInput || "none"}`),
       h("div", { class: "control-grid single" }, [
         h("div", { class: "control" }, [
           h("label", { class: "label" }, "Profile code"),
@@ -2705,7 +2837,7 @@ function renderProfileExport() {
           }, "Save profile"),
         ]),
       ]),
-      h("div", { class: "table-card" }, [
+      accordion("Local saved profile inventory", false, [
         makeTable(
           [
             { label: "Profile code", render: (row) => row.code },
@@ -2722,15 +2854,16 @@ function renderProfileExport() {
     ]),
     accordion("JSON backup", true, [
       h("p", { class: "section-copy" }, "JSON restores compatible profiles and migrates older files when possible. Keep a CSV export too."),
-      h("button", { class: "btn full", onclick: () => window.open("../deep-interactions/downloads/profile.json", "_blank") }, "Download profile JSON"),
+      h("button", { class: "btn full", onclick: downloadProfileJson }, "Download profile JSON"),
       h("div", { class: "control" }, [
         h("label", { class: "label" }, "Upload profile JSON"),
         uploadProfileControl(),
       ]),
     ]),
     accordion("Human-readable backup", false, [
+      h("p", { class: "section-copy" }, "CSV is for reference/manual recreation. It is more stable as documentation, but it is not automatically imported."),
       h("div", { class: "button-row" }, [
-        h("button", { class: "btn", onclick: () => window.open("../deep-interactions/downloads/settings.csv", "_blank") }, "Download settings CSV"),
+        h("button", { class: "btn", onclick: downloadCurrentSettingsCsv }, "Download settings CSV"),
         h("button", { class: "btn", onclick: () => window.open("../deep-interactions/downloads/projection-audit.csv", "_blank") }, "Download projection audit CSV"),
       ]),
       h("div", { class: "inline-link-list" }, downloadLinks.map(([label, href]) => h("a", { href, target: "_blank" }, label))),
@@ -3120,6 +3253,7 @@ async function loadData() {
   state.settings.partner_base_salary_2026 = manualPartnerIncome();
   loadFeatureFlags();
   loadSavedProfiles();
+  applyProfileFromUrl();
   loadApiKeyDrafts();
   recomputeProjectionRows();
 }
