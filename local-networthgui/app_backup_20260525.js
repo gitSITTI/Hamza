@@ -71,8 +71,6 @@ const state = {
   scenarioMilestones: ["2026", "2027", "2031", "2041", "2051", "2061"],
   stressImpactYears: ["2030", "2035", "2056"],
   overlayName: "Housing mortgage",
-  childSupportMode: "None",
-  propertyPortfolioMode: "No properties",
   activeDecisionName: null,
   decisionAmount: 0,
   decisionStartYear: 2026,
@@ -195,26 +193,6 @@ const state = {
     stressJobLossMonths: 0,
     stressIncomeRemaining: 70,
     stressPartnerDelayYears: 0,
-    childSupportMonthly: 0,
-    priorChildrenCount: 0,
-    primaryHomeValue: 0,
-    primaryHomeMortgageBalance: 0,
-    primaryHomeMortgageRate: 6.5,
-    primaryHomeMortgageTerm: 30,
-    investmentPropertyCount: 0,
-    investmentPropertyValue: 0,
-    investmentPropertyMortgageBalance: 0,
-    investmentPropertyMortgageRate: 6.5,
-    investmentPropertyMortgageTerm: 30,
-    investmentPropertyMonthlyRent: 0,
-    cryptoBalance: 0,
-    cryptoAnnualReturnPct: 15,
-    stocksAltBalance: 0,
-    stocksAltReturnPct: 10,
-    optionsAnnualPL: 0,
-    futuresAnnualPL: 0,
-    commoditiesBalance: 0,
-    commoditiesReturnPct: 5,
   },
   renderedStress: false,
   stressStockCrashEnabled: false,
@@ -281,8 +259,6 @@ const controlsMeta = {
   realEstateMode: ["No rentals", "Simple rental portfolio", "Advanced investor"],
   complexityMode: ["Simple", "Guided", "Advanced"],
   dollarBasis: ["Nominal dollars", "2026 purchasing-power dollars"],
-  childSupportMode: ["None", "Paying child support", "Receiving child support"],
-  propertyPortfolioMode: ["No properties", "Primary home only", "Primary + rentals", "Investment properties only"],
 };
 
 const DEFAULT_PUBLIC_BENCHMARKS = {
@@ -788,84 +764,6 @@ function applyManualProjectionOverrides(rows) {
   });
 }
 
-function monthlyLoanPayment(principal, annualRate, termYears) {
-  const P = Math.max(0, Number(principal) || 0);
-  const r = (Number(annualRate) || 0) / 100 / 12;
-  const n = Math.max(1, Number(termYears) || 1) * 12;
-  if (P <= 0) return 0;
-  if (r <= 0) return P / n;
-  return (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-}
-
-function remainingMortgageBalance(principal, annualRate, termYears, yearsElapsed) {
-  const P = Math.max(0, Number(principal) || 0);
-  const r = (Number(annualRate) || 0) / 100 / 12;
-  const n = Math.max(1, Number(termYears) || 1) * 12;
-  const elapsed = Math.round(Math.min(n, yearsElapsed * 12));
-  if (P <= 0 || elapsed >= n) return 0;
-  if (r <= 0) return P * (1 - elapsed / n);
-  const pmt = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  return Math.max(0, P * Math.pow(1 + r, elapsed) - pmt * (Math.pow(1 + r, elapsed) - 1) / r);
-}
-
-function childcareCostPerYear() {
-  const n = Number(state.sliders.numberOfChildren || 0);
-  if (n <= 0 || state.childcareMode === "None") return 0;
-  const bothWorking = state.partnerChildWorkImpact === "None";
-  const utilization = bothWorking ? state.sliders.daycareBothWorking
-    : state.partnerChildWorkImpact === "Part-time" ? state.sliders.daycarePartTime
-    : state.sliders.daycareHome;
-  const baseCost = state.childcareMode === "Nanny / private care" ? 35000
-    : state.childcareMode === "Daycare / paid childcare" ? 15000
-    : state.childcareMode === "Family care" ? 3500
-    : 0;
-  return Math.round(n * baseCost * Math.max(0, Math.min(1, Number(utilization) || 0)));
-}
-
-function annualChildSupportCost() {
-  if (state.childSupportMode === "None") return 0;
-  const monthly = Number(state.sliders.childSupportMonthly || 0);
-  return state.childSupportMode === "Paying child support" ? monthly * 12 : -(monthly * 12);
-}
-
-function primaryHomeEquityAtYear(year) {
-  const homeValue = Number(state.sliders.primaryHomeValue || 0);
-  if (homeValue <= 0) return 0;
-  const yearsElapsed = Math.max(0, Number(year) - 2026);
-  const appreciation = (state.sliders.existingPropertyAppreciation || 2) / 100;
-  const currentValue = homeValue * Math.pow(1 + appreciation, yearsElapsed);
-  const balance = Number(state.sliders.primaryHomeMortgageBalance || 0);
-  const remaining = remainingMortgageBalance(balance, state.sliders.primaryHomeMortgageRate, state.sliders.primaryHomeMortgageTerm, yearsElapsed);
-  return Math.max(0, currentValue - remaining);
-}
-
-function investmentPropertyNetIncome(year) {
-  const count = Number(state.sliders.investmentPropertyCount || 0);
-  const monthlyRent = Number(state.sliders.investmentPropertyMonthlyRent || 0);
-  if (count <= 0 || monthlyRent <= 0) return 0;
-  const yearsElapsed = Math.max(0, Number(year) - 2026);
-  const rentGrowth = (state.sliders.grossRentGrowth || 2.5) / 100;
-  const vacancy = (state.sliders.vacancyRate || 0) / 100;
-  const mgmtFee = (state.sliders.managementFee || 8) / 100;
-  const grossRent = monthlyRent * 12 * count * Math.pow(1 + rentGrowth, yearsElapsed);
-  const effectiveRent = grossRent * (1 - vacancy) * (1 - mgmtFee);
-  const balance = Number(state.sliders.investmentPropertyMortgageBalance || 0);
-  const annualDebtService = monthlyLoanPayment(balance, state.sliders.investmentPropertyMortgageRate, state.sliders.investmentPropertyMortgageTerm) * 12 * count;
-  return Math.max(0, effectiveRent - annualDebtService);
-}
-
-function investmentPropertyEquityAtYear(year) {
-  const count = Number(state.sliders.investmentPropertyCount || 0);
-  const propValue = Number(state.sliders.investmentPropertyValue || 0);
-  if (count <= 0 || propValue <= 0) return 0;
-  const yearsElapsed = Math.max(0, Number(year) - 2026);
-  const appreciation = (state.sliders.existingPropertyAppreciation || 2) / 100;
-  const currentTotal = propValue * count * Math.pow(1 + appreciation, yearsElapsed);
-  const balance = Number(state.sliders.investmentPropertyMortgageBalance || 0);
-  const remaining = remainingMortgageBalance(balance, state.sliders.investmentPropertyMortgageRate, state.sliders.investmentPropertyMortgageTerm, yearsElapsed) * count;
-  return Math.max(0, currentTotal - remaining);
-}
-
 function recomputeProjectionRows() {
   if (!state.featureFlags.useValidatedProjectionModel || !state.baseAuditRows.length || state.freezeUpdates) {
     state.auditRows = applyManualProjectionOverrides([...state.baseAuditRows]);
@@ -879,28 +777,11 @@ function recomputeProjectionRows() {
   const basePrimaryIncome = manualPrimaryIncome() || Number(start["Primary Job Salary + Bonus"] || state.settings.primary_job_salary_bonus_2026 || 0);
   const basePartnerIncome = Number.isFinite(manualPartnerIncome()) ? manualPartnerIncome() : Number(start["Partner Income"] || state.settings.partner_base_salary_2026 || 0);
   const baseSpending = Number(start["Personal Spending"] || 0);
-  const taxRate = (state.sliders.federalEffectiveTaxRate + state.sliders.stateLocalEffectiveTaxRate) / 100;
+  const taxRate = Number(state.settings.federal_effective_tax_rate || 0.18) + Number(state.settings.state_local_effective_tax_rate || 0.03);
   const incomeGrowth = state.sliders.primaryJobCompGrowth / 100;
-  const partnerIncomeGrowth = state.sliders.partnerIncomeGrowthPct / 100;
   const marketReturn = state.sliders.vooReturn / 100;
   const inflation = state.sliders.inflationRate / 100;
   const retirementAge = Number(state.sliders.retirementAge);
-  const partnerStayHomeAge = Number(state.sliders.partnerStayHomeAge);
-  const partnerDelayYears = Number(state.sliders.partnerIncomeDelayYears || 0);
-  const glideStartAge = Number(state.sliders.glideStartAge || 100);
-  const glidePay = Number(state.sliders.glidePay || 70) / 100;
-  const partTimePay = Number(state.sliders.partTimePay || 70) / 100;
-  const careerBreakYears = Number(state.sliders.careerBreakMonths || 0) / 12;
-  const annualChildcare = childcareCostPerYear();
-  const annualChildSupportNet = annualChildSupportCost();
-  const investCashFrac = state.investmentStrategy === "Hold cash reserve first" ? 0.4
-    : state.investmentStrategy === "Split surplus between cash and investments" ? 0.5
-    : 0.2;
-  const partnerChildFactor = state.partnerChildWorkImpact === "Full stay-at-home" ? 0
-    : state.partnerChildWorkImpact === "Career pause" ? 0
-    : state.partnerChildWorkImpact === "Part-time" ? (state.sliders.partnerPartTimeIncome / 100)
-    : 1;
-
   let previousNetWorth = startNetWorth;
   let investmentBalance = startInvestments;
   let cashReserve = startCash;
@@ -910,53 +791,17 @@ function recomputeProjectionRows() {
     const age = Number(baseRow["Primary Age"] || state.sliders.setupPrimaryAge + (year - startYear));
     const yearsElapsed = Math.max(0, year - startYear);
     const isRetired = age >= retirementAge;
-    const inCareerBreak = careerBreakYears > 0 && yearsElapsed < careerBreakYears;
-
-    let primaryIncome = 0;
-    if (!isRetired && !inCareerBreak) {
-      primaryIncome = basePrimaryIncome * Math.pow(1 + incomeGrowth, yearsElapsed);
-      if (state.primaryJobWorkMode === "Part-time") primaryIncome *= partTimePay;
-      else if (state.primaryJobWorkMode === "Glide path" && age >= glideStartAge) primaryIncome *= glidePay;
-    }
-
-    let partnerIncome = 0;
-    const isPartnerDelayed = yearsElapsed < partnerDelayYears;
-    const isPartnerRetired = age >= partnerStayHomeAge;
-    if (!isPartnerDelayed && !isPartnerRetired && state.partnerWorkMode !== "No income") {
-      const adjustedYears = Math.max(0, yearsElapsed - partnerDelayYears);
-      partnerIncome = basePartnerIncome * Math.pow(1 + partnerIncomeGrowth, adjustedYears) * partnerChildFactor;
-      if (state.partnerWorkMode === "Part-time") partnerIncome *= (state.sliders.partnerPartTimeIncome / 100);
-    }
-
-    const rentalNetIncome = investmentPropertyNetIncome(year);
-    const cryptoReturn = (state.sliders.cryptoBalance || 0) * (state.sliders.cryptoAnnualReturnPct || 0) / 100;
-    const altStocksReturn = (state.sliders.stocksAltBalance || 0) * (state.sliders.stocksAltReturnPct || 0) / 100;
-    const commoditiesReturn = (state.sliders.commoditiesBalance || 0) * (state.sliders.commoditiesReturnPct || 0) / 100;
-    const altAnnualPL = (state.sliders.optionsAnnualPL || 0) + (state.sliders.futuresAnnualPL || 0);
-
+    const primaryIncome = isRetired ? 0 : basePrimaryIncome * Math.pow(1 + incomeGrowth, yearsElapsed);
+    const partnerIncome = age >= Number(state.sliders.partnerStayHomeAge) ? 0 : basePartnerIncome * Math.pow(1 + incomeGrowth * 0.8, yearsElapsed);
+    const spending = baseSpending * Math.pow(1 + inflation, yearsElapsed) + state.sliders.numberOfChildren * 4500;
     const marketGains = investmentBalance * marketReturn;
-    const spending = (baseSpending + annualChildcare) * Math.pow(1 + inflation, yearsElapsed);
-    const houseValueIncrease = Number(baseRow["House Value Increase"] || 0);
-    const principalPaydown = Number(baseRow["Principal Paydown"] || 0);
-    const economicGross = primaryIncome + partnerIncome + marketGains + houseValueIncrease + principalPaydown
-      + rentalNetIncome + cryptoReturn + altStocksReturn + commoditiesReturn + altAnnualPL;
+    const economicGross = primaryIncome + partnerIncome + marketGains + Number(baseRow["House Value Increase"] || 0) + Number(baseRow["Principal Paydown"] || 0);
     const taxes = Math.max(0, (primaryIncome + partnerIncome) * taxRate);
     const decisionDrag = state.activeDecisionName && year >= state.decisionStartYear ? getAnnualDecisionCost() : 0;
-    const childSupportExpense = annualChildSupportNet > 0 ? annualChildSupportNet : 0;
-    const childSupportIncome = annualChildSupportNet < 0 ? -annualChildSupportNet : 0;
-    const surplus = primaryIncome + partnerIncome + rentalNetIncome + childSupportIncome + altAnnualPL
-      - spending - taxes - decisionDrag - childSupportExpense;
-
-    cashReserve = Math.max(0, cashReserve + surplus * investCashFrac);
-    investmentBalance = Math.max(0, investmentBalance
-      + Math.max(0, surplus * (1 - investCashFrac))
-      + marketGains + cryptoReturn + altStocksReturn + commoditiesReturn);
-
-    const baseHomeEquity = state.sliders.primaryHomeValue > 0
-      ? primaryHomeEquityAtYear(year)
-      : Number(baseRow["Home Equity"] || 0);
-    const investPropEquity = investmentPropertyEquityAtYear(year);
-    const endingNetWorth = investmentBalance + cashReserve + baseHomeEquity + investPropEquity;
+    const surplus = primaryIncome + partnerIncome - spending - taxes - decisionDrag;
+    cashReserve = Math.max(0, cashReserve + surplus * 0.2);
+    investmentBalance = Math.max(0, investmentBalance + Math.max(0, surplus * 0.8) + marketGains);
+    const endingNetWorth = investmentBalance + cashReserve + Number(baseRow["Home Equity"] || 0);
     const netWorthIncrease = index === 0 ? endingNetWorth - startNetWorth : endingNetWorth - previousNetWorth;
     previousNetWorth = endingNetWorth;
 
@@ -965,17 +810,14 @@ function recomputeProjectionRows() {
       "Primary Age": String(age),
       "Primary Job Salary + Bonus": primaryIncome,
       "Partner Income": partnerIncome,
-      "Rental Net Income": rentalNetIncome,
-      "VOO / Market Gains": marketGains + cryptoReturn + altStocksReturn + commoditiesReturn,
+      "VOO / Market Gains": marketGains,
       "VOO / Investment Balance": investmentBalance,
       "Economic Gross Income": economicGross,
       "Personal Spending": spending,
-      "Child Support": childSupportExpense,
       Taxes: taxes,
       "Additional Decision Spending": decisionDrag,
       "Surplus Cash After Tax/Spend": surplus,
       "Cash Reserve": cashReserve,
-      "Home Equity": baseHomeEquity + investPropEquity,
       "Ending Net Worth": endingNetWorth,
       "Net Worth Increase": netWorthIncrease,
     };
@@ -983,13 +825,9 @@ function recomputeProjectionRows() {
 }
 
 function getAnnualDecisionCost() {
-  const frequency = state.decisionFrequency === "Monthly" ? 12 : state.decisionFrequency === "Weekly" ? 52 : 1;
-  if (state.decisionFunding === "Debt") {
-    const loanAmount = state.decisionAmount * (1 - state.decisionDownPayment / 100);
-    const annualDebtService = monthlyLoanPayment(loanAmount, state.decisionLoanRate, Math.max(1, state.decisionLoanTerm)) * 12;
-    return annualDebtService + Number(state.decisionOperatingCost || 0) * frequency;
-  }
-  return (state.decisionAmount + Number(state.decisionOperatingCost || 0)) * frequency;
+  const frequency = state.decisionFrequency === "Monthly" ? 12 : state.decisionFrequency === "Weekly" ? 52 : state.decisionFrequency === "Annual" ? 1 : 1;
+  const debtDownPayment = state.decisionFunding === "Debt" ? state.decisionAmount * (state.decisionDownPayment / 100) : state.decisionAmount;
+  return (debtDownPayment + Number(state.decisionOperatingCost || 0)) * frequency;
 }
 
 function currentStatusItems() {
@@ -1922,16 +1760,9 @@ function scenarioSeries() {
 
 function stressSeries() {
   const rows = state.auditRows.filter((row) => Number(row.Year) <= 2061);
+  const severityMap = { None: 1, Mild: 0.94, Base: 0.86, Severe: 0.72, Custom: 0.8 };
+  const severity = severityMap[state.stressSeverity] || 1;
   const crashYear = Number(state.stressYear);
-  let severityFactor;
-  if (state.stressSeverity === "Custom" && (state.stressStockCrashEnabled || state.stressJobLossEnabled)) {
-    const stockFactor = state.stressStockCrashEnabled ? Math.max(0, 1 - state.sliders.stressStockCrash / 100) : 1;
-    const incomeFactor = state.stressJobLossEnabled ? (state.sliders.stressIncomeRemaining / 100) : 1;
-    severityFactor = stockFactor * incomeFactor;
-  } else {
-    const severityMap = { None: 1, Mild: 0.94, Base: 0.86, Severe: 0.72, Custom: 0.8 };
-    severityFactor = severityMap[state.stressSeverity] || 1;
-  }
   return [
     {
       label: "Baseline",
@@ -1943,7 +1774,7 @@ function stressSeries() {
       color: "#ff5252",
       values: rows.map((row) => {
         const year = Number(row.Year);
-        const multiplier = year >= crashYear ? severityFactor : 1;
+        const multiplier = year >= crashYear ? severity : 1;
         return { x: row.Year, y: adjustMoney(row["Ending Net Worth"] * multiplier, row.Year) };
       }),
     },
@@ -2487,7 +2318,10 @@ function renderRealEstate() {
 }
 
 function renderDecisionLab() {
-  const estimatedCashImpact = getAnnualDecisionCost();
+  const yearlyCost = state.decisionFrequency === "Monthly" ? 12 : state.decisionFrequency === "Weekly" ? 52 : 1;
+  const estimatedCashImpact = state.decisionFunding === "Debt"
+    ? (state.decisionAmount * (state.decisionDownPayment / 100)) + state.decisionOperatingCost
+    : state.decisionAmount;
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Decision Lab"),
     h("p", { class: "section-copy" }, "Model purchases, recurring choices, work/family decisions, and liquidity tradeoffs."),
@@ -2617,7 +2451,7 @@ function renderDecisionLab() {
           { label: "Purchase type", render: () => state.decisionPurchaseType },
           { label: "Down payment %", render: () => state.decisionDownPayment.toFixed(0) },
           { label: "Down payment cash", render: () => formatMoney(state.decisionAmount * (state.decisionDownPayment / 100)) },
-          { label: "Annual cost impact", render: () => formatMoney(estimatedCashImpact * -1) },
+          { label: "Current-year cash impact", render: () => formatMoney(estimatedCashImpact * yearlyCost * -1) },
         ],
         [{}]
       ),
