@@ -107,6 +107,11 @@ const state = {
     useGovernmentBenchmarks: true,
     showAssumptionQualityScore: true,
   },
+  mcpEndpoint: "",
+  mcpApiKey: "",
+  mcpStatus: "disconnected",
+  mcpLastSync: null,
+  mcpServerInfo: null,
   reports: {
     deep: null,
     audit: null,
@@ -3155,8 +3160,129 @@ function renderModelNotes() {
       h("p", { class: "section-copy" }, "CSV is for reference/manual recreation. It is more stable as documentation, but it is not automatically imported."),
       h("button", { class: "btn full", onclick: () => window.open("../deep-interactions/downloads/settings.csv", "_blank") }, "Download settings CSV"),
     ]),
+    renderMCPConnector(),
   ]);
 }
+
+// ── Personal MCP connector ────────────────────────────────────────────────────
+
+async function mcpCall(method, params = {}) {
+  const endpoint = state.mcpEndpoint.trim();
+  const apiKey   = state.mcpApiKey.trim();
+  if (!endpoint || !apiKey) throw new Error("MCP endpoint and API key required");
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method, params }),
+  });
+  const json = await res.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.result;
+}
+
+async function connectToPersonalMCP() {
+  state.mcpStatus = "connecting";
+  render();
+  try {
+    const info = await mcpCall("initialize", { protocolVersion: "2024-11-05", capabilities: {} });
+    state.mcpServerInfo = info?.serverInfo || null;
+
+    // Pull session context and populate sliders
+    const ctxResult = await mcpCall("tools/call", { name: "get_session_context", arguments: {} });
+    const ctx = JSON.parse(ctxResult?.content?.[0]?.text || "{}");
+
+    if (ctx.net_worth) {
+      // Snapshot net worth as a note
+      state.notes = (state.notes || "") + `\n[Personal MCP] Net worth snapshot: $${Number(ctx.net_worth.value || 0).toLocaleString()} (${ctx.net_worth.date || "no date"})`;
+    }
+
+    if (Array.isArray(ctx.properties) && ctx.properties.length) {
+      const p = ctx.properties[0];
+      if (p.current_value) state.sliders.primaryHomeValue = Number(p.current_value) || 0;
+      if (p.mortgage_balance) state.sliders.primaryHomeMortgageBalance = Number(p.mortgage_balance) || 0;
+    }
+
+    if (Array.isArray(ctx.obligations)) {
+      const cs = ctx.obligations.find(o => o.type === "child_support");
+      if (cs) {
+        state.childSupportMode = "Paying child support";
+        state.sliders.childSupportMonthly = Number(cs.monthly_amount) || 0;
+      }
+    }
+
+    state.mcpStatus = "connected";
+    state.mcpLastSync = new Date().toISOString();
+  } catch (e) {
+    state.mcpStatus = "error:" + e.message;
+  }
+  render();
+}
+
+async function pushSnapshotToMCP() {
+  try {
+    const netWorth =
+      (state.sliders.primaryHomeValue || 0) - (state.sliders.primaryHomeMortgageBalance || 0) +
+      (state.sliders.cryptoBalance || 0) +
+      (state.sliders.stocksAltBalance || 0);
+    await mcpCall("tools/call", {
+      name: "save_snapshot",
+      arguments: {
+        label: "NetWorth GUI — " + new Date().toISOString().slice(0, 10),
+        net_worth: netWorth,
+        data: { sliders: state.sliders, childSupportMode: state.childSupportMode, propertyPortfolioMode: state.propertyPortfolioMode }
+      }
+    });
+    alert("Snapshot saved to Personal MCP");
+  } catch (e) {
+    alert("Error: " + e.message);
+  }
+}
+
+function renderMCPConnector() {
+  const status = state.mcpStatus || "disconnected";
+  const isConnected = status === "connected";
+  const isConnecting = status === "connecting";
+  const statusColor = isConnected ? "#22c55e" : (status.startsWith("error") ? "#ef4444" : "#94a3b8");
+  return accordion("Personal MCP Connection", false, [
+    h("p", { class: "section-copy" }, "Connect to your Personal MCP server to auto-populate sliders from your real financial data and push snapshots back."),
+    h("div", { class: "control-grid single" }, [
+      h("div", { class: "control" }, [
+        h("label", { class: "label" }, "MCP Server URL"),
+        h("input", {
+          class: "text-input",
+          placeholder: "http://localhost:3333/mcp  or  https://mcp.you.cloudflareaccess.com/mcp",
+          value: state.mcpEndpoint,
+          oninput: (e) => { state.mcpEndpoint = e.target.value; },
+        }),
+      ]),
+      h("div", { class: "control" }, [
+        h("label", { class: "label" }, "API Key"),
+        h("input", {
+          class: "text-input",
+          type: "password",
+          placeholder: "pmcp-xxxxxxxx",
+          value: state.mcpApiKey,
+          oninput: (e) => { state.mcpApiKey = e.target.value; },
+        }),
+      ]),
+    ]),
+    h("div", { style: "display:flex;gap:10px;margin-top:10px;flex-wrap:wrap" }, [
+      h("button", {
+        class: "btn",
+        disabled: isConnecting,
+        onclick: connectToPersonalMCP,
+      }, isConnecting ? "Connecting…" : "Connect & Pull Data"),
+      isConnected ? h("button", { class: "btn", onclick: pushSnapshotToMCP }, "Push Snapshot → MCP") : null,
+    ]),
+    h("div", { style: `margin-top:10px;font-size:12px;color:${statusColor}` }, [
+      `Status: ${status}`,
+      state.mcpLastSync ? `  ·  Last sync: ${new Date(state.mcpLastSync).toLocaleTimeString()}` : "",
+      state.mcpServerInfo ? `  ·  ${state.mcpServerInfo.name} v${state.mcpServerInfo.version}` : "",
+    ]),
+  ]);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 function pageFrame(title, lede, children) {
   return h("div", { class: "main-inner" }, [
