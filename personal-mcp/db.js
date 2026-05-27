@@ -204,6 +204,56 @@ function migrate(db) {
       content,
       tokenize='porter ascii'
     );
+
+    CREATE TABLE IF NOT EXISTS options_trades (
+      id TEXT PRIMARY KEY,
+      account_id TEXT,
+      ticker TEXT NOT NULL,
+      underlying TEXT,
+      strategy TEXT,
+      contract_type TEXT,
+      strike REAL,
+      expiry TEXT,
+      contracts INTEGER DEFAULT 1,
+      premium_collected REAL DEFAULT 0,
+      premium_paid REAL DEFAULT 0,
+      open_date TEXT,
+      close_date TEXT,
+      status TEXT DEFAULT 'open',
+      net_pnl REAL,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS income_distributions (
+      id TEXT PRIMARY KEY,
+      ticker TEXT NOT NULL,
+      account_id TEXT,
+      distribution_date TEXT,
+      per_share_amount REAL,
+      shares REAL,
+      total_received REAL,
+      reinvested INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS broker_snapshots (
+      id TEXT PRIMARY KEY,
+      broker TEXT NOT NULL,
+      account_type TEXT,
+      equity REAL,
+      cash REAL,
+      margin_used REAL DEFAULT 0,
+      margin_available REAL DEFAULT 0,
+      buying_power REAL,
+      positions_value REAL,
+      day_pnl REAL,
+      unrealized_pnl REAL,
+      realized_pnl_ytd REAL,
+      snapshot_date TEXT,
+      notes TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
   `);
 }
 

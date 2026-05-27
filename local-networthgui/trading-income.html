@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trading Income Dashboard</title>
+<style>
+:root{
+  --bg:#080b12;--bg2:#0d1117;--bg3:#161b27;--bg4:#1e2535;
+  --border:#2a3347;--text:#e2e8f0;--muted:#64748b;--label:#94a3b8;
+  --green:#22c55e;--green2:#16a34a;--yellow:#eab308;--red:#ef4444;
+  --blue:#3b82f6;--purple:#8b5cf6;--orange:#f97316;--teal:#14b8a6;
+  --accent:#6c63ff;--accent2:#00d4a0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+h1{font-size:1.4rem;font-weight:700;letter-spacing:-.02em}
+h2{font-size:1rem;font-weight:600}
+h3{font-size:.82rem;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.06em}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto;flex-shrink:0}
+.sidebar-logo{padding:0 18px 14px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.sidebar-logo span{font-size:.95rem;font-weight:700;color:var(--accent)}
+.sidebar-logo sub{font-size:.65rem;color:var(--muted);display:block;margin-top:2px}
+.nav-section{padding:8px 18px 4px;font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 18px;cursor:pointer;color:var(--label);font-size:.78rem;font-weight:500;transition:.15s}
+.nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--text)}
+.nav-item.active{border-left:2px solid var(--accent);padding-left:16px}
+.main{padding:24px;overflow-y:auto;min-width:0}
+.screen{display:none}.screen.active{display:block}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.card-title{font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* KPI */
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.kpi-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.kpi-val{font-size:1.35rem;font-weight:700;letter-spacing:-.02em}
+.kpi-sub{font-size:.68rem;color:var(--muted);margin-top:2px}
+.kpi.green .kpi-val{color:var(--green)}
+.kpi.yellow .kpi-val{color:var(--yellow)}
+.kpi.red .kpi-val{color:var(--red)}
+.kpi.blue .kpi-val{color:var(--blue)}
+.kpi.teal .kpi-val{color:var(--accent2)}
+.kpi.purple .kpi-val{color:var(--purple)}
+.kpi.orange .kpi-val{color:var(--orange)}
+
+/* Progress bar */
+.prog-wrap{margin:10px 0}
+.prog-label{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:5px}
+.prog-bar{height:10px;background:var(--bg4);border-radius:5px;overflow:hidden}
+.prog-fill{height:100%;border-radius:5px;transition:.5s;background:var(--accent2)}
+.prog-fill.warn{background:var(--yellow)}
+.prog-fill.danger{background:var(--red)}
+
+/* Forms */
+label.fl{display:block;font-size:.72rem;color:var(--label);margin-bottom:4px;font-weight:500}
+input[type=number],input[type=text],input[type=date],select,textarea{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:.82rem;outline:none;transition:.15s;font-family:inherit}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.15)}
+textarea{resize:vertical;min-height:60px}
+.btn{padding:8px 16px;background:var(--accent);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:.8rem;font-weight:600;transition:.15s}
+.btn:hover{background:#5a52e0}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{background:var(--green2)}
+.btn-red{background:var(--red)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--label)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:5px 10px;font-size:.72rem}
+
+/* Tables */
+.t{width:100%;border-collapse:collapse;font-size:.8rem}
+.t th{padding:8px 10px;background:var(--bg3);color:var(--muted);font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;text-align:left;white-space:nowrap}
+.t td{padding:8px 10px;border-bottom:1px solid rgba(42,51,71,.4);vertical-align:middle}
+.t tr:last-child td{border-bottom:none}
+.t tr:hover td{background:rgba(255,255,255,.015)}
+.t .right{text-align:right}
+.t .num{font-variant-numeric:tabular-nums;font-family:monospace;font-size:.82rem}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:.68rem;font-weight:600}
+.bg-green{background:rgba(34,197,94,.15);color:var(--green)}
+.bg-yellow{background:rgba(234,179,8,.15);color:var(--yellow)}
+.bg-red{background:rgba(239,68,68,.15);color:var(--red)}
+.bg-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.bg-purple{background:rgba(139,92,246,.15);color:var(--purple)}
+.bg-teal{background:rgba(20,184,166,.15);color:var(--teal)}
+.bg-orange{background:rgba(249,115,22,.15);color:var(--orange)}
+.bg-gray{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* Tabs */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.tab{padding:8px 14px;cursor:pointer;font-size:.78rem;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Broker logo chips */
+.broker-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:12px;font-size:.7rem;font-weight:600;border:1px solid}
+.broker-rh{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--green)}
+.broker-sc{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--blue)}
+.broker-tos{background:rgba(139,92,246,.1);border-color:rgba(139,92,246,.3);color:var(--purple)}
+.broker-ib{background:rgba(234,179,8,.1);border-color:rgba(234,179,8,.3);color:var(--yellow)}
+.broker-wb{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:var(--orange)}
+.broker-other{background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.3);color:var(--muted)}
+
+/* Coverage meter */
+.freedom-ring{display:flex;flex-direction:column;align-items:center;padding:16px;gap:8px}
+.freedom-circle{width:130px;height:130px;border-radius:50%;background:conic-gradient(var(--accent2) var(--fill,0%), var(--bg4) 0%);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 30px rgba(0,212,160,.1)}
+.freedom-inner{width:100px;height:100px;border-radius:50%;background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.freedom-pct{font-size:1.5rem;font-weight:700;color:var(--accent2)}
+.freedom-label{font-size:.65rem;color:var(--muted)}
+
+/* Weekly bars */
+.bar-chart{display:flex;align-items:flex-end;gap:4px;height:80px;padding-top:8px}
+.bar-col{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0}
+.bar-fill{width:100%;border-radius:3px 3px 0 0;transition:.4s;min-height:2px}
+.bar-label{font-size:.6rem;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.bar-val{font-size:.62rem;color:var(--muted);margin-bottom:2px}
+
+/* Tag */
+.tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:.65rem;background:var(--bg4);color:var(--muted);margin:1px}
+
+/* Margin meter */
+.margin-bar{height:8px;border-radius:4px;background:var(--bg4);position:relative;overflow:hidden;margin-top:4px}
+.margin-fill{height:100%;border-radius:4px;transition:.4s}
+
+/* Info box */
+.info-box{background:rgba(108,99,255,.07);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:12px 14px;font-size:.78rem;color:var(--label);line-height:1.7}
+.info-box strong{color:var(--text)}
+
+/* Wheel diagram */
+.wheel-steps{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0}
+.wheel-step{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center;flex:1;min-width:120px}
+.wheel-step .icon{font-size:1.4rem;margin-bottom:4px}
+.wheel-step .title{font-size:.78rem;font-weight:600;color:var(--text)}
+.wheel-step .desc{font-size:.68rem;color:var(--muted);margin-top:3px;line-height:1.4}
+.wheel-arrow{color:var(--muted);font-size:1.2rem;flex-shrink:0}
+
+/* Modal overlay */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:90%;max-width:500px;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:1rem;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between}
+.modal-close{cursor:pointer;color:var(--muted);font-size:1.2rem}
+
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .grid2,.grid3,.grid4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- Add Trade Modal -->
+<div class="modal" id="modal-trade">
+  <div class="modal-box">
+    <div class="modal-title">Log Options Trade <span class="modal-close" onclick="closeModal('modal-trade')">✕</span></div>
+    <div style="display:grid;gap:10px">
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Ticker (underlying)</label><input type="text" id="t-ticker" placeholder="SPY, TSLA, AAPL…" style="text-transform:uppercase"></div>
+        <div><label class="fl">Strategy</label>
+          <select id="t-strategy">
+            <option value="csp">Cash-Secured Put (CSP)</option>
+            <option value="cc">Covered Call (CC)</option>
+            <option value="wheel">Wheel</option>
+            <option value="ic">Iron Condor</option>
+            <option value="bps">Bull Put Spread</option>
+            <option value="bcs_bear">Bear Call Spread</option>
+            <option value="naked_put">Naked Put (margin)</option>
+            <option value="diagonal">Diagonal / PMCC</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid3" style="gap:10px">
+        <div><label class="fl">Strike ($)</label><input type="number" id="t-strike" placeholder="450"></div>
+        <div><label class="fl">Expiry</label><input type="date" id="t-expiry"></div>
+        <div><label class="fl">Contracts</label><input type="number" id="t-contracts" value="1" min="1"></div>
+      </div>
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Premium Collected ($)</label><input type="number" id="t-premium" placeholder="145.00" step="0.01"></div>
+        <div><label class="fl">Open Date</label><input type="date" id="t-open-date"></div>
+      </div>
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Broker</label>
+          <select id="t-broker">
+            <option value="thinkorswim">ThinkOrSwim (TOS)</option>
+            <option value="schwab">Schwab</option>
+            <option value="robinhood">Robinhood</option>
+            <option value="interactive_brokers">Interactive Brokers</option>
+            <option value="webull">Webull</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div><label class="fl">Account Type</label>
+          <select id="t-acct-type">
+            <option value="margin">Margin</option>
+            <option value="cash">Cash</option>
+            <option value="roth">Roth IRA</option>
+            <option value="ira">Traditional IRA</option>
+          </select>
+        </div>
+      </div>
+      <div><label class="fl">Notes (optional)</label><textarea id="t-notes" placeholder="SPY weekly, sold 0DTE, support level…"></textarea></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-outline" onclick="closeModal('modal-trade')">Cancel</button>
+        <button class="btn btn-green" onclick="saveTrade()">Log Trade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add ETF Modal -->
+<div class="modal" id="modal-etf">
+  <div class="modal-box">
+    <div class="modal-title">Add Income Position <span class="modal-close" onclick="closeModal('modal-etf')">✕</span></div>
+    <div style="display:grid;gap:10px">
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Ticker</label><input type="text" id="e-ticker" placeholder="JEPI, QYLD, JEPQ…" style="text-transform:uppercase"></div>
+        <div><label class="fl">Broker</label>
+          <select id="e-broker">
+            <option value="schwab">Schwab</option>
+            <option value="robinhood">Robinhood</option>
+            <option value="thinkorswim">ThinkOrSwim</option>
+            <option value="interactive_brokers">Interactive Brokers</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid3" style="gap:10px">
+        <div><label class="fl">Shares</label><input type="number" id="e-shares" placeholder="100" step="0.001"></div>
+        <div><label class="fl">Cost Basis / Share ($)</label><input type="number" id="e-cost" placeholder="54.20" step="0.01"></div>
+        <div><label class="fl">Monthly Dist. / Share ($)</label><input type="number" id="e-dist" placeholder="0.34" step="0.001"></div>
+      </div>
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Account Type</label>
+          <select id="e-acct">
+            <option value="taxable">Taxable / Margin</option>
+            <option value="roth">Roth IRA</option>
+            <option value="ira">Traditional IRA</option>
+          </select>
+        </div>
+        <div><label class="fl">Annual Yield % (override)</label><input type="number" id="e-yield" placeholder="auto from dist" step="0.1"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-outline" onclick="closeModal('modal-etf')">Cancel</button>
+        <button class="btn" onclick="saveEtf()">Add Position</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Broker Snapshot Modal -->
+<div class="modal" id="modal-broker">
+  <div class="modal-box">
+    <div class="modal-title">Update Broker Account <span class="modal-close" onclick="closeModal('modal-broker')">✕</span></div>
+    <div style="display:grid;gap:10px">
+      <div class="grid2" style="gap:10px">
+        <div><label class="fl">Broker</label>
+          <select id="b-broker">
+            <option value="thinkorswim">ThinkOrSwim (TOS)</option>
+            <option value="schwab">Schwab</option>
+            <option value="robinhood">Robinhood</option>
+            <option value="interactive_brokers">Interactive Brokers</option>
+            <option value="webull">Webull</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div><label class="fl">Account Type</label>
+          <select id="b-acct">
+            <option value="margin">Margin</option>
+            <option value="cash">Cash</option>
+            <option value="roth">Roth IRA</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid3" style="gap:10px">
+        <div><label class="fl">Total Equity ($)</label><input type="number" id="b-equity" placeholder="50000"></div>
+        <div><label class="fl">Cash ($)</label><input type="number" id="b-cash" placeholder="5000"></div>
+        <div><label class="fl">Positions Value ($)</label><input type="number" id="b-positions" placeholder="45000"></div>
+      </div>
+      <div class="grid3" style="gap:10px">
+        <div><label class="fl">Margin Used ($)</label><input type="number" id="b-margin-used" placeholder="0"></div>
+        <div><label class="fl">Margin Available ($)</label><input type="number" id="b-margin-avail" placeholder="25000"></div>
+        <div><label class="fl">Buying Power ($)</label><input type="number" id="b-bp" placeholder="25000"></div>
+      </div>
+      <div class="grid3" style="gap:10px">
+        <div><label class="fl">Today's P&L ($)</label><input type="number" id="b-day-pnl" placeholder="+450"></div>
+        <div><label class="fl">Unrealized P&L ($)</label><input type="number" id="b-unreal" placeholder="+2300"></div>
+        <div><label class="fl">Realized YTD ($)</label><input type="number" id="b-ytd" placeholder="+8500"></div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px">
+        <button class="btn btn-outline" onclick="closeModal('modal-broker')">Cancel</button>
+        <button class="btn" onclick="saveBroker()">Save Snapshot</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>Trading Income</span>
+    <sub>Live off the market</sub>
+  </div>
+  <div class="nav-section">Overview</div>
+  <div class="nav-item active" onclick="show('dashboard')">📊 Income Dashboard</div>
+  <div class="nav-item" onclick="show('freedom')">🎯 Freedom Number</div>
+  <div class="nav-section">Income ETFs</div>
+  <div class="nav-item" onclick="show('etf-positions')">💰 My Positions</div>
+  <div class="nav-item" onclick="show('etf-screener')">🔍 ETF Screener</div>
+  <div class="nav-section">Options Trading</div>
+  <div class="nav-item" onclick="show('options-log')">📋 Trade Log</div>
+  <div class="nav-item" onclick="show('options-pnl')">📈 P&amp;L Tracker</div>
+  <div class="nav-item" onclick="show('wheel')">⚙️ The Wheel</div>
+  <div class="nav-section">Broker Accounts</div>
+  <div class="nav-item" onclick="show('brokers')">🏦 Accounts</div>
+  <div class="nav-item" onclick="show('margin')">⚡ Margin Manager</div>
+  <div class="nav-section">Education</div>
+  <div class="nav-item" onclick="show('strategies')">📚 Strategies</div>
+</nav>
+
+<div class="main">
+
+<!-- ══ DASHBOARD ══════════════════════════════════════════════════════════════ -->
+<div id="dashboard" class="screen active">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+    <div>
+      <h1>Income Dashboard</h1>
+      <p style="color:var(--muted);font-size:.8rem;margin-top:4px">Your market paycheck — updated manually or via Personal MCP</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="openModal('modal-trade')">+ Log Trade</button>
+      <button class="btn btn-sm" onclick="openModal('modal-etf')">+ Add ETF</button>
+    </div>
+  </div>
+
+  <div class="grid4" style="margin-bottom:14px">
+    <div class="kpi teal"><div class="kpi-label">Monthly Income</div><div class="kpi-val" id="kpi-monthly">$0</div><div class="kpi-sub">ETF dist + options premium</div></div>
+    <div class="kpi green"><div class="kpi-label">YTD Total</div><div class="kpi-val" id="kpi-ytd">$0</div><div class="kpi-sub">Jan–<span id="kpi-ytd-month">May</span></div></div>
+    <div class="kpi blue"><div class="kpi-label">Annualized Rate</div><div class="kpi-val" id="kpi-annual">$0</div><div class="kpi-sub">Monthly × 12</div></div>
+    <div class="kpi purple"><div class="kpi-label">Coverage</div><div class="kpi-val" id="kpi-coverage">0%</div><div class="kpi-sub">of monthly expenses</div></div>
+  </div>
+
+  <div class="grid2" style="margin-bottom:0">
+    <div class="card">
+      <div class="card-title">Monthly Income Breakdown</div>
+      <div id="income-breakdown"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Weekly Options P&amp;L (last 8 weeks)</div>
+      <div class="bar-chart" id="weekly-bars"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Open Positions Summary</div>
+    <table class="t" id="open-positions-table">
+      <thead><tr>
+        <th>Type</th><th>Ticker</th><th>Strategy</th><th>Details</th><th>Premium</th><th>Expiry</th><th>Status</th><th>Actions</th>
+      </tr></thead>
+      <tbody id="open-positions-tbody"><tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No open positions logged yet. <span style="color:var(--accent);cursor:pointer" onclick="openModal('modal-trade')">Log your first trade →</span></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ FREEDOM NUMBER ═════════════════════════════════════════════════════════ -->
+<div id="freedom" class="screen">
+  <h1 style="margin-bottom:6px">Freedom Number</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:18px">The monthly income target that replaces your job. Track how close you are.</p>
+
+  <div class="grid2" style="align-items:start">
+    <div class="card">
+      <div class="card-title">Set Your Target</div>
+      <div style="display:grid;gap:10px">
+        <div><label class="fl">Monthly Expenses ($)</label><input type="number" id="f-expenses" value="5000" oninput="updateFreedom()"></div>
+        <div><label class="fl">Monthly Income (ETF + Options) ($)</label><input type="number" id="f-income" value="0" oninput="updateFreedom()"></div>
+        <div><label class="fl">Total Portfolio Value ($)</label><input type="number" id="f-portfolio" value="100000" oninput="updateFreedom()"></div>
+        <div><label class="fl">Target Margin Leverage (1x = no margin)</label>
+          <select id="f-leverage" onchange="updateFreedom()">
+            <option value="1">1× (cash only)</option>
+            <option value="1.3">1.3× (light margin)</option>
+            <option value="1.5" selected>1.5× (moderate margin)</option>
+            <option value="2">2× (full margin)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;justify-content:center">
+      <div class="freedom-ring">
+        <div class="freedom-circle" id="freedom-circle" style="--fill:0%">
+          <div class="freedom-inner"><div class="freedom-pct" id="freedom-pct">0%</div><div class="freedom-label">covered</div></div>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <div style="font-size:.82rem;font-weight:600" id="freedom-status">Not started</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px" id="freedom-gap">Gap: —</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="freedom-analysis" class="card" style="margin-top:0">
+    <div class="card-title">Portfolio Size Needed to Cover Expenses</div>
+    <table class="t" id="freedom-table">
+      <thead><tr>
+        <th>Strategy / Source</th><th>Annual Yield</th><th>Portfolio Needed</th><th>At 1.5× Margin</th><th>Monthly Income/100k</th><th>Risk Level</th>
+      </tr></thead>
+      <tbody id="freedom-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Time to Freedom Calculator</div>
+    <div id="freedom-timeline"></div>
+  </div>
+</div>
+
+<!-- ══ ETF POSITIONS ══════════════════════════════════════════════════════════ -->
+<div id="etf-positions" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h1>Income ETF Positions</h1>
+    <button class="btn btn-sm" onclick="openModal('modal-etf')">+ Add Position</button>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Portfolio Income Summary</div>
+    <div class="grid3" id="etf-portfolio-kpis"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Holdings</div>
+    <table class="t">
+      <thead><tr>
+        <th>Ticker</th><th>Broker</th><th>Shares</th><th>Cost/Share</th><th>Mthly Dist</th><th>Yield on Cost</th><th>Mthly Income</th><th>Ann. Income</th><th>Strategy</th>
+      </tr></thead>
+      <tbody id="etf-holdings-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ ETF SCREENER ════════════════════════════════════════════════════════════ -->
+<div id="etf-screener" class="screen">
+  <h1 style="margin-bottom:6px">Income ETF Screener</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Compare all major income ETFs. Find what fits your yield target and risk tolerance.</p>
+
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">Filter &amp; Model</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:160px"><label class="fl">Investment Amount ($)</label><input type="number" id="scr-amount" value="50000" oninput="renderScreener()"></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Min Yield (%)</label><input type="number" id="scr-min-yield" value="0" oninput="renderScreener()"></div>
+      <div style="flex:1;min-width:140px"><label class="fl">Margin Broker</label>
+        <select id="scr-broker" onchange="renderScreener()">
+          <option value="robinhood_gold">Robinhood Gold (5.75%)</option>
+          <option value="schwab">Schwab (8.5%)</option>
+          <option value="thinkorswim">ThinkOrSwim (7.5%)</option>
+          <option value="interactive_brokers">IBKR (5.83%)</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:140px"><label class="fl">Margin Leverage</label>
+        <select id="scr-leverage" onchange="renderScreener()">
+          <option value="1">1× (no margin)</option>
+          <option value="1.5" selected>1.5× margin</option>
+          <option value="2">2× margin</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="t" id="screener-table">
+      <thead><tr>
+        <th>ETF</th><th>Name</th><th>Annual Yield</th><th>Freq</th><th>Monthly/100k</th><th>Margin Rate</th><th>Net Spread</th><th>Risk</th><th>Best For</th>
+      </tr></thead>
+      <tbody id="screener-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="info-box" style="margin-top:0">
+    <strong>Margin math:</strong> Using 1.5× leverage on $100k = $150k invested. If JEPQ yields 10%, gross income = $15k/yr. Minus Schwab margin cost: $50k × 8.5% = $4,250. Net income = $10,750 vs $10,000 without margin — modest 7.5% boost for the risk.<br>
+    <strong>Rule of thumb:</strong> Only use margin if ETF yield beats margin rate by ≥3%. Below 2% spread, the risk/reward isn't worth it.
+  </div>
+</div>
+
+<!-- ══ OPTIONS LOG ════════════════════════════════════════════════════════════ -->
+<div id="options-log" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h1>Options Trade Log</h1>
+    <button class="btn btn-sm" onclick="openModal('modal-trade')">+ Log Trade</button>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('log-tab','log-open')">Open</div>
+    <div class="tab" onclick="switchTab('log-tab','log-closed')">Closed</div>
+    <div class="tab" onclick="switchTab('log-tab','log-all')">All</div>
+  </div>
+
+  <div id="log-open" class="tab-panel active">
+    <div class="card">
+      <div class="card-title">Open Trades</div>
+      <table class="t"><thead><tr>
+        <th>Ticker</th><th>Strategy</th><th>Strike</th><th>Expiry</th><th>Contracts</th><th>Premium Coll.</th><th>Opened</th><th>DTE</th><th>Ann. Return</th><th>Action</th>
+      </tr></thead><tbody id="log-open-tbody"></tbody></table>
+    </div>
+  </div>
+  <div id="log-closed" class="tab-panel">
+    <div class="card">
+      <div class="card-title">Closed Trades</div>
+      <table class="t"><thead><tr>
+        <th>Ticker</th><th>Strategy</th><th>Strike</th><th>Premium</th><th>Cost to Close</th><th>P&amp;L</th><th>Outcome</th><th>Closed</th>
+      </tr></thead><tbody id="log-closed-tbody"></tbody></table>
+    </div>
+  </div>
+  <div id="log-all" class="tab-panel">
+    <div class="card">
+      <div class="card-title">All Trades</div>
+      <table class="t"><thead><tr>
+        <th>Ticker</th><th>Strategy</th><th>Strike/Expiry</th><th>Premium</th><th>Status</th><th>P&amp;L</th><th>Broker</th>
+      </tr></thead><tbody id="log-all-tbody"></tbody></table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ P&L TRACKER ════════════════════════════════════════════════════════════ -->
+<div id="options-pnl" class="screen">
+  <h1 style="margin-bottom:6px">Options P&amp;L Tracker</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Weekly, monthly, YTD breakdown. Win rate, average trade, by strategy.</p>
+
+  <div class="grid4" style="margin-bottom:14px">
+    <div class="kpi teal"><div class="kpi-label">Realized P&L (MTD)</div><div class="kpi-val" id="pnl-mtd">$0</div><div class="kpi-sub">Closed trades this month</div></div>
+    <div class="kpi green"><div class="kpi-label">Win Rate</div><div class="kpi-val" id="pnl-winrate">—</div><div class="kpi-sub">wins / total closed</div></div>
+    <div class="kpi blue"><div class="kpi-label">Avg Win</div><div class="kpi-val" id="pnl-avg-win">—</div><div class="kpi-sub">per trade</div></div>
+    <div class="kpi orange"><div class="kpi-label">Avg Loss</div><div class="kpi-val" id="pnl-avg-loss">—</div><div class="kpi-sub">per losing trade</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">P&L by Strategy</div>
+      <div id="pnl-by-strategy"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">P&L by Ticker</div>
+      <div id="pnl-by-ticker"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Monthly P&L History</div>
+    <div id="monthly-pnl-chart"></div>
+  </div>
+</div>
+
+<!-- ══ THE WHEEL ══════════════════════════════════════════════════════════════ -->
+<div id="wheel" class="screen">
+  <h1 style="margin-bottom:6px">The Wheel Strategy</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Sell puts → get assigned → sell calls → repeat. Generate income on stocks you want to own anyway.</p>
+
+  <div class="wheel-steps">
+    <div class="wheel-step">
+      <div class="icon">💵</div>
+      <div class="title">1. Sell CSP</div>
+      <div class="desc">Sell put at strike below market. Collect premium. Keep cash as collateral.</div>
+    </div>
+    <div class="wheel-arrow">→</div>
+    <div class="wheel-step">
+      <div class="icon">📉</div>
+      <div class="title">2. If Assigned</div>
+      <div class="desc">Buy 100 shares at strike. Cost basis = strike − premium collected.</div>
+    </div>
+    <div class="wheel-arrow">→</div>
+    <div class="wheel-step">
+      <div class="icon">📞</div>
+      <div class="title">3. Sell CC</div>
+      <div class="desc">Sell covered call above your cost basis. Collect more premium.</div>
+    </div>
+    <div class="wheel-arrow">→</div>
+    <div class="wheel-step">
+      <div class="icon">🔄</div>
+      <div class="title">4. If Called Away</div>
+      <div class="desc">Shares sold at call strike. Take profit. Return to Step 1.</div>
+    </div>
+    <div class="wheel-arrow">→</div>
+    <div class="wheel-step">
+      <div class="icon">🔁</div>
+      <div class="title">5. Repeat</div>
+      <div class="desc">Keep rolling. Premium compounds. Goal: annualized 20-35% on capital.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Wheel Calculator</div>
+    <div class="grid3" style="gap:12px;margin-bottom:14px">
+      <div><label class="fl">Underlying (e.g. SPY)</label><input type="text" id="wh-ticker" value="SPY" style="text-transform:uppercase" oninput="calcWheel()"></div>
+      <div><label class="fl">Current Stock Price ($)</label><input type="number" id="wh-price" value="550" oninput="calcWheel()"></div>
+      <div><label class="fl">CSP Strike ($)</label><input type="number" id="wh-strike" value="535" oninput="calcWheel()"></div>
+    </div>
+    <div class="grid3" style="gap:12px;margin-bottom:14px">
+      <div><label class="fl">Weekly CSP Premium ($)</label><input type="number" id="wh-csp-prem" value="120" oninput="calcWheel()"></div>
+      <div><label class="fl">CC Strike (if assigned, $)</label><input type="number" id="wh-cc-strike" value="545" oninput="calcWheel()"></div>
+      <div><label class="fl">Weekly CC Premium ($)</label><input type="number" id="wh-cc-prem" value="90" oninput="calcWheel()"></div>
+    </div>
+    <div class="grid2" style="gap:12px;margin-bottom:14px">
+      <div><label class="fl">Contracts</label><input type="number" id="wh-contracts" value="1" oninput="calcWheel()"></div>
+      <div><label class="fl">Account Size / Capital Allocated ($)</label><input type="number" id="wh-capital" value="55000" oninput="calcWheel()"></div>
+    </div>
+    <div id="wheel-result"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Best Wheel Candidates (Income ETF Edition)</div>
+    <div class="info-box" style="margin-bottom:12px">
+      Running the wheel on income ETFs like JEPI, JEPQ, QYLD combines two income streams: the ETF's own distributions + options premium. Great for margin accounts.
+    </div>
+    <table class="t">
+      <thead><tr>
+        <th>ETF</th><th>Approx Price</th><th>Why It Works</th><th>CSP Strike Idea</th><th>Typical Weekly Premium</th><th>Ann. Premium Yield Est.</th>
+      </tr></thead>
+      <tbody>
+        <tr><td><strong>JEPI</strong></td><td>~$55</td><td>Low IV, stable NAV, monthly distribution adds to total yield</td><td>5% OTM = ~$52</td><td>$15–$35/contract</td><td>~15-30% annualized</td></tr>
+        <tr><td><strong>JEPQ</strong></td><td>~$55</td><td>Higher IV than JEPI (Nasdaq), better premium, monthly dist</td><td>5% OTM = ~$52</td><td>$25–$60/contract</td><td>~20-40% annualized</td></tr>
+        <tr><td><strong>QYLD</strong></td><td>~$16</td><td>Small notional per contract, very consistent premium, very high dist yield</td><td>5% OTM = ~$15</td><td>$5–$15/contract</td><td>~25-35% + 12% dist</td></tr>
+        <tr><td><strong>SPY</strong></td><td>~$555</td><td>High liquidity, predictable, tight spreads, weekly options</td><td>2-4% OTM = ~$530</td><td>$100–$300/contract</td><td>~20-30% annualized</td></tr>
+        <tr><td><strong>QQQ</strong></td><td>~$470</td><td>Higher IV than SPY, better premium, Nasdaq exposure</td><td>3-5% OTM = ~$445</td><td>$150–$400/contract</td><td>~25-35% annualized</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ BROKERS ════════════════════════════════════════════════════════════════ -->
+<div id="brokers" class="screen">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+    <h1>Broker Accounts</h1>
+    <button class="btn btn-sm" onclick="openModal('modal-broker')">+ Update Account</button>
+  </div>
+
+  <div class="grid4" style="margin-bottom:14px" id="broker-kpis">
+    <div class="kpi teal"><div class="kpi-label">Total Equity</div><div class="kpi-val" id="bkr-equity">$0</div><div class="kpi-sub">across all accounts</div></div>
+    <div class="kpi blue"><div class="kpi-label">Total Buying Power</div><div class="kpi-val" id="bkr-bp">$0</div><div class="kpi-sub">incl. margin</div></div>
+    <div class="kpi orange"><div class="kpi-label">Margin Used</div><div class="kpi-val" id="bkr-margin">$0</div><div class="kpi-sub">across margin accounts</div></div>
+    <div class="kpi green"><div class="kpi-label">Day P&amp;L</div><div class="kpi-val" id="bkr-day-pnl">$0</div><div class="kpi-sub">today across brokers</div></div>
+  </div>
+
+  <div id="broker-cards"></div>
+
+  <div class="card">
+    <div class="card-title">API Integration Status</div>
+    <table class="t">
+      <thead><tr><th>Broker</th><th>API Available</th><th>How to Connect</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td><span class="broker-chip broker-sc">Schwab</span></td><td><span class="badge bg-green">✓ Official API</span></td><td>developer.schwab.com — OAuth2, free tier available. After TD/TOS merger.</td><td><span class="badge bg-yellow">Manual (MCP tool coming)</span></td></tr>
+        <tr><td><span class="broker-chip broker-tos">ThinkOrSwim</span></td><td><span class="badge bg-green">✓ Schwab API</span></td><td>TOS uses Schwab API after 2024 merger. Same OAuth2 endpoint.</td><td><span class="badge bg-yellow">Manual snapshot</span></td></tr>
+        <tr><td><span class="broker-chip broker-rh">Robinhood</span></td><td><span class="badge bg-yellow">Unofficial</span></td><td>No official API. robin_stocks Python library works but unofficial.</td><td><span class="badge bg-yellow">Manual snapshot</span></td></tr>
+        <tr><td><span class="broker-chip broker-ib">IBKR</span></td><td><span class="badge bg-green">✓ Official API</span></td><td>client.ibkr.com/portal/api — REST API, no OAuth needed locally.</td><td><span class="badge bg-yellow">Manual snapshot</span></td></tr>
+        <tr><td><span class="broker-chip broker-wb">Webull</span></td><td><span class="badge bg-gray">Limited</span></td><td>No public API. Export CSV from app.</td><td><span class="badge bg-yellow">CSV import (coming)</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ══ MARGIN MANAGER ═════════════════════════════════════════════════════════ -->
+<div id="margin" class="screen">
+  <h1 style="margin-bottom:6px">Margin Manager</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Know your leverage, margin cost, and safe operating zone at all times.</p>
+
+  <div class="card">
+    <div class="card-title">Margin Cost Calculator</div>
+    <div class="grid3" style="gap:12px;margin-bottom:14px">
+      <div><label class="fl">Portfolio Value ($)</label><input type="number" id="mg-port" value="100000" oninput="calcMargin()"></div>
+      <div><label class="fl">Margin Used ($)</label><input type="number" id="mg-used" value="30000" oninput="calcMargin()"></div>
+      <div><label class="fl">Broker</label>
+        <select id="mg-broker" onchange="calcMargin()">
+          <option value="5.75">Robinhood Gold (5.75%)</option>
+          <option value="8.5" selected>Schwab (8.5%)</option>
+          <option value="7.5">ThinkOrSwim (7.5%)</option>
+          <option value="5.83">IBKR (5.83%)</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid3" style="gap:12px;margin-bottom:14px">
+      <div><label class="fl">Portfolio Income Yield (%)</label><input type="number" id="mg-yield" value="8.5" step="0.1" oninput="calcMargin()"></div>
+      <div><label class="fl">Target Margin Utilization (%)</label><input type="number" id="mg-target-util" value="50" step="5" oninput="calcMargin()"></div>
+      <div></div>
+    </div>
+    <div id="margin-analysis"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Margin Safety Rules</div>
+    <div style="font-size:.82rem;color:var(--label);line-height:2">
+      <span class="badge bg-green">SAFE</span> Margin utilization &lt;50% — plenty of buffer for drawdowns<br>
+      <span class="badge bg-yellow">CAUTION</span> 50–75% utilization — one bad day could trigger a call<br>
+      <span class="badge bg-red">DANGER</span> &gt;75% utilization — margin call risk in a 15-20% drawdown<br><br>
+      <strong style="color:var(--text)">Margin call math:</strong> If portfolio drops 20% and you're at 60% utilization,
+      your effective leverage jumps to ~75%+ fast. Always leave ≥40% buffer.<br><br>
+      <strong style="color:var(--text)">Margin vs. Income ETF yield spread:</strong> Need ≥3% spread to justify the risk.
+      Example: JEPQ 10% yield − Robinhood 5.75% = 4.25% net (reasonable).
+      QYLD 12% − Schwab 8.5% = 3.5% net (thin — one distribution cut wipes it).
+    </div>
+  </div>
+</div>
+
+<!-- ══ STRATEGIES ═════════════════════════════════════════════════════════════ -->
+<div id="strategies" class="screen">
+  <h1 style="margin-bottom:6px">Strategy Guide</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:16px">Options income strategies — when to use each, what you're risking, what you're earning.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">Cash-Secured Put (CSP)</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Sell a put option below the market. You agree to buy 100 shares at the strike price if assigned. Collect the premium immediately.<br>
+        <strong style="color:var(--text)">Best for:</strong> Stocks you want to own at a lower price anyway. High IV environments. Cash sitting in account.<br>
+        <strong style="color:var(--text)">Risk:</strong> Stock crashes below your strike — you own shares at above-market price. Mitigate with quality underlyings (SPY, QQQ, JEPI).<br>
+        <strong style="color:var(--text)">Target return:</strong> 1–3% per month on capital secured. Equals 12–36% annualized.<br>
+        <strong style="color:var(--text)">Best accounts:</strong> Margin account (naked puts) or cash account (CSP). NOT Roth unless cash-secured.
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">Covered Call (CC)</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Own 100 shares, sell a call above market. If stock reaches strike, shares get called away. You keep the premium regardless.<br>
+        <strong style="color:var(--text)">Best for:</strong> Stocks you own that aren't moving much. Generating income on flat/slow-growth holdings.<br>
+        <strong style="color:var(--text)">Risk:</strong> Caps your upside if stock rockets past strike. You miss the gain above your strike.<br>
+        <strong style="color:var(--text)">Target return:</strong> 0.5–2% per month on stock value. Best on high-IV stocks.<br>
+        <strong style="color:var(--text)">Pro tip:</strong> Sell CCs on income ETFs (JEPI, QYLD) — you get their distribution AND option premium.
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">Iron Condor</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Sell an OTM call spread + OTM put spread. Profit if stock stays in a range. Max profit = net credit, max loss = spread width − credit.<br>
+        <strong style="color:var(--text)">Best for:</strong> Low-volatility, range-bound markets. SPX/SPY/QQQ in calm periods.<br>
+        <strong style="color:var(--text)">Risk:</strong> Defined max loss. Lose if market moves sharply either direction.<br>
+        <strong style="color:var(--text)">Target return:</strong> 3–8% on margin in 30–45 days.<br>
+        <strong style="color:var(--text)">TOS advantage:</strong> ThinkOrSwim has the best condor visualization tools. Use the Analyze tab.
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">Bull Put Spread (BPS)</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Sell a higher put, buy a lower put. Net credit. Profit if stock stays above your short strike. Defined risk.<br>
+        <strong style="color:var(--text)">Best for:</strong> Bullish to neutral outlook. Lower capital requirement than naked puts. Works in Roth IRAs.<br>
+        <strong style="color:var(--text)">Risk:</strong> Max loss = spread width − credit. E.g., $5 spread for $1.50 credit = max loss $3.50.<br>
+        <strong style="color:var(--text)">Target return:</strong> 20–50% return on risk per trade.<br>
+        <strong style="color:var(--text)">Robinhood approved:</strong> Yes, Level 2 options. Great starter strategy.
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">0DTE / Weekly Strategy</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Selling 0-day (expires today) or weekly options on SPX/SPY. Fastest theta decay = highest relative premium for days held.<br>
+        <strong style="color:var(--text)">Best for:</strong> Active traders who monitor positions. Can do CSPs or spreads 0-2 DTE.<br>
+        <strong style="color:var(--text)">Risk:</strong> No time for recovery if wrong. Gap risk on open. Requires discipline.<br>
+        <strong style="color:var(--text)">Target return:</strong> $50–$500/day on a $50k account at 10–40 delta. Weekly compounding is powerful.<br>
+        <strong style="color:var(--text)">Best platform:</strong> ThinkOrSwim (TOS) for 0DTE — Level 2 quotes, fast execution, SPX weekly chains.
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin-bottom:10px;color:var(--accent2)">Poor Man's Covered Call (PMCC)</h3>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+        <strong style="color:var(--text)">What it is:</strong> Buy a long-dated deep ITM call (LEAPS) as a cheaper stock substitute. Sell short-dated OTM calls against it. Same income as CC, less capital.<br>
+        <strong style="color:var(--text)">Best for:</strong> High-priced stocks you can't afford 100 shares of. SPY at $550 needs $55k — LEAPS might cost $8k.<br>
+        <strong style="color:var(--text)">Risk:</strong> LEAPS value erodes if stock drops. Not fully delta-neutral.<br>
+        <strong style="color:var(--text)">Target return:</strong> 5–15% per month on LEAPS cost (versus 1-2% on full stock value for CCs).<br>
+        <strong style="color:var(--text)">TOS approved:</strong> Level 3 options required. Great for high-ticket growth stocks.
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+// ── State (in-memory for demo — wire to MCP for persistence) ─────────────────
+const state = {
+  trades: [],         // options trades
+  etfs: [],           // income ETF positions
+  brokers: [],        // broker snapshots
+  distributions: [],  // income distributions
+  expenses: 5000,
+};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = (n,d=0) => n===undefined||n===null?'—':'$'+(+n||0).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtK = n => !n&&n!==0?'—':Math.abs(n)>=1e6?'$'+(n/1e6).toFixed(1)+'M':Math.abs(n)>=1e3?'$'+(n/1e3).toFixed(0)+'K':fmt(n);
+const pct = (n,d=1) => (n||0).toFixed(d)+'%';
+const sign = n => n>=0?'+':'';
+const today = () => new Date().toISOString().split('T')[0];
+const now = () => new Date();
+
+const INCOME_ETFS = {
+  JEPI: {name:'JPMorgan Equity Premium Income',yield:7.5,freq:'monthly',risk:'Low',price:55,strategy:'Covered calls on S&P 500 basket'},
+  JEPQ: {name:'JPMorgan Nasdaq Equity Premium',yield:10.0,freq:'monthly',risk:'Low-Med',price:55,strategy:'Covered calls on Nasdaq-100'},
+  QYLD: {name:'Global X NASDAQ-100 Covered Call',yield:12.0,freq:'monthly',risk:'Med',price:16,strategy:'Sells ATM calls on full QQQ — max yield, NAV erodes in bull runs'},
+  XYLD: {name:'Global X S&P 500 Covered Call',yield:10.0,freq:'monthly',risk:'Med',price:46,strategy:'Sells calls on full SPY — more stable NAV than QYLD'},
+  RYLD: {name:'Global X Russell 2000 Covered Call',yield:13.0,freq:'monthly',risk:'High',price:18,strategy:'Highest yield in series, volatile small-cap'},
+  DIVO: {name:'Amplify CWP Enhanced Dividend',yield:5.0,freq:'monthly',risk:'Low',price:40,strategy:'Quality dividend + selective covered calls. Best NAV retention'},
+  SCHD: {name:'Schwab US Dividend Equity',yield:3.5,freq:'quarterly',risk:'Low',price:28,strategy:'Dividend growth. Lowest yield but best long-run total return'},
+  AGNC: {name:'AGNC Investment (mREIT)',yield:15.0,freq:'monthly',risk:'High',price:10,strategy:'Mortgage REIT — very high yield, interest rate sensitive'},
+  MAIN: {name:'Main Street Capital (BDC)',yield:6.5,freq:'monthly',risk:'Med',price:56,strategy:'BDC monthly dividend + specials. Strong track record'},
+  ARCC: {name:'Ares Capital (BDC)',yield:9.5,freq:'quarterly',risk:'Med',price:21,strategy:'Largest BDC. Floating rate loans — benefits from high rates'},
+  O:    {name:'Realty Income (REIT)',yield:5.5,freq:'monthly',risk:'Low',price:54,strategy:'Triple-net lease REIT. The Monthly Dividend Company'},
+  CSWC: {name:'Capital Southwest (BDC)',yield:11.0,freq:'quarterly',risk:'Med',price:24,strategy:'Smaller BDC, strong credit, high yield + specials'},
+  BITO: {name:'ProShares Bitcoin Strategy ETF',yield:25.0,freq:'monthly',risk:'Very High',price:20,strategy:'BTC futures-based. Extreme yield from roll, extreme NAV decay risk'},
+  NUSI: {name:'Nationwide Nasdaq-100 Risk-Managed',yield:7.0,freq:'monthly',risk:'Low-Med',price:19,strategy:'Collar strategy — downside protection built in'},
+};
+
+const BROKER_RATES = {robinhood_gold:5.75,schwab:8.5,thinkorswim:7.5,interactive_brokers:5.83,webull:6.99};
+const STRATEGY_NAMES = {cc:'Covered Call',csp:'Cash-Secured Put',wheel:'Wheel',ic:'Iron Condor',bcs:'Bull Call Spread',bps:'Bull Put Spread',bcs_bear:'Bear Call Spread',naked_put:'Naked Put',diagonal:'Diagonal/PMCC'};
+
+function brokerChip(b) {
+  const classes = {robinhood:'broker-rh',schwab:'broker-sc',thinkorswim:'broker-tos',interactive_brokers:'broker-ib',webull:'broker-wb'};
+  const labels = {robinhood:'Robinhood',schwab:'Schwab',thinkorswim:'TOS',interactive_brokers:'IBKR',webull:'Webull'};
+  const cls = classes[b]||'broker-other';
+  return `<span class="broker-chip ${cls}">${labels[b]||b}</span>`;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el=$(id); if(el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes("'"+id+"'")) n.classList.add('active');
+  });
+  renderScreen(id);
+}
+
+function switchTab(group, id) {
+  document.querySelectorAll(`#${document.getElementById(id)?.closest('[id]')?.id||''} .tab, .tabs .tab`).forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  const panel=$(id); if(panel) panel.classList.add('active');
+  renderScreen(id);
+}
+
+function openModal(id) { const m=$(id); if(m){m.classList.add('open'); /* set today's date */ m.querySelectorAll('input[type=date]').forEach(i=>{ if(!i.value) i.value=today();}); } }
+function closeModal(id) { const m=$(id); if(m) m.classList.remove('open'); }
+
+// ── Save trade ────────────────────────────────────────────────────────────────
+function saveTrade() {
+  const trade = {
+    id: Date.now(),
+    ticker: ($('t-ticker')?.value||'').toUpperCase(),
+    strategy: $('t-strategy')?.value||'csp',
+    strike: parseFloat($('t-strike')?.value)||null,
+    expiry: $('t-expiry')?.value||null,
+    contracts: parseInt($('t-contracts')?.value)||1,
+    premium: parseFloat($('t-premium')?.value)||0,
+    openDate: $('t-open-date')?.value||today(),
+    broker: $('t-broker')?.value||'other',
+    acctType: $('t-acct-type')?.value||'margin',
+    notes: $('t-notes')?.value||'',
+    status: 'open',
+    closePremium: 0,
+    pnl: null,
+  };
+  if(!trade.ticker||!trade.premium){ alert('Ticker and premium are required'); return; }
+  state.trades.unshift(trade);
+  closeModal('modal-trade');
+  renderScreen('dashboard');
+  renderScreen('options-log');
+  renderScreen('options-pnl');
+}
+
+function closeTrade(id) {
+  const t = state.trades.find(x=>x.id===id);
+  if(!t) return;
+  const cp = parseFloat(prompt('Cost to close ($)? Enter 0 if expired worthless:', '0'))||0;
+  const reason = prompt('Close reason? (expired/closed/assigned)', 'expired')||'expired';
+  t.closePremium = cp;
+  t.pnl = t.premium - cp;
+  t.status = reason;
+  t.closeDate = today();
+  renderAll();
+}
+
+// ── Save ETF ──────────────────────────────────────────────────────────────────
+function saveEtf() {
+  const ticker = ($('e-ticker')?.value||'').toUpperCase();
+  const shares = parseFloat($('e-shares')?.value)||0;
+  const cost = parseFloat($('e-cost')?.value)||0;
+  const dist = parseFloat($('e-dist')?.value)||0;
+  const broker = $('e-broker')?.value||'other';
+  const acct = $('e-acct')?.value||'taxable';
+  const yieldOverride = parseFloat($('e-yield')?.value)||null;
+  if(!ticker||!shares){ alert('Ticker and shares required'); return; }
+
+  const ref = INCOME_ETFS[ticker];
+  const annualYield = yieldOverride || (dist && cost ? (dist*12/cost*100) : ref?.yield||0);
+  const monthlyIncome = dist ? dist*shares : shares*cost*(annualYield/100)/12;
+  state.etfs.push({ id:Date.now(), ticker, shares, cost, dist, broker, acct, annualYield, monthlyIncome, ref });
+  closeModal('modal-etf');
+  renderScreen('etf-positions');
+  renderDashboard();
+}
+
+// ── Save broker ────────────────────────────────────────────────────────────────
+function saveBroker() {
+  const snap = {
+    id: Date.now(), broker: $('b-broker')?.value||'other',
+    acct: $('b-acct')?.value||'margin',
+    equity: parseFloat($('b-equity')?.value)||0,
+    cash: parseFloat($('b-cash')?.value)||0,
+    positions: parseFloat($('b-positions')?.value)||0,
+    marginUsed: parseFloat($('b-margin-used')?.value)||0,
+    marginAvail: parseFloat($('b-margin-avail')?.value)||0,
+    bp: parseFloat($('b-bp')?.value)||0,
+    dayPnl: parseFloat($('b-day-pnl')?.value)||0,
+    unreal: parseFloat($('b-unreal')?.value)||0,
+    ytd: parseFloat($('b-ytd')?.value)||0,
+    date: today(),
+  };
+  // Remove old snapshot for same broker+acct
+  state.brokers = state.brokers.filter(b=>!(b.broker===snap.broker&&b.acct===snap.acct));
+  state.brokers.push(snap);
+  closeModal('modal-broker');
+  renderScreen('brokers');
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const now_m = new Date();
+  const month = now_m.getMonth(), year = now_m.getFullYear();
+
+  // ETF monthly income
+  const etfMonthly = state.etfs.reduce((s,e)=>s+e.monthlyIncome,0);
+
+  // Options P&L this month (closed)
+  const optsMtd = state.trades.filter(t=>t.status!=='open'&&t.closeDate).reduce((s,t)=>s+(t.pnl||0),0);
+  const total = etfMonthly + optsMtd;
+
+  const kpiMonthly = $('kpi-monthly'); if(kpiMonthly) { kpiMonthly.textContent=fmt(total); kpiMonthly.closest('.kpi').className='kpi '+(total>0?'teal':''); }
+  const kpiAnnual  = $('kpi-annual');  if(kpiAnnual)  kpiAnnual.textContent=fmtK(total*12);
+  const kpiCov     = $('kpi-coverage');if(kpiCov) {
+    const cov = state.expenses>0?total/state.expenses*100:0;
+    kpiCov.textContent=cov.toFixed(0)+'%';
+    kpiCov.closest('.kpi').className='kpi '+(cov>=100?'green':cov>=50?'yellow':'red');
+  }
+
+  // Income breakdown
+  const ib = $('income-breakdown');
+  if(ib) ib.innerHTML = `
+    <div style="display:grid;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">ETF Distributions</span><strong style="color:var(--accent2)">${fmt(etfMonthly)}/mo</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Options Realized (MTD)</span><strong style="color:${optsMtd>=0?'var(--green)':'var(--red)'}">${sign(optsMtd)}${fmt(optsMtd)}</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--muted)">Open Premiums (unrealized)</span><strong style="color:var(--blue)">${fmt(state.trades.filter(t=>t.status==='open').reduce((s,t)=>s+t.premium,0))}</strong></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0"><span style="font-weight:600">Total Monthly Income</span><strong style="color:var(--accent2);font-size:1.1rem">${fmt(total)}</strong></div>
+    </div>`;
+
+  // Weekly bars (last 8 weeks simulated)
+  const bars = $('weekly-bars');
+  if(bars) {
+    const weeks = []; const labels = [];
+    for(let i=7;i>=0;i--) {
+      const d = new Date(); d.setDate(d.getDate()-i*7);
+      labels.push(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]||`W${8-i}`);
+      weeks.push(state.trades.filter(t=>{
+        if(!t.closeDate||t.status==='open') return false;
+        const cd=new Date(t.closeDate); const diff=(now()-cd)/86400000;
+        return diff>=i*7 && diff<(i+1)*7;
+      }).reduce((s,t)=>s+(t.pnl||0),0));
+    }
+    const maxAbs = Math.max(...weeks.map(Math.abs),1);
+    bars.innerHTML = weeks.map((w,i)=>`
+      <div class="bar-col">
+        <div class="bar-val" style="color:${w>=0?'var(--green)':'var(--red)'}">${w?sign(w)+fmtK(w):''}</div>
+        <div class="bar-fill" style="height:${Math.abs(w)/maxAbs*60+4}px;background:${w>=0?'var(--accent2)':'var(--red)'}"></div>
+        <div class="bar-label">${labels[i]}</div>
+      </div>`).join('');
+  }
+
+  // Open positions
+  const tbody = $('open-positions-tbody');
+  if(tbody) {
+    const openTrades = state.trades.filter(t=>t.status==='open');
+    const allOpen = [
+      ...openTrades.map(t=>({type:'options',data:t})),
+      ...state.etfs.map(e=>({type:'etf',data:e})),
+    ];
+    if(!allOpen.length) {
+      tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No open positions. <span style="color:var(--accent);cursor:pointer" onclick="openModal(\'modal-trade\')">Log your first trade →</span></td></tr>';
+      return;
+    }
+    tbody.innerHTML = allOpen.map(({type,data:d})=>{
+      if(type==='etf') return `<tr>
+        <td><span class="badge bg-blue">ETF</span></td>
+        <td><strong>${d.ticker}</strong></td>
+        <td><span class="badge bg-teal">income</span></td>
+        <td>${d.shares} shares @ ${fmt(d.cost)}</td>
+        <td style="color:var(--accent2)">${fmt(d.monthlyIncome)}/mo</td>
+        <td>Ongoing</td>
+        <td><span class="badge bg-green">Active</span></td>
+        <td></td>
+      </tr>`;
+      const dte = d.expiry ? Math.ceil((new Date(d.expiry)-now())/86400000) : '—';
+      return `<tr>
+        <td><span class="badge bg-purple">Options</span></td>
+        <td><strong>${d.ticker}</strong></td>
+        <td><span class="badge bg-gray">${STRATEGY_NAMES[d.strategy]||d.strategy}</span></td>
+        <td>$${d.strike||'—'} ${d.strategy==='ic'?'condor':d.strategy==='csp'?'put':'call'}</td>
+        <td style="color:var(--green)">${fmt(d.premium)}</td>
+        <td>${d.expiry||'—'} <small style="color:${dte>0&&dte<7?'var(--yellow)':dte>0?'var(--muted)':'var(--red)'}">(${dte}d)</small></td>
+        <td><span class="badge bg-blue">Open</span></td>
+        <td><button class="btn btn-outline btn-sm" onclick="closeTrade(${d.id})">Close</button></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Freedom ───────────────────────────────────────────────────────────────────
+function updateFreedom() {
+  const expenses   = parseFloat($('f-expenses')?.value)||5000;
+  const income     = parseFloat($('f-income')?.value)||0;
+  const portfolio  = parseFloat($('f-portfolio')?.value)||0;
+  const leverage   = parseFloat($('f-leverage')?.value)||1;
+  state.expenses   = expenses;
+
+  const coverage = expenses>0 ? Math.min(income/expenses*100, 100) : 0;
+  const gap = Math.max(expenses-income, 0);
+
+  const circle = $('freedom-circle');
+  if(circle) circle.style.setProperty('--fill', coverage+'%');
+  const pctEl = $('freedom-pct'); if(pctEl) pctEl.textContent=coverage.toFixed(0)+'%';
+  const stEl = $('freedom-status');
+  if(stEl) stEl.textContent = coverage>=100?'🎉 FINANCIALLY FREE':coverage>=75?'Getting close!':coverage>=50?'Halfway there':coverage>=25?'Building momentum':'Getting started';
+  const gapEl = $('freedom-gap'); if(gapEl) gapEl.textContent = gap>0?`Monthly gap: ${fmt(gap)}`:(`Surplus: ${fmt(income-expenses)}/mo`);
+
+  // Table
+  const strategies = [
+    {name:'JEPI (CC S&P)',yield:7.5,risk:'Low'},
+    {name:'JEPQ (CC Nasdaq)',yield:10.0,risk:'Low-Med'},
+    {name:'QYLD (Full CC)',yield:12.0,risk:'Med'},
+    {name:'Wheel Strategy',yield:20.0,risk:'Med'},
+    {name:'Aggressive Wheel',yield:30.0,risk:'High'},
+    {name:'AGNC mREIT',yield:15.0,risk:'High'},
+  ];
+  const tbody=$('freedom-tbody');
+  if(tbody) tbody.innerHTML=strategies.map(s=>{
+    const needed = expenses*12/s.yield*100;
+    const neededMargin = needed/leverage;
+    const monthlyPer100k = 100000*s.yield/100/12;
+    const riskCls={Low:'bg-green','Low-Med':'bg-teal',Med:'bg-yellow',High:'bg-red','Very High':'bg-red'};
+    return `<tr>
+      <td>${s.name}</td>
+      <td>${s.yield}%</td>
+      <td style="color:var(--accent2)">${fmtK(needed)}</td>
+      <td style="color:var(--blue)">${fmtK(neededMargin)}</td>
+      <td>${fmt(monthlyPer100k)}/mo</td>
+      <td><span class="badge ${riskCls[s.risk]||'bg-gray'}">${s.risk}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Timeline
+  const tl=$('freedom-timeline');
+  if(tl) {
+    const growthRate=0.10;
+    let p=portfolio, months=0;
+    const target = expenses*12/0.10*100;
+    while(p<target&&months<240) { p=p*(1+growthRate/12)+income; months++; }
+    tl.innerHTML=`<div style="font-size:.82rem;color:var(--label);line-height:1.9">
+      <strong style="color:var(--text)">Current trajectory:</strong><br>
+      Portfolio: ${fmtK(portfolio)} → Freedom number at 10% yield: ${fmtK(target)}<br>
+      ${months<240?`At 10% portfolio growth + current income, you hit freedom in approximately <strong style="color:var(--accent2)">${Math.ceil(months/12)} years</strong> (${months} months).`:'At current rate, may need to increase income or reduce expenses.'}<br>
+      Adding ${fmt(500)}/mo more income → saves ~${Math.max(0,Math.ceil(months*0.1/12))} years.
+    </div>`;
+  }
+}
+
+// ── ETF Positions ─────────────────────────────────────────────────────────────
+function renderEtfPositions() {
+  const kpis=$('etf-portfolio-kpis');
+  if(kpis) {
+    const totalMonthly=state.etfs.reduce((s,e)=>s+e.monthlyIncome,0);
+    const totalInvested=state.etfs.reduce((s,e)=>s+(e.shares*e.cost),0);
+    const avgYield=totalInvested>0?totalMonthly*12/totalInvested*100:0;
+    kpis.innerHTML=`
+      <div class="kpi teal"><div class="kpi-label">Monthly Income</div><div class="kpi-val">${fmt(totalMonthly)}</div><div class="kpi-sub">from ${state.etfs.length} positions</div></div>
+      <div class="kpi blue"><div class="kpi-label">Total Invested</div><div class="kpi-val">${fmtK(totalInvested)}</div><div class="kpi-sub">cost basis</div></div>
+      <div class="kpi purple"><div class="kpi-label">Avg Portfolio Yield</div><div class="kpi-val">${avgYield.toFixed(1)}%</div><div class="kpi-sub">weighted by investment</div></div>`;
+  }
+  const tbody=$('etf-holdings-tbody');
+  if(tbody) {
+    if(!state.etfs.length) { tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:20px">No ETF positions added. <span style="color:var(--accent);cursor:pointer" onclick="openModal(\'modal-etf\')">Add your first position →</span></td></tr>'; return; }
+    tbody.innerHTML=state.etfs.map(e=>{
+      const yoc = e.dist&&e.cost ? (e.dist*12/e.cost*100) : e.annualYield||0;
+      return `<tr>
+        <td><strong>${e.ticker}</strong>${e.ref?'':' <span class="badge bg-gray">custom</span>'}</td>
+        <td>${brokerChip(e.broker)}</td>
+        <td class="num">${e.shares.toLocaleString()}</td>
+        <td class="num">${fmt(e.cost,2)}</td>
+        <td class="num">${e.dist?fmt(e.dist,3):pct(e.annualYield/12,2)+'/mo'}</td>
+        <td style="color:var(--accent2)">${yoc.toFixed(1)}%</td>
+        <td style="color:var(--green)">${fmt(e.monthlyIncome)}/mo</td>
+        <td style="color:var(--green)">${fmt(e.monthlyIncome*12)}/yr</td>
+        <td style="font-size:.72rem;color:var(--muted)">${e.ref?.strategy||'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ── Screener ──────────────────────────────────────────────────────────────────
+function renderScreener() {
+  const amount = parseFloat($('scr-amount')?.value)||50000;
+  const minYield = parseFloat($('scr-min-yield')?.value)||0;
+  const brokerKey = $('scr-broker')?.value||'schwab';
+  const leverage = parseFloat($('scr-leverage')?.value)||1;
+  const marginRate = BROKER_RATES[brokerKey]||8.5;
+  const borrowAmt = amount*(leverage-1);
+  const marginCostAnn = borrowAmt*marginRate/100;
+
+  const tbody=$('screener-tbody');
+  if(!tbody) return;
+
+  const etfs = Object.entries(INCOME_ETFS)
+    .filter(([,e])=>e.yield>=minYield)
+    .sort(([,a],[,b])=>b.yield-a.yield);
+
+  const riskColor = {Low:'bg-green','Low-Med':'bg-teal',Med:'bg-yellow',High:'bg-red','Very High':'bg-red'};
+
+  tbody.innerHTML=etfs.map(([ticker,e])=>{
+    const totalInvested = amount*leverage;
+    const grossIncome = totalInvested*e.yield/100;
+    const netIncome = grossIncome - marginCostAnn;
+    const netYield = netIncome/amount*100;
+    const spread = e.yield - (leverage>1?marginRate:0);
+    const monthly = netIncome/12;
+    return `<tr>
+      <td><strong>${ticker}</strong></td>
+      <td style="font-size:.75rem;color:var(--muted)">${e.name}</td>
+      <td style="color:var(--accent2)">${e.yield}%</td>
+      <td><span class="badge bg-gray">${e.freq}</span></td>
+      <td style="color:var(--green)">${fmt(monthly*amount/50000)}/mo <span style="color:var(--muted);font-size:.7rem">per $${(amount/1000).toFixed(0)}k</span></td>
+      <td>${leverage>1?marginRate+'%':'—'}</td>
+      <td style="color:${spread>3?'var(--green)':spread>1.5?'var(--yellow)':'var(--red)'}">
+        ${leverage>1?(spread>0?'+':'')+spread.toFixed(1)+'%':'N/A (no margin)'}
+      </td>
+      <td><span class="badge ${riskColor[e.risk]||'bg-gray'}">${e.risk}</span></td>
+      <td style="font-size:.72rem;color:var(--muted);max-width:200px">${e.strategy}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Options Log ────────────────────────────────────────────────────────────────
+function renderOptionsLog() {
+  const open=state.trades.filter(t=>t.status==='open');
+  const closed=state.trades.filter(t=>t.status!=='open');
+
+  const openTbody=$('log-open-tbody');
+  if(openTbody) openTbody.innerHTML=open.length?open.map(t=>{
+    const expDate = t.expiry?new Date(t.expiry):null;
+    const dte = expDate?Math.ceil((expDate-now())/86400000):null;
+    const daysHeld = Math.floor((now()-new Date(t.openDate))/86400000)||1;
+    const daysToExp = dte||30;
+    const annReturn = t.strike ? (t.premium/(t.strike*t.contracts*100))*(365/daysToExp)*100 : null;
+    return `<tr>
+      <td><strong>${t.ticker}</strong></td>
+      <td><span class="badge bg-gray">${STRATEGY_NAMES[t.strategy]||t.strategy}</span></td>
+      <td>${t.strike||'—'}</td>
+      <td>${t.expiry||'—'}</td>
+      <td>${t.contracts}</td>
+      <td style="color:var(--green)">${fmt(t.premium)}</td>
+      <td>${t.openDate}</td>
+      <td style="color:${dte!==null&&dte<7?'var(--yellow)':'var(--muted)'}">${dte!==null?dte+'d':'—'}</td>
+      <td>${annReturn?annReturn.toFixed(0)+'%':'—'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="closeTrade(${t.id})">Close</button></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:20px">No open trades.</td></tr>';
+
+  const closedTbody=$('log-closed-tbody');
+  if(closedTbody) closedTbody.innerHTML=closed.length?closed.map(t=>`<tr>
+    <td><strong>${t.ticker}</strong></td>
+    <td><span class="badge bg-gray">${STRATEGY_NAMES[t.strategy]||t.strategy}</span></td>
+    <td>${t.strike||'—'}</td>
+    <td style="color:var(--green)">${fmt(t.premium)}</td>
+    <td style="color:var(--red)">${t.closePremium?fmt(t.closePremium):'$0'}</td>
+    <td style="color:${(t.pnl||0)>=0?'var(--green)':'var(--red)'}">${sign(t.pnl||0)}${fmt(Math.abs(t.pnl||0))}</td>
+    <td><span class="badge ${(t.pnl||0)>=0?'bg-green':'bg-red'}">${t.status}</span></td>
+    <td>${t.closeDate||'—'}</td>
+  </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:20px">No closed trades yet.</td></tr>';
+
+  const allTbody=$('log-all-tbody');
+  if(allTbody) allTbody.innerHTML=state.trades.length?state.trades.map(t=>`<tr>
+    <td><strong>${t.ticker}</strong></td>
+    <td>${STRATEGY_NAMES[t.strategy]||t.strategy}</td>
+    <td>${t.strike||'—'}  ${t.expiry||''}</td>
+    <td style="color:var(--green)">${fmt(t.premium)}</td>
+    <td><span class="badge ${t.status==='open'?'bg-blue':t.pnl>=0?'bg-green':'bg-red'}">${t.status}</span></td>
+    <td style="color:${t.pnl==null?'var(--muted)':t.pnl>=0?'var(--green)':'var(--red)'}">${t.pnl!=null?sign(t.pnl)+fmt(Math.abs(t.pnl)):'pending'}</td>
+    <td>${brokerChip(t.broker)}</td>
+  </tr>`).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px">No trades logged.</td></tr>';
+}
+
+// ── P&L Tracker ────────────────────────────────────────────────────────────────
+function renderPnl() {
+  const closed = state.trades.filter(t=>t.status!=='open'&&t.pnl!=null);
+  const wins = closed.filter(t=>t.pnl>0);
+  const losses = closed.filter(t=>t.pnl<=0);
+  const now_m=new Date(); const m=now_m.getMonth(),y=now_m.getFullYear();
+  const mtd = closed.filter(t=>t.closeDate&&new Date(t.closeDate).getMonth()===m&&new Date(t.closeDate).getFullYear()===y);
+  const mtdPnl = mtd.reduce((s,t)=>s+(t.pnl||0),0);
+
+  const kpiMtd=$('pnl-mtd'); if(kpiMtd){kpiMtd.textContent=sign(mtdPnl)+fmt(Math.abs(mtdPnl));kpiMtd.closest('.kpi').className='kpi '+(mtdPnl>=0?'teal':'red');}
+  const kpiWr=$('pnl-winrate'); if(kpiWr&&closed.length) kpiWr.textContent=pct(wins.length/closed.length*100,0);
+  const kpiAw=$('pnl-avg-win'); if(kpiAw&&wins.length) kpiAw.textContent=fmt(wins.reduce((s,t)=>s+t.pnl,0)/wins.length);
+  const kpiAl=$('pnl-avg-loss'); if(kpiAl&&losses.length) kpiAl.textContent=fmt(Math.abs(losses.reduce((s,t)=>s+t.pnl,0)/losses.length));
+
+  // By strategy
+  const byStrat={};
+  closed.forEach(t=>{ byStrat[t.strategy]=(byStrat[t.strategy]||0)+(t.pnl||0); });
+  const bsEl=$('pnl-by-strategy');
+  if(bsEl) bsEl.innerHTML=Object.entries(byStrat).sort(([,a],[,b])=>b-a).map(([s,p])=>`
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(42,51,71,.4)">
+      <span class="badge bg-gray">${STRATEGY_NAMES[s]||s}</span>
+      <span style="color:${p>=0?'var(--green)':'var(--red)'};font-weight:600">${sign(p)}${fmt(Math.abs(p))}</span>
+    </div>`).join('')||'<div style="color:var(--muted);padding:12px;text-align:center">No data</div>';
+
+  // By ticker
+  const byTick={};
+  closed.forEach(t=>{ byTick[t.ticker]=(byTick[t.ticker]||0)+(t.pnl||0); });
+  const btEl=$('pnl-by-ticker');
+  if(btEl) btEl.innerHTML=Object.entries(byTick).sort(([,a],[,b])=>b-a).slice(0,8).map(([tk,p])=>`
+    <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(42,51,71,.4)">
+      <strong>${tk}</strong>
+      <span style="color:${p>=0?'var(--green)':'var(--red)'};font-weight:600">${sign(p)}${fmt(Math.abs(p))}</span>
+    </div>`).join('')||'<div style="color:var(--muted);padding:12px;text-align:center">No data</div>';
+}
+
+// ── Wheel Calc ────────────────────────────────────────────────────────────────
+function calcWheel() {
+  const ticker = $('wh-ticker')?.value||'SPY';
+  const price  = parseFloat($('wh-price')?.value)||550;
+  const strike = parseFloat($('wh-strike')?.value)||535;
+  const cspPrem= parseFloat($('wh-csp-prem')?.value)||120;
+  const ccStrike=parseFloat($('wh-cc-strike')?.value)||545;
+  const ccPrem = parseFloat($('wh-cc-prem')?.value)||90;
+  const contracts=parseInt($('wh-contracts')?.value)||1;
+  const capital= parseFloat($('wh-capital')?.value)||55000;
+
+  const weeklyPrem = (cspPrem+ccPrem)*contracts;
+  const annualPrem = weeklyPrem*52;
+  const annReturn  = capital>0?annualPrem/capital*100:0;
+  const breakeven  = strike - cspPrem;
+  const assignedCost = strike - cspPrem;
+  const callPremOnAssignment = ccPrem;
+
+  const el=$('wheel-result');
+  if(el) el.innerHTML=`
+    <div class="grid3" style="gap:10px;margin-bottom:12px">
+      <div class="kpi teal"><div class="kpi-label">Weekly Premium</div><div class="kpi-val">${fmt(weeklyPrem)}</div><div class="kpi-sub">CSP + CC combined</div></div>
+      <div class="kpi green"><div class="kpi-label">Annual Premium</div><div class="kpi-val">${fmtK(annualPrem)}</div><div class="kpi-sub">${annReturn.toFixed(1)}% on capital</div></div>
+      <div class="kpi blue"><div class="kpi-label">Breakeven Price</div><div class="kpi-val">${fmt(breakeven)}</div><div class="kpi-sub">Stock price where you're flat</div></div>
+    </div>
+    <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+      <strong style="color:var(--text)">Wheel math for ${ticker}:</strong><br>
+      CSP: Sell $${strike} put, collect $${cspPrem} × ${contracts} = $${cspPrem*contracts}/week<br>
+      If assigned at $${strike}: effective cost = $${assignedCost} (vs current $${price})<br>
+      CC after assignment: Sell $${ccStrike} call, collect $${ccPrem} × ${contracts} = $${ccPrem*contracts}/week<br>
+      If called away at $${ccStrike}: profit = ($${ccStrike}-$${assignedCost}) × ${contracts*100} + all premiums collected<br>
+      <strong style="color:var(--accent2)">Annualized premium income: ${fmt(annualPrem)} = ${annReturn.toFixed(1)}% on $${(capital/1000).toFixed(0)}k</strong>
+    </div>`;
+}
+
+// ── Brokers ───────────────────────────────────────────────────────────────────
+function renderBrokers() {
+  const totalEquity=state.brokers.reduce((s,b)=>s+b.equity,0);
+  const totalBp=state.brokers.reduce((s,b)=>s+b.bp,0);
+  const totalMargin=state.brokers.reduce((s,b)=>s+b.marginUsed,0);
+  const totalDayPnl=state.brokers.reduce((s,b)=>s+b.dayPnl,0);
+
+  const kpiEq=$('bkr-equity');if(kpiEq)kpiEq.textContent=fmtK(totalEquity);
+  const kpiBp=$('bkr-bp');if(kpiBp)kpiBp.textContent=fmtK(totalBp);
+  const kpiMg=$('bkr-margin');if(kpiMg)kpiMg.textContent=fmtK(totalMargin);
+  const kpiDp=$('bkr-day-pnl');if(kpiDp){kpiDp.textContent=sign(totalDayPnl)+fmt(Math.abs(totalDayPnl));kpiDp.closest('.kpi').className='kpi '+(totalDayPnl>=0?'green':'red');}
+
+  const cards=$('broker-cards');
+  if(cards) {
+    if(!state.brokers.length){ cards.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:30px">No broker accounts added. <span style="color:var(--accent);cursor:pointer" onclick="openModal(\'modal-broker\')">Add your first account →</span></div>'; return; }
+    cards.innerHTML=state.brokers.map(b=>{
+      const util=b.marginUsed&&(b.marginUsed+b.marginAvail)>0?b.marginUsed/(b.marginUsed+b.marginAvail)*100:0;
+      const lev=b.equity>0?(b.positions/b.equity):1;
+      const rate=BROKER_RATES[b.broker]||8.5;
+      const annualCost=b.marginUsed*rate/100;
+      return `<div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:8px">${brokerChip(b.broker)} <span class="badge bg-gray">${b.acct}</span></div>
+          <span style="font-size:.7rem;color:var(--muted)">${b.date}</span>
+        </div>
+        <div class="grid4" style="gap:8px;margin-bottom:12px">
+          <div class="kpi teal"><div class="kpi-label">Equity</div><div class="kpi-val" style="font-size:1rem">${fmtK(b.equity)}</div></div>
+          <div class="kpi blue"><div class="kpi-label">Buying Power</div><div class="kpi-val" style="font-size:1rem">${fmtK(b.bp)}</div></div>
+          <div class="kpi ${b.dayPnl>=0?'green':'red'}"><div class="kpi-label">Day P&L</div><div class="kpi-val" style="font-size:1rem">${sign(b.dayPnl)}${fmt(Math.abs(b.dayPnl))}</div></div>
+          <div class="kpi purple"><div class="kpi-label">YTD Realized</div><div class="kpi-val" style="font-size:1rem">${sign(b.ytd)}${fmtK(Math.abs(b.ytd))}</div></div>
+        </div>
+        ${b.marginUsed>0?`<div>
+          <div class="prog-label"><span>Margin Used: ${fmt(b.marginUsed)} / ${fmt(b.marginUsed+b.marginAvail)}</span><span style="color:${util>75?'var(--red)':util>50?'var(--yellow)':'var(--green)'}">${util.toFixed(0)}%</span></div>
+          <div class="prog-bar"><div class="prog-fill ${util>75?'danger':util>50?'warn':''}" style="width:${util}%"></div></div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Leverage: ${lev.toFixed(2)}×  ·  Annual margin cost: ${fmt(annualCost)} @ ${rate}%</div>
+        </div>`:''}
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── Margin Calc ───────────────────────────────────────────────────────────────
+function calcMargin() {
+  const port=parseFloat($('mg-port')?.value)||100000;
+  const used=parseFloat($('mg-used')?.value)||30000;
+  const rate=parseFloat($('mg-broker')?.value)||8.5;
+  const yield_=parseFloat($('mg-yield')?.value)||8.5;
+  const targetUtil=parseFloat($('mg-target-util')?.value)||50;
+
+  const annualCost=used*rate/100;
+  const totalDeployed=port+used;
+  const grossIncome=totalDeployed*yield_/100;
+  const netIncome=grossIncome-annualCost;
+  const util=used>0?(used/(port))*100:0;
+  const leverage=totalDeployed/port;
+  const safeMax=port*targetUtil/100;
+  const netYield=netIncome/port*100;
+
+  const el=$('margin-analysis');
+  if(el) el.innerHTML=`
+    <div class="grid3" style="gap:10px;margin-bottom:12px">
+      <div class="kpi ${netIncome>0?'green':'red'}"><div class="kpi-label">Net Annual Income</div><div class="kpi-val">${fmt(netIncome)}</div><div class="kpi-sub">${netYield.toFixed(1)}% net yield on equity</div></div>
+      <div class="kpi orange"><div class="kpi-label">Annual Margin Cost</div><div class="kpi-val">${fmt(annualCost)}</div><div class="kpi-sub">${rate}% on $${(used/1000).toFixed(0)}k</div></div>
+      <div class="kpi ${util<50?'green':util<75?'yellow':'red'}"><div class="kpi-label">Margin Utilization</div><div class="kpi-val">${util.toFixed(0)}%</div><div class="kpi-sub">${leverage.toFixed(2)}× leverage</div></div>
+    </div>
+    <div class="prog-wrap">
+      <div class="prog-label"><span>Margin safety (safe zone: &lt;50%)</span><span>${util.toFixed(0)}%</span></div>
+      <div class="prog-bar" style="height:12px"><div class="prog-fill ${util>75?'danger':util>50?'warn':''}" style="width:${Math.min(util,100)}%"></div></div>
+    </div>
+    <div style="font-size:.8rem;color:var(--label);margin-top:12px;line-height:1.8">
+      Gross income from $${(totalDeployed/1000).toFixed(0)}k deployed at ${yield_}% = <strong>${fmt(grossIncome)}/yr</strong><br>
+      Minus margin interest: <strong style="color:var(--red)">−${fmt(annualCost)}/yr</strong><br>
+      Net income: <strong style="color:${netIncome>0?'var(--green)':'var(--red)'}"> ${fmt(netIncome)}/yr (${fmt(netIncome/12)}/mo)</strong><br>
+      At your ${targetUtil}% target utilization, safe max margin = <strong style="color:var(--blue)">${fmt(safeMax)}</strong><br>
+      Spread (yield − margin rate): <strong style="color:${yield_-rate>=3?'var(--green)':yield_-rate>=1.5?'var(--yellow)':'var(--red)'}">${(yield_-rate).toFixed(1)}%</strong> ${yield_-rate<2?'⚠️ Spread is thin — consider lower leverage or higher-yield positions':'✓ Acceptable spread'}
+    </div>`;
+}
+
+// ── renderScreen dispatcher ───────────────────────────────────────────────────
+function renderScreen(id) {
+  switch(id) {
+    case 'dashboard': renderDashboard(); break;
+    case 'freedom':   updateFreedom();   break;
+    case 'etf-positions': renderEtfPositions(); break;
+    case 'etf-screener':  renderScreener();     break;
+    case 'options-log':   renderOptionsLog();   break;
+    case 'log-open': case 'log-closed': case 'log-all': renderOptionsLog(); break;
+    case 'options-pnl':   renderPnl();          break;
+    case 'wheel':         calcWheel();           break;
+    case 'brokers':       renderBrokers();       break;
+    case 'margin':        calcMargin();          break;
+  }
+}
+function renderAll() { renderDashboard(); renderOptionsLog(); renderPnl(); renderBrokers(); }
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Set today's date on open-date inputs
+  const od=$('t-open-date'); if(od) od.value=today();
+  renderDashboard();
+  renderScreener();
+  calcWheel();
+  calcMargin();
+  document.addEventListener('keydown', e=>{
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    const map={d:'dashboard',f:'freedom',e:'etf-positions',s:'etf-screener',o:'options-log',p:'options-pnl',w:'wheel',b:'brokers',m:'margin'};
+    if(map[e.key]) show(map[e.key]);
+    if(e.key==='t') openModal('modal-trade');
+  });
+});
+</script>
+</body>
+</html>

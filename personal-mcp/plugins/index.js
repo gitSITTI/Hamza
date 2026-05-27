@@ -11,6 +11,7 @@ const documentTools  = require('./documents');
 const businessTools  = require('./business');
 const scoutTools     = require('./scout');
 const bitcoinTools   = require('./bitcoin');
+const tradingTools   = require('./trading');
 
 const allTools = [
   ...identityTools,
@@ -25,7 +26,8 @@ const allTools = [
   ...documentTools,
   ...businessTools,
   ...scoutTools,
-  ...bitcoinTools
+  ...bitcoinTools,
+  ...tradingTools
 ];
 
 const toolMap = Object.fromEntries(allTools.map(t => [t.name, t]));
