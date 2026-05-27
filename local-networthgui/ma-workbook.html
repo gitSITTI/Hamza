@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>M&A Workbook — QLA Deal Engineering</title>
+<style>
+:root{
+  --bg:#080b12;--bg2:#0d1117;--bg3:#161b27;--bg4:#1e2535;
+  --border:#2a3347;--text:#e2e8f0;--muted:#64748b;--label:#94a3b8;
+  --green:#22c55e;--green2:#16a34a;--yellow:#eab308;--red:#ef4444;
+  --blue:#3b82f6;--purple:#8b5cf6;--orange:#f97316;--teal:#14b8a6;
+  --accent:#6c63ff;--accent2:#00d4a0;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;font-size:14px;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em}
+h2{font-size:1.05rem;font-weight:600;color:var(--label)}
+h3{font-size:.9rem;font-weight:600;color:var(--label);text-transform:uppercase;letter-spacing:.05em}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--bg2);border-right:1px solid var(--border);padding:20px 0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-logo{padding:0 20px 16px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.sidebar-logo span{font-size:1rem;font-weight:700;color:var(--accent)}
+.sidebar-logo sub{font-size:.65rem;color:var(--muted);display:block;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 20px;cursor:pointer;color:var(--label);font-size:.8rem;font-weight:500;transition:.15s}
+.nav-item:hover,.nav-item.active{background:var(--bg3);color:var(--text)}
+.nav-item.active{border-left:2px solid var(--accent);padding-left:18px}
+.nav-section{padding:10px 20px 4px;font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:8px}
+.main{padding:28px;overflow-y:auto}
+.screen{display:none}.screen.active{display:block}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.card-title{font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+
+/* KPI tiles */
+.kpi{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 16px}
+.kpi-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.kpi-val{font-size:1.4rem;font-weight:700;letter-spacing:-.02em}
+.kpi-sub{font-size:.7rem;color:var(--muted);margin-top:2px}
+.kpi.pass .kpi-val{color:var(--green)}
+.kpi.warn .kpi-val{color:var(--yellow)}
+.kpi.fail .kpi-val{color:var(--red)}
+.kpi.blue .kpi-val{color:var(--blue)}
+.kpi.purple .kpi-val{color:var(--purple)}
+.kpi.teal .kpi-val{color:var(--teal)}
+
+/* Form controls */
+label.fl{display:block;font-size:.72rem;color:var(--label);margin-bottom:4px;font-weight:500}
+input[type=number],input[type=text],select{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:7px 10px;font-size:.82rem;outline:none;transition:.15s}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.15)}
+input[type=range]{width:100%;accent-color:var(--accent);margin-top:4px}
+.range-row{display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-top:2px}
+.toggle{display:flex;gap:6px;flex-wrap:wrap}
+.toggle button{padding:5px 12px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);border-radius:5px;cursor:pointer;font-size:.75rem;font-weight:500;transition:.15s}
+.toggle button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{padding:8px 18px;background:var(--accent);border:none;color:#fff;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:.15s}
+.btn:hover{background:#5a52e0}
+.btn-outline{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.btn-outline:hover{background:var(--accent);color:#fff}
+.btn-sm{padding:5px 12px;font-size:.75rem}
+.btn-green{background:var(--green);color:#000}
+.btn-red{background:var(--red)}
+
+/* Tranche table */
+.tranche-table{width:100%;border-collapse:collapse}
+.tranche-table th{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;text-align:left;border-bottom:1px solid var(--border)}
+.tranche-table td{padding:8px 10px;border-bottom:1px solid rgba(42,51,71,.5);font-size:.82rem;vertical-align:middle}
+.tranche-table tr:last-child td{border-bottom:none;font-weight:700;color:var(--text)}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-yellow{background:rgba(234,179,8,.15);color:var(--yellow)}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.15);color:var(--blue)}
+.badge-purple{background:rgba(139,92,246,.15);color:var(--purple)}
+.badge-gray{background:rgba(100,116,139,.15);color:var(--muted)}
+
+/* DSCR dial */
+.dscr-dial-wrap{display:flex;flex-direction:column;align-items:center;padding:20px}
+.dscr-dial{width:120px;height:60px;position:relative;overflow:hidden}
+.dscr-arc-bg{width:120px;height:120px;border-radius:50%;border:10px solid var(--bg4);border-bottom-color:transparent;border-right-color:transparent;transform:rotate(225deg);position:absolute;top:0;left:0}
+.dscr-arc-fill{width:120px;height:120px;border-radius:50%;border:10px solid var(--green);border-bottom-color:transparent;border-right-color:transparent;transform:rotate(225deg);position:absolute;top:0;left:0;transition:.4s}
+.dscr-val{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:1.4rem;font-weight:700;white-space:nowrap}
+.dscr-label{font-size:.7rem;color:var(--muted);margin-top:4px;text-align:center}
+
+/* Scenario table */
+.scenario-table{width:100%;border-collapse:collapse;font-size:.8rem}
+.scenario-table th{padding:8px 10px;background:var(--bg3);color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;text-align:right}
+.scenario-table th:first-child{text-align:left}
+.scenario-table td{padding:8px 10px;border-bottom:1px solid rgba(42,51,71,.4);text-align:right}
+.scenario-table td:first-child{text-align:left;font-weight:600}
+.scenario-table tr:hover td{background:rgba(255,255,255,.02)}
+.scenario-table .recommended td{background:rgba(0,212,160,.06);border-left:2px solid var(--accent2)}
+
+/* Pena quote */
+.pena-quote{background:rgba(108,99,255,.08);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;font-style:italic;color:var(--label);font-size:.82rem;line-height:1.6}
+.pena-quote strong{color:var(--text);font-style:normal}
+
+/* Verdict banner */
+.verdict-banner{border-radius:8px;padding:14px 18px;margin-bottom:16px;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:10px}
+.verdict-banner.strong{background:rgba(0,212,160,.12);border:1px solid rgba(0,212,160,.3);color:var(--accent2)}
+.verdict-banner.buy{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.verdict-banner.warn{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.3);color:var(--yellow)}
+.verdict-banner.fail{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--red)}
+
+/* Checklist */
+.phase-block{margin-bottom:16px}
+.phase-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer}
+.phase-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:.72rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.phase-title{font-size:.85rem;font-weight:600}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(42,51,71,.4);font-size:.8rem;color:var(--label)}
+.check-item input[type=checkbox]{margin-top:2px;flex-shrink:0;accent-color:var(--accent)}
+.check-item.done{color:var(--muted);text-decoration:line-through}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{padding:8px 16px;cursor:pointer;font-size:.8rem;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:.15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* Creative financing cards */
+.fin-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
+.fin-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.fin-name{font-weight:600;font-size:.88rem}
+.fin-meta{font-size:.75rem;color:var(--muted);margin-bottom:8px;line-height:1.5}
+.fin-bars{display:flex;gap:4px;height:8px;border-radius:4px;overflow:hidden;margin:8px 0}
+.fin-bar{height:100%;transition:.3s}
+.fin-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:.7rem;color:var(--muted);margin-top:6px}
+.fin-legend span{display:flex;align-items:center;gap:4px}
+.fin-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+
+/* Bitcoin panel */
+.btc-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.btc-logo{width:40px;height:40px;background:linear-gradient(135deg,#f97316,#eab308);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.1rem;color:#000}
+
+/* Saylor score */
+.saylor-score{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}
+.saylor-item{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;flex:1;min-width:140px}
+.saylor-item .val{font-size:1.1rem;font-weight:700;color:var(--accent2);margin-bottom:2px}
+.saylor-item .desc{font-size:.72rem;color:var(--muted);line-height:1.4}
+
+/* Tip pills */
+.tip-pill{display:inline-block;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);color:var(--label);font-size:.7rem;padding:3px 9px;border-radius:20px;margin:3px 3px 3px 0}
+
+/* Progress */
+.progress-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;border-radius:3px;background:var(--accent2);transition:.5s}
+
+/* Responsive */
+@media(max-width:768px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .grid2,.grid3,.grid4{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <span>M&amp;A Workbook</span>
+    <sub>QLA Deal Engineering</sub>
+  </div>
+  <div class="nav-section">Deal Engineering</div>
+  <div class="nav-item active" onclick="show('deal-input')">📋 Deal Input</div>
+  <div class="nav-item" onclick="show('structure')">🏗️ Debt Structure</div>
+  <div class="nav-item" onclick="show('dscr')">📊 DSCR Engineer</div>
+  <div class="nav-item" onclick="show('creative')">💡 Creative Financing</div>
+  <div class="nav-section">Dan Peña QLA</div>
+  <div class="nav-item" onclick="show('qla')">🦁 QLA Framework</div>
+  <div class="nav-item" onclick="show('checklist')">✅ Deal Checklist</div>
+  <div class="nav-item" onclick="show('scenarios')">📈 Deal Scenarios</div>
+  <div class="nav-section">Bitcoin Models</div>
+  <div class="nav-item" onclick="show('btc-models')">₿ S2F + Power Law</div>
+  <div class="nav-item" onclick="show('saylor')">🎯 Saylor Thesis</div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══ DEAL INPUT ════════════════════════════════════════════════════════════ -->
+<div id="deal-input" class="screen active">
+  <h1 style="margin-bottom:6px">Deal Input</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Enter the target business details. All other tabs recalculate in real-time.</p>
+
+  <div class="card">
+    <div class="card-title">Target Business</div>
+    <div class="grid2" style="gap:14px">
+      <div><label class="fl">Business Name</label><input type="text" id="biz-name" value="Target Co." oninput="recalc()"></div>
+      <div><label class="fl">Industry</label>
+        <select id="biz-industry" onchange="recalc()">
+          <option>HVAC / Home Services</option><option>Healthcare / Medical</option>
+          <option>SaaS / Software</option><option>Logistics / Trucking</option>
+          <option>Laundromat / Car Wash</option><option>Restaurant / Food</option>
+          <option>Retail / E-Commerce</option><option>Professional Services</option>
+          <option>Manufacturing</option><option>Real Estate Related</option><option>Other</option>
+        </select>
+      </div>
+      <div><label class="fl">Asking Price ($)</label><input type="number" id="asking" value="2000000" oninput="recalc()"></div>
+      <div><label class="fl">Annual Revenue ($)</label><input type="number" id="revenue" value="3500000" oninput="recalc()"></div>
+      <div><label class="fl">EBITDA ($)</label><input type="number" id="ebitda" value="480000" oninput="recalc()"></div>
+      <div><label class="fl">SDE — Seller Discretionary Earnings ($)</label><input type="number" id="sde" value="560000" oninput="recalc()"></div>
+      <div><label class="fl">Working Capital Included ($)</label><input type="number" id="working-cap" value="150000" oninput="recalc()"></div>
+      <div><label class="fl">Real Estate Included ($)</label><input type="number" id="re-value" value="0" oninput="recalc()"></div>
+    </div>
+  </div>
+
+  <!-- Live KPIs -->
+  <div class="grid4" style="margin-bottom:16px">
+    <div class="kpi" id="kpi-sde-mult"><div class="kpi-label">SDE Multiple</div><div class="kpi-val">—</div><div class="kpi-sub">target &lt; 3.5x</div></div>
+    <div class="kpi" id="kpi-ebitda-mult"><div class="kpi-label">EBITDA Multiple</div><div class="kpi-val">—</div><div class="kpi-sub">target &lt; 5x</div></div>
+    <div class="kpi" id="kpi-rev-mult"><div class="kpi-label">Revenue Multiple</div><div class="kpi-val">—</div><div class="kpi-sub">target &lt; 1.5x</div></div>
+    <div class="kpi" id="kpi-dscr-quick"><div class="kpi-label">DSCR (quick)</div><div class="kpi-val">—</div><div class="kpi-sub">min 1.25x bank</div></div>
+  </div>
+
+  <div id="deal-verdict" class="verdict-banner warn">⚡ Enter deal numbers above to see verdict</div>
+
+  <div class="card">
+    <div class="card-title">Peña Valuation Check</div>
+    <div id="pena-check" style="font-size:.83rem;line-height:1.8;color:var(--label)">
+      Loading analysis…
+    </div>
+    <div class="pena-quote" style="margin-top:12px">"<strong>Never pay more than 4-5x EBITDA for a solid cash-flowing business.</strong> If they want more, walk. They'll call you back." — Dan Peña</div>
+  </div>
+</div>
+
+<!-- ═══ DEBT STRUCTURE ════════════════════════════════════════════════════════ -->
+<div id="structure" class="screen">
+  <h1 style="margin-bottom:6px">Debt Structure Engineering</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Model the full capital stack. Slide the tranches — DSCR and cashflow update live.</p>
+
+  <div class="grid2" style="margin-bottom:0">
+    <div class="card">
+      <div class="card-title">🏦 Senior Bank Debt</div>
+      <label class="fl">% of Purchase Price <span id="bank-pct-val" style="color:var(--accent)">60%</span></label>
+      <input type="range" id="bank-pct" min="0" max="85" value="60" oninput="document.getElementById('bank-pct-val').textContent=this.value+'%';recalc()">
+      <div class="range-row"><span>0%</span><span>85%</span></div>
+      <div class="grid2" style="margin-top:10px;gap:10px">
+        <div><label class="fl">Rate (% annual)</label><input type="number" id="bank-rate" value="6.5" step="0.25" oninput="recalc()"></div>
+        <div><label class="fl">Amortization (years)</label><input type="number" id="bank-term" value="10" oninput="recalc()"></div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="fl">Interest-Only Period (years) <span id="bank-io-val" style="color:var(--orange)">0 yr</span></label>
+        <input type="range" id="bank-io" min="0" max="5" value="0" oninput="document.getElementById('bank-io-val').textContent=this.value+' yr';recalc()">
+        <div class="range-row"><span>None</span><span>5 yr IO</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🤝 Seller Note</div>
+      <label class="fl">% of Purchase Price <span id="seller-pct-val" style="color:var(--teal)">25%</span></label>
+      <input type="range" id="seller-pct" min="0" max="80" value="25" oninput="document.getElementById('seller-pct-val').textContent=this.value+'%';recalc()">
+      <div class="range-row"><span>0%</span><span>80%</span></div>
+      <div class="grid2" style="margin-top:10px;gap:10px">
+        <div><label class="fl">Rate (% annual)</label><input type="number" id="seller-rate" value="4.0" step="0.25" oninput="recalc()"></div>
+        <div><label class="fl">Term (years)</label><input type="number" id="seller-term" value="7" oninput="recalc()"></div>
+      </div>
+      <div style="margin-top:10px">
+        <label class="fl">Seller Note Type</label>
+        <div class="toggle" id="seller-type-toggle">
+          <button class="on" onclick="toggleSet('seller-type-toggle',this);recalc()">Interest-Only</button>
+          <button onclick="toggleSet('seller-type-toggle',this);recalc()">Fully Amortizing</button>
+          <button onclick="toggleSet('seller-type-toggle',this);recalc()">PIK (Accrues)</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🚀 Mezzanine</div>
+      <label class="fl">% of Purchase Price <span id="mezz-pct-val" style="color:var(--purple)">0%</span></label>
+      <input type="range" id="mezz-pct" min="0" max="40" value="0" oninput="document.getElementById('mezz-pct-val').textContent=this.value+'%';recalc()">
+      <div class="range-row"><span>0%</span><span>40%</span></div>
+      <div class="grid2" style="margin-top:10px;gap:10px">
+        <div><label class="fl">Rate (% annual)</label><input type="number" id="mezz-rate" value="12.0" step="0.5" oninput="recalc()"></div>
+        <div><label class="fl">Type</label>
+          <select id="mezz-type" onchange="recalc()">
+            <option value="cash">Cash Pay</option>
+            <option value="pik">PIK (accrues)</option>
+            <option value="hybrid">Hybrid 50/50</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💵 Equity Required</div>
+      <div class="kpi" id="equity-kpi" style="margin-bottom:12px"><div class="kpi-label">Equity to Close</div><div class="kpi-val" id="equity-val">—</div><div class="kpi-sub" id="equity-sub">—</div></div>
+      <div style="font-size:.75rem;color:var(--muted);line-height:1.7">
+        Equity = Asking Price − Bank − Seller Note − Mezzanine<br>
+        Sources: SBA injection, investors, business cash reserves, HELOC
+      </div>
+      <div class="pena-quote" style="margin-top:10px;font-size:.75rem">"<strong>Never use your own money.</strong> 10% max equity. The rest? OPM." — Peña</div>
+    </div>
+  </div>
+
+  <!-- Capital Stack Table -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">Capital Stack Summary</div>
+    <table class="tranche-table">
+      <thead><tr>
+        <th>Tranche</th><th>Amount</th><th>%</th><th>Rate</th><th>Annual Service</th><th>DSCR Contribution</th><th>Status</th>
+      </tr></thead>
+      <tbody id="stack-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- DSCR Cards -->
+  <div class="grid3" style="margin-top:0">
+    <div class="kpi" id="dscr-bank-kpi"><div class="kpi-label">Bank-Only DSCR</div><div class="kpi-val" id="dscr-bank-val">—</div><div class="kpi-sub">Senior debt only</div></div>
+    <div class="kpi" id="dscr-total-kpi"><div class="kpi-label">Total DSCR</div><div class="kpi-val" id="dscr-total-val">—</div><div class="kpi-sub">All cash-pay debt</div></div>
+    <div class="kpi teal" id="cashflow-kpi"><div class="kpi-label">Annual Free Cashflow</div><div class="kpi-val" id="cashflow-val">—</div><div class="kpi-sub">After all debt service</div></div>
+  </div>
+</div>
+
+<!-- ═══ DSCR ENGINEER ═════════════════════════════════════════════════════════ -->
+<div id="dscr" class="screen">
+  <h1 style="margin-bottom:6px">DSCR Optimizer</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Massage the deal until the bank says yes. Each lever recalculates coverage and max supportable price.</p>
+
+  <div class="card">
+    <div class="card-title">How Banks Calculate DSCR</div>
+    <div style="font-size:.82rem;color:var(--label);line-height:1.8">
+      <strong style="color:var(--text)">DSCR = EBITDA ÷ Annual Senior Debt Service</strong><br>
+      Banks use <strong>senior-only</strong> debt in most SBA deals — subordinated seller notes are excluded. DSCR ≥ 1.25 is the minimum for most lenders (1.20 with compensating factors).<br><br>
+      <strong style="color:var(--accent2)">4 Levers to Hit 1.25×:</strong>
+      Extend amortization → lower payment → higher DSCR.
+      Add IO period → zero principal years → higher DSCR.
+      More seller note → smaller bank loan → higher DSCR.
+      Negotiate price down → smaller everything → higher DSCR.
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Lever Comparison Table</div>
+    <table class="scenario-table">
+      <thead><tr>
+        <th>Scenario</th><th>Bank Loan</th><th>Rate</th><th>Term / IO</th><th>Ann. Service</th><th>DSCR</th><th>Max Price @ 1.25x</th><th></th>
+      </tr></thead>
+      <tbody id="lever-tbody"></tbody>
+    </table>
+    <div id="lever-recommendation" style="margin-top:12px;font-size:.82rem;color:var(--accent2);font-weight:600"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Max Supportable Price Calculator</div>
+    <div style="font-size:.82rem;color:var(--label);margin-bottom:12px">At target DSCR 1.25× — what's the highest price that works with optimal terms?</div>
+    <div class="grid3" style="margin-bottom:12px">
+      <div class="kpi teal"><div class="kpi-label">Baseline Max Price</div><div class="kpi-val" id="max-price-base">—</div><div class="kpi-sub">10yr, 60% bank</div></div>
+      <div class="kpi blue"><div class="kpi-label">Optimized Max Price</div><div class="kpi-val" id="max-price-opt">—</div><div class="kpi-sub">25yr, 60% bank</div></div>
+      <div class="kpi purple"><div class="kpi-label">Full OPM Max Price</div><div class="kpi-val" id="max-price-opm">—</div><div class="kpi-sub">25yr, 35% bank + seller</div></div>
+    </div>
+    <div id="price-gap-analysis" style="font-size:.82rem;color:var(--label);line-height:1.8"></div>
+  </div>
+</div>
+
+<!-- ═══ CREATIVE FINANCING ════════════════════════════════════════════════════ -->
+<div id="creative" class="screen">
+  <h1 style="margin-bottom:6px">Creative Financing Structures</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Six structures beyond standard SBA. Each one is a tool to close deals that don't fit the box.</p>
+  <div id="creative-cards"></div>
+</div>
+
+<!-- ═══ QLA FRAMEWORK ═════════════════════════════════════════════════════════ -->
+<div id="qla" class="screen">
+  <h1 style="margin-bottom:6px">Dan Peña — QLA Framework</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Quantum Leap Advantage methodology. Not theory — a battle-tested playbook for acquiring businesses with other people's money.</p>
+
+  <div class="pena-quote" style="font-size:.95rem;margin-bottom:20px">
+    "<strong>Your biggest challenge isn't someone else. It's the bullshit story you keep telling yourself as to why you can't achieve your dream.</strong>"
+    <div style="margin-top:6px;font-size:.75rem;color:var(--muted);font-style:normal">— Dan Peña, Guthrie Castle seminars</div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🎯 Target Selection (HPT)</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">High Performance Targets (HPTs):</strong><br>
+        ✓ Recurring, predictable cash flow<br>
+        ✓ Owner-operated, aging owner (succession gap)<br>
+        ✓ Priced below market (family biz, no broker)<br>
+        ✓ Essential service (recession-resistant)<br>
+        ✓ Below-radar for PE firms (&lt;$5M EBITDA)<br>
+        ✓ Multiple below 4x EBITDA<br><br>
+        <strong style="color:var(--text)">Avoid:</strong><br>
+        ✗ Trendy / fad industries<br>
+        ✗ Single-customer concentration &gt;30%<br>
+        ✗ Owner IS the business (no transferability)<br>
+        ✗ Overpriced (seller greed = negotiation failure)
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📞 Initial Approach</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">Peña's Direct Approach — No Brokers:</strong><br>
+        1. Handwritten letter to owner (not email)<br>
+        2. Call within 72 hours of letter<br>
+        3. Open: "I want to buy your business."<br>
+        4. Never show enthusiasm or urgency<br>
+        5. Let them talk — gather intel<br>
+        6. First meeting: listen 80%, talk 20%<br><br>
+        <strong style="color:var(--text)">Early Intel to Gather:</strong><br>
+        • Why are they selling? (succession, health, divorce?)<br>
+        • Any debt, liens, outstanding litigation?<br>
+        • Is owner willing to finance part of the deal?<br>
+        • What's their timeline?
+      </div>
+      <div class="pena-quote">"<strong>Never tell the seller how much you want his business.</strong> You can always negotiate down. Never up."</div>
+    </div>
+    <div class="card">
+      <div class="card-title">📄 The LOI (Letter of Intent)</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">Get LOI signed FAST. Key terms:</strong><br>
+        • Purchase price (start below fair value)<br>
+        • Exclusivity period: 60–90 days (no-shop)<br>
+        • Good faith deposit: $5k–$25k refundable<br>
+        • Seller non-compete: 3–5yr, 25+ mile radius<br>
+        • Key employee retention clause<br>
+        • Seller representation + warranties<br>
+        • Subject to financing and DD<br><br>
+        <strong style="color:var(--text)">Earnout clause example:</strong><br>
+        "Additional $X payable if revenue exceeds $Y in Year 1–2 post-close" — bridges valuation gap without overpaying upfront.
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 OPM Capital Stack (QLA Style)</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">Other People's Money — The Peña Stack:</strong><br>
+        <span style="color:var(--blue)">■</span> SBA / Bank: 55–70% · low rate · longest term<br>
+        <span style="color:var(--teal)">■</span> Seller Note: 20–35% · IO, subordinated<br>
+        <span style="color:var(--purple)">■</span> Mezzanine: 0–10% · PIK if possible<br>
+        <span style="color:var(--green)">■</span> Equity: &lt;10% ideally · from investors, not you<br><br>
+        <strong style="color:var(--text)">The zero-equity deal:</strong><br>
+        Business has working capital → fund equity from target's own cash. SBA allows this as "seller discretionary working capital injection."
+      </div>
+      <div class="pena-quote">"<strong>Use OPM — other people's money. OPC — other people's credibility. OPE — other people's experience.</strong>"</div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔍 Due Diligence — Peña's Non-Negotiables</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">Verify EVERYTHING. Bank statements are truth.</strong><br>
+        1. 3 years bank statements → reconcile to P&L<br>
+        2. Every SDE add-back → documented receipt<br>
+        3. AR aging → who owes money and how old<br>
+        4. Top 10 customers → interview 3–5 yourself<br>
+        5. Licenses → ARE THEY TRANSFERABLE?<br>
+        6. Environmental → especially real estate<br>
+        7. QoE report → &gt;$750k deal, non-negotiable<br><br>
+        <strong style="color:var(--red)">Kill deal immediately if:</strong><br>
+        ✗ Bank statements don't match P&L<br>
+        ✗ Key licenses not transferable<br>
+        ✗ Customer concentration &gt;40% in one client<br>
+        ✗ Litigation you didn't know about
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 100-Day Post-Acquisition Plan</div>
+      <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+        <strong style="color:var(--text)">First 100 days — DO NOT blow up the machine:</strong><br>
+        Days 1–30: Observe. Meet everyone. Don't change anything.<br>
+        Days 31–60: Install reporting (weekly P&L, cash flow)<br>
+        Days 61–90: Attack biggest expense line. Renegotiate supplier contracts. Find top revenue lever.<br>
+        Days 91–100: Set 12-month targets. Identify acquisition #2.<br><br>
+        <strong style="color:var(--text)">Peña's rules:</strong><br>
+        • Keep all key employees for 90 days minimum<br>
+        • Don't raise prices until you understand the biz<br>
+        • Cash flow statement weekly, not monthly<br>
+        • Use business cash flow to fund your next deal
+      </div>
+      <div class="pena-quote">"<strong>Your first deal is your best deal. Don't wait for perfect. Done beats perfect every time.</strong>"</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DEAL CHECKLIST ════════════════════════════════════════════════════════ -->
+<div id="checklist" class="screen">
+  <h1 style="margin-bottom:6px">Deal Checklist</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Track your acquisition from first call to close. Check items as you complete them.</p>
+
+  <div id="checklist-progress" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:4px">
+      <span>Completion</span><span id="cl-pct">0%</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="cl-fill" style="width:0%"></div></div>
+  </div>
+
+  <div id="checklist-phases"></div>
+</div>
+
+<!-- ═══ DEAL SCENARIOS ════════════════════════════════════════════════════════ -->
+<div id="scenarios" class="screen">
+  <h1 style="margin-bottom:6px">Deal Scenarios</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Compare how changing the price or EBITDA assumptions shifts the verdict.</p>
+
+  <div class="card">
+    <div class="card-title">Price Sensitivity — DSCR at Different Asking Prices</div>
+    <table class="scenario-table">
+      <thead><tr>
+        <th>Asking Price</th><th>SDE Mult</th><th>EBITDA Mult</th><th>Bank Loan (60%)</th><th>Ann. Service</th><th>DSCR</th><th>Cashflow</th><th>Verdict</th>
+      </tr></thead>
+      <tbody id="sensitivity-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">EBITDA Growth Scenarios (Year 1–5)</div>
+    <div id="growth-note" style="font-size:.78rem;color:var(--muted);margin-bottom:10px">Assumes you close at asking price with current debt structure.</div>
+    <table class="scenario-table">
+      <thead><tr>
+        <th>Growth Rate</th><th>EBITDA Yr1</th><th>EBITDA Yr2</th><th>EBITDA Yr3</th><th>DSCR Yr1</th><th>DSCR Yr3</th><th>Equity ROI Yr3</th>
+      </tr></thead>
+      <tbody id="growth-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ BTC MODELS ════════════════════════════════════════════════════════════ -->
+<div id="btc-models" class="screen">
+  <h1 style="margin-bottom:6px">Bitcoin Price Models</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">Stock-to-Flow and Power Law corridor — the two most-cited on-chain models.</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="btc-header">
+        <div class="btc-logo">₿</div>
+        <div><div style="font-weight:700">Stock-to-Flow Model</div><div style="font-size:.75rem;color:var(--muted)">Plan B (100trillionUSD)</div></div>
+      </div>
+      <div id="s2f-content"></div>
+    </div>
+    <div class="card">
+      <div class="btc-header">
+        <div class="btc-logo" style="background:linear-gradient(135deg,var(--teal),var(--blue))">📈</div>
+        <div><div style="font-weight:700">Power Law Corridor</div><div style="font-size:.75rem;color:var(--muted)">Santostasi / Burger model</div></div>
+      </div>
+      <div id="pl-content"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:0">
+    <div class="card-title">BTC Price Scenarios (Based on Your Holdings)</div>
+    <div class="grid2" style="margin-bottom:12px;gap:10px">
+      <div><label class="fl">BTC Holdings (coins)</label><input type="number" id="btc-holdings" value="1.5" step="0.01" oninput="renderBtcScenarios()"></div>
+      <div><label class="fl">Purchase Price (USD, optional)</label><input type="number" id="btc-cost" value="45000" oninput="renderBtcScenarios()"></div>
+    </div>
+    <table class="scenario-table" id="btc-scenario-table">
+      <thead><tr>
+        <th>Scenario</th><th>CAGR</th><th>Price 1yr</th><th>Price 3yr</th><th>Price 5yr</th><th>Price 10yr</th><th>Portfolio 5yr</th>
+      </tr></thead>
+      <tbody id="btc-scenario-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SAYLOR THESIS ════════════════════════════════════════════════════════= -->
+<div id="saylor" class="screen">
+  <h1 style="margin-bottom:6px">Michael Saylor — Bitcoin Thesis</h1>
+  <p style="color:var(--muted);font-size:.82rem;margin-bottom:20px">The monetary inflation model, purchasing power decay, and why BTC is the apex asset.</p>
+
+  <div class="pena-quote" style="border-color:var(--orange)">
+    "<strong>Bitcoin is a swarm of cyber hornets serving the goddess of wisdom, feeding on the fire of truth, exponentially growing ever smarter, faster, and stronger behind a wall of encrypted energy.</strong>"
+    <div style="margin-top:6px;font-size:.75rem;color:var(--muted);font-style:normal">— Michael Saylor</div>
+  </div>
+
+  <div class="saylor-score">
+    <div class="saylor-item"><div class="val">~7%</div><div class="desc">USD M2 money supply growth / year — the "monetary inflation tax" on dollar holders</div></div>
+    <div class="saylor-item"><div class="val">21M</div><div class="desc">Hard cap on BTC supply — only asset with mathematically guaranteed scarcity</div></div>
+    <div class="saylor-item"><div class="val">~120</div><div class="desc">Current Stock-to-Flow ratio (post-4th halving) vs gold's ~60 — BTC is harder than gold</div></div>
+    <div class="saylor-item"><div class="val">~580K</div><div class="desc">Strategy (MSTR) BTC holdings est. — world's largest corporate Bitcoin treasury</div></div>
+    <div class="saylor-item"><div class="val">~$65K</div><div class="desc">Strategy avg cost basis est. — leveraged at premium, betting on 10x from here</div></div>
+    <div class="saylor-item"><div class="val">10M%</div><div class="desc">BTC return from $0.08 (2010) to ~$100K (2025) — 15 years, ~65% CAGR</div></div>
+  </div>
+
+  <div class="grid2" style="margin-top:0">
+    <div class="card">
+      <div class="card-title">Purchasing Power Decay Model</div>
+      <div id="saylor-usd-table"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">BTC Addressable Market Scenarios</div>
+      <div id="saylor-tam-table"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">BTC vs USD: Capital Preservation Calculator</div>
+    <div class="grid3" style="margin-bottom:12px;gap:10px">
+      <div><label class="fl">Capital Amount ($)</label><input type="number" id="saylor-capital" value="100000" oninput="renderSaylorcalc()"></div>
+      <div><label class="fl">Projection Years</label><input type="number" id="saylor-years" value="10" oninput="renderSaylorcalc()"></div>
+      <div><label class="fl">BTC CAGR Assumption (%)</label><input type="number" id="saylor-cagr" value="50" oninput="renderSaylorcalc()"></div>
+    </div>
+    <div id="saylor-calc-result"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">The Saylor Argument (Plain English)</div>
+    <div style="font-size:.82rem;color:var(--label);line-height:1.9">
+      <strong style="color:var(--text)">1. Every dollar held is losing ~7%/year in real purchasing power</strong> (M2 growth). $1M in cash becomes ~$508k of real value in 10 years.<br>
+      <strong style="color:var(--text)">2. Bitcoin has a fixed 21M supply.</strong> Demand grows with global adoption. Supply cannot respond to price. This is the opposite of every fiat currency, every central bank, and most assets.<br>
+      <strong style="color:var(--text)">3. Bitcoin's SF ratio (post-4th halving: ~120) exceeds gold (~60).</strong> Historically, higher SF = higher price in S2F model. Gold took 5,000 years to accumulate its stock. BTC is harder.<br>
+      <strong style="color:var(--text)">4. Institutional adoption is early.</strong> Strategy bought at $65K avg. MicroStrategy's thesis: BTC captures value from deteriorating monetary systems.<br>
+      <strong style="color:var(--text)">5. If BTC captures even 10% of gold's market cap ($13T),</strong> that implies ~$620,000/BTC. 50% of gold = ~$3.1M/BTC.<br>
+      <strong style="color:var(--text)">6. Roth IRA is the ultimate BTC wrapper.</strong> Tax-free compounding at 50-65% CAGR = the biggest legal tax arbitrage available to US citizens.
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+let state = {
+  asking:0, ebitda:0, sde:0, revenue:0,
+  bankPct:60, bankRate:6.5, bankTerm:10, bankIO:0,
+  sellerPct:25, sellerRate:4.0, sellerTerm:7, sellerType:'io',
+  mezzPct:0, mezzRate:12, mezzType:'pik',
+};
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fmt = (n,d=0) => '$'+(n||0).toLocaleString('en-US',{maximumFractionDigits:d});
+const pct = n => (n||0).toFixed(2)+'x';
+const fmtK = n => n>=1e6?'$'+(n/1e6).toFixed(2)+'M':n>=1e3?'$'+(n/1e3).toFixed(0)+'K':fmt(n);
+
+function monthlyPayment(principal, annualRate, termYears) {
+  const r = annualRate / 100 / 12;
+  const n = termYears * 12;
+  if (r === 0 || n === 0) return principal / (n || 1);
+  return principal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+}
+function annualService(amt, rate, term, type='amort') {
+  if (!amt || amt <= 0) return 0;
+  if (type === 'io' || type === 'pik') return type === 'pik' ? 0 : amt * rate / 100;
+  return monthlyPayment(amt, rate, term) * 12;
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const el = $(id); if(el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>{
+    if(n.getAttribute('onclick')?.includes(id)) n.classList.add('active');
+  });
+  renderCurrentScreen(id);
+}
+
+function toggleSet(containerId, btn) {
+  document.querySelectorAll('#'+containerId+' button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function setKpi(id, value, cls) {
+  const el=$(id); if(!el)return;
+  el.className='kpi'+(cls?' '+cls:'');
+  el.querySelector('.kpi-val').textContent=value;
+}
+
+function dscrClass(d) {
+  return d>=1.25?'pass':d>=1.0?'warn':'fail';
+}
+
+// ── Main recalc ───────────────────────────────────────────────────────────────
+function recalc() {
+  state.asking   = parseFloat($('asking')?.value)||0;
+  state.ebitda   = parseFloat($('ebitda')?.value)||0;
+  state.sde      = parseFloat($('sde')?.value)||0;
+  state.revenue  = parseFloat($('revenue')?.value)||0;
+  state.bankPct  = parseInt($('bank-pct')?.value)||60;
+  state.bankRate = parseFloat($('bank-rate')?.value)||6.5;
+  state.bankTerm = parseFloat($('bank-term')?.value)||10;
+  state.bankIO   = parseInt($('bank-io')?.value)||0;
+  state.sellerPct  = parseInt($('seller-pct')?.value)||25;
+  state.sellerRate = parseFloat($('seller-rate')?.value)||4.0;
+  state.sellerTerm = parseFloat($('seller-term')?.value)||7;
+  state.mezzPct  = parseInt($('mezz-pct')?.value)||0;
+  state.mezzRate = parseFloat($('mezz-rate')?.value)||12;
+  state.mezzType = $('mezz-type')?.value||'pik';
+
+  // Seller type from toggle
+  const sellerBtns = document.querySelectorAll('#seller-type-toggle button');
+  sellerBtns.forEach(b=>{if(b.classList.contains('on')) state.sellerType=b.textContent.includes('IO')?'io':b.textContent.includes('PIK')?'pik':'amort';});
+
+  renderDealInput();
+  renderStructure();
+  renderDscrOptimizer();
+  renderCreative();
+  renderSensitivity();
+  renderGrowthScenarios();
+}
+
+// ── Deal Input ────────────────────────────────────────────────────────────────
+function renderDealInput() {
+  const {asking,ebitda,sde,revenue,bankPct,bankRate,bankTerm} = state;
+  if (!asking) return;
+
+  const sdeMult    = sde ? asking/sde : null;
+  const ebitdaMult = ebitda ? asking/ebitda : null;
+  const revMult    = revenue ? asking/revenue : null;
+
+  // Quick DSCR (standard: 60% bank, 10yr)
+  const bankAmt = asking*bankPct/100;
+  const bankService = bankAmt > 0 ? monthlyPayment(bankAmt,bankRate,bankTerm)*12 : 0;
+  const income = ebitda||sde||0;
+  const dscr = bankService>0 ? income/bankService : 0;
+
+  // SDE multiple KPI
+  const kpiSde = $('kpi-sde-mult');
+  if(kpiSde && sdeMult) {
+    kpiSde.className='kpi'+(sdeMult<=3?'':sdeMult<=4.5?' warn':' fail');
+    kpiSde.querySelector('.kpi-val').textContent=sdeMult.toFixed(2)+'x';
+  }
+  const kpiEbitda = $('kpi-ebitda-mult');
+  if(kpiEbitda && ebitdaMult) {
+    kpiEbitda.className='kpi'+(ebitdaMult<=5?'':ebitdaMult<=7?' warn':' fail');
+    kpiEbitda.querySelector('.kpi-val').textContent=ebitdaMult.toFixed(2)+'x';
+  }
+  const kpiRev = $('kpi-rev-mult');
+  if(kpiRev && revMult) {
+    kpiRev.className='kpi'+(revMult<=1.5?'':revMult<=2.5?' warn':' fail');
+    kpiRev.querySelector('.kpi-val').textContent=revMult.toFixed(2)+'x';
+  }
+  const kpiDscr = $('kpi-dscr-quick');
+  if(kpiDscr) {
+    kpiDscr.className='kpi '+dscrClass(dscr);
+    kpiDscr.querySelector('.kpi-val').textContent=dscr.toFixed(2)+'x';
+  }
+
+  // Verdict banner
+  const v = $('deal-verdict');
+  if(v) {
+    const sdmOk = !sdeMult || sdeMult<=3.5;
+    const emOk  = !ebitdaMult || ebitdaMult<=5;
+    const dscrOk= dscr>=1.25;
+    if(dscrOk && sdmOk && emOk) { v.className='verdict-banner strong'; v.textContent='✅  STRONG BUY — DSCR clears 1.25x, price under target multiples'; }
+    else if(dscrOk) { v.className='verdict-banner buy'; v.textContent='✅  BUY — DSCR passes. Multiples may be high; negotiate or add IO'; }
+    else if(dscr>=1.0) { v.className='verdict-banner warn'; v.textContent='⚠️  NEGOTIATE — DSCR ' + dscr.toFixed(2)+'x. Add IO period or extend term'; }
+    else { v.className='verdict-banner fail'; v.textContent='❌  PASS / RESTRUCTURE — DSCR '+dscr.toFixed(2)+'x. Price too high or earnings too low'; }
+  }
+
+  // Peña check
+  const pc = $('pena-check');
+  if(pc) {
+    const lines = [];
+    const target = 4*( ebitda||0 );
+    if(asking>target && ebitda) lines.push(`🔴 Asking price <strong>${fmt(asking)}</strong> is ${fmtK(asking-target)} above Peña's 4× EBITDA max of <strong>${fmt(target)}</strong>. Room to negotiate down.`);
+    else if(ebitda) lines.push(`🟢 Price is within Peña's 4× EBITDA ceiling. <strong>${fmt(asking)}</strong> vs max ${fmt(target)}.`);
+    if(sdeMult && sdeMult<=3) lines.push('🟢 SDE multiple ' + sdeMult.toFixed(2)+'x is in bargain zone (&lt;3×).');
+    else if(sdeMult) lines.push('🟡 SDE multiple ' + sdeMult.toFixed(2)+'x. Target &lt;3× for a Peña-style deal.');
+    lines.push(dscr>=1.25 ? `🟢 DSCR ${dscr.toFixed(2)}x passes 1.25× bank threshold.` : `🔴 DSCR ${dscr.toFixed(2)}x below 1.25×. Use IO period or extend term.`);
+    pc.innerHTML = lines.join('<br>');
+  }
+}
+
+// ── Structure ─────────────────────────────────────────────────────────────────
+function renderStructure() {
+  const {asking,ebitda,sde,bankPct,bankRate,bankTerm,bankIO,sellerPct,sellerRate,sellerTerm,sellerType,mezzPct,mezzRate,mezzType} = state;
+  if(!asking) return;
+
+  const income     = ebitda||sde||0;
+  const bankAmt    = asking*bankPct/100;
+  const sellerAmt  = asking*sellerPct/100;
+  const mezzAmt    = asking*mezzPct/100;
+  const equityAmt  = Math.max(0, asking - bankAmt - sellerAmt - mezzAmt);
+  const equityPct  = asking>0 ? equityAmt/asking*100 : 0;
+
+  // Annual services
+  const bankServiceIO    = bankIO>0 ? bankAmt*bankRate/100 : null;
+  const bankServiceAmort = bankAmt>0 ? monthlyPayment(bankAmt,bankRate,bankTerm)*12 : 0;
+  const bankService      = bankIO>0 ? bankAmt*bankRate/100 : bankServiceAmort;
+
+  const sellerService = annualService(sellerAmt, sellerRate, sellerTerm, sellerType);
+  const mezzCashService = mezzType==='pik' ? 0 : mezzType==='hybrid' ? mezzAmt*mezzRate/100*0.5 : mezzAmt*mezzRate/100;
+
+  const totalCashService = bankService + sellerService + mezzCashService;
+  const bankDscr  = bankService>0 ? income/bankService : 0;
+  const totalDscr = totalCashService>0 ? income/totalCashService : 0;
+  const cashflow  = income - totalCashService;
+
+  // Equity KPI
+  const eqKpi = $('equity-val');
+  if(eqKpi) {
+    eqKpi.textContent = fmt(equityAmt);
+    $('equity-sub').textContent = equityPct.toFixed(1)+'% of purchase price';
+    $('equity-kpi').className = 'kpi'+(equityPct<10?' pass':equityPct<20?' warn':' fail');
+  }
+
+  // Stack table
+  const tbody = $('stack-tbody');
+  if(tbody) {
+    const rows = [
+      { name:'Senior Bank Debt', amt:bankAmt, pct:bankPct, rate:bankRate+'%', service:bankService, cls:'blue',
+        note: bankIO>0?`${bankIO}yr IO then amortizing`:`${bankTerm}yr amort` },
+      { name:'Seller Note', amt:sellerAmt, pct:sellerPct, rate:sellerRate+'%', service:sellerService, cls:'teal',
+        note: sellerType==='io'?'Interest-only':sellerType==='pik'?'PIK (accrues)':'Amortizing' },
+      { name:'Mezzanine', amt:mezzAmt, pct:mezzPct, rate:mezzRate+'%', service:mezzCashService, cls:'purple',
+        note: mezzType==='pik'?'PIK — no cash':'Cash pay' },
+      { name:'Equity', amt:equityAmt, pct:equityPct.toFixed(1), rate:'—', service:0, cls:'green',
+        note: equityPct<10?'✓ Low equity':'High — use OPM' },
+    ];
+    tbody.innerHTML = rows.map(r=>`
+      <tr>
+        <td><span class="badge badge-${r.cls}">${r.name}</span> <span style="font-size:.72rem;color:var(--muted)">${r.note}</span></td>
+        <td>${fmt(r.amt)}</td>
+        <td>${r.pct}%</td>
+        <td>${r.rate}</td>
+        <td style="color:${r.service>0?'var(--red)':'var(--muted)'};">${r.service>0?fmt(r.service):r.name==='Mezzanine'&&mezzType==='pik'?'Accrues':'—'}</td>
+        <td>${income>0&&r.service>0?'Used in DSCR':'—'}</td>
+        <td>${r.amt>0?'<span class="badge badge-blue">Active</span>':'<span class="badge badge-gray">—</span>'}</td>
+      </tr>`).join('') +
+    `<tr><td>TOTAL</td><td>${fmt(asking)}</td><td>100%</td><td>—</td><td style="color:var(--red)">${fmt(totalCashService)}</td><td>—</td><td>—</td></tr>`;
+  }
+
+  // DSCR KPIs
+  const dbv = $('dscr-bank-val'); if(dbv){ dbv.textContent=bankDscr.toFixed(2)+'x'; $('dscr-bank-kpi').className='kpi '+dscrClass(bankDscr); }
+  const dtv = $('dscr-total-val'); if(dtv){ dtv.textContent=totalDscr.toFixed(2)+'x'; $('dscr-total-kpi').className='kpi '+dscrClass(totalDscr); }
+  const cfv = $('cashflow-val'); if(cfv){ cfv.textContent=fmt(cashflow); $('cashflow-kpi').className='kpi'+(cashflow>0?' teal':' fail'); }
+}
+
+// ── DSCR Optimizer ────────────────────────────────────────────────────────────
+function renderDscrOptimizer() {
+  const {asking,ebitda,sde,bankPct,bankRate} = state;
+  const income = ebitda||sde||0;
+  if(!asking||!income) return;
+
+  const bankAmt = asking*bankPct/100;
+  const pmtCalc = (amt,rate,term) => amt>0 ? monthlyPayment(amt,rate,term)*12 : 0;
+
+  const scenarios = [
+    { name:'Baseline', bankAmt, rate:bankRate, term:10, io:0 },
+    { name:'20yr amortization', bankAmt, rate:bankRate, term:20, io:0 },
+    { name:'25yr amortization', bankAmt, rate:bankRate, term:25, io:0 },
+    { name:'2yr IO + 10yr amort', bankAmt, rate:bankRate, term:10, io:2 },
+    { name:'2yr IO + 20yr amort', bankAmt, rate:bankRate, term:20, io:2 },
+    { name:'35% bank (more seller note)', asking*0.35, rate:bankRate, term:10, io:0 },
+    { name:'35% bank + 25yr amort', asking*0.35, rate:bankRate, term:25, io:0 },
+    { name:'SBA 25yr RE (real estate)', bankAmt, rate:bankRate, term:25, io:0, label:'RE only' },
+  ];
+
+  const maxDscr = Math.max(...scenarios.map(s => {
+    const svc = s.io > 0 ? s.bankAmt*s.rate/100 : pmtCalc(s.bankAmt,s.rate,s.term);
+    return svc > 0 ? income/svc : 0;
+  }));
+
+  const tbody = $('lever-tbody');
+  if(tbody) {
+    // Max supportable price: solving for asking_price where bank_dscr = 1.25
+    // annual_service = income/1.25, bank_amt = asking*bankPct/100, monthly = service/12
+    // monthlyPayment(bankAmt,rate,term)*12 = income/1.25
+    // → bankAmt = income/1.25 / 12 / (r*(1+r)^n/((1+r)^n-1)) where r=rate/100/12, n=term*12
+    const maxPrice = (rate,term) => {
+      const r = rate/100/12, n = term*12;
+      const mthFactor = r===0 ? 1/n : r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+      const targetBankAmt = (income/1.25/12) / mthFactor;
+      return targetBankAmt / (bankPct/100);
+    };
+
+    tbody.innerHTML = scenarios.map((s,i) => {
+      const svc = s.io>0 ? s.bankAmt*s.rate/100 : pmtCalc(s.bankAmt,s.rate,s.term);
+      const d = svc>0 ? income/svc : 0;
+      const mp = s.io>0 ? fmt(s.bankAmt*s.rate/100*1/( bankPct/100)*1.25/1) : fmt(maxPrice(s.rate,s.term));
+      const cls = d>=1.25?'pass':d>=1.0?'warn':'fail';
+      const recommended = d === maxDscr ? 'class="recommended"' : '';
+      return `<tr ${recommended}>
+        <td>${s.name}${d===maxDscr?' <span class="badge badge-green">BEST</span>':''}</td>
+        <td>${fmt(s.bankAmt)}</td>
+        <td>${s.rate}%</td>
+        <td>${s.io>0?s.io+'yr IO + ':''}${s.term}yr</td>
+        <td>${fmt(svc)}</td>
+        <td class="${cls}">${d.toFixed(2)}x</td>
+        <td>${mp}</td>
+        <td><span class="badge badge-${d>=1.25?'green':d>=1?'yellow':'red'}">${d>=1.25?'PASS':d>=1?'CLOSE':'FAIL'}</span></td>
+      </tr>`;
+    }).join('');
+    $('lever-recommendation').textContent = `Recommendation: Use "${scenarios.find(s=>{const svc=s.io>0?s.bankAmt*s.rate/100:pmtCalc(s.bankAmt,s.rate,s.term);return svc>0&&income/svc===maxDscr;})?.name}" — achieves highest DSCR of ${maxDscr.toFixed(2)}x`;
+  }
+
+  // Max supportable price cards
+  const r = bankRate/100/12;
+  const maxPriceBase = () => { const n=10*12,f=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return (income/1.25/12)/f/(bankPct/100); };
+  const maxPriceOpt  = () => { const n=25*12,f=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return (income/1.25/12)/f/(bankPct/100); };
+  const maxPriceOpm  = () => { const n=25*12,f=r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1); return (income/1.25/12)/f/0.35; };
+
+  const mb=$('max-price-base');if(mb)mb.textContent=fmtK(maxPriceBase());
+  const mo=$('max-price-opt');if(mo)mo.textContent=fmtK(maxPriceOpt());
+  const mp=$('max-price-opm');if(mp)mp.textContent=fmtK(maxPriceOpm());
+
+  const gap=$('price-gap-analysis');
+  if(gap) {
+    const gap1 = asking - maxPriceBase();
+    const gap2 = asking - maxPriceOpt();
+    const gap3 = asking - maxPriceOpm();
+    gap.innerHTML = [
+      gap1>0?`<span style="color:var(--red)">✗</span> Baseline: asking is <strong>${fmtK(gap1)} too high</strong> for 1.25x DSCR at 10yr.`:`<span style="color:var(--green)">✓</span> Baseline: asking is ${fmtK(-gap1)} below max supportable price.`,
+      gap2>0?`<span style="color:var(--yellow)">→</span> 25yr amort: asking is <strong>${fmtK(gap2)} too high</strong>.`:`<span style="color:var(--green)">✓</span> 25yr amort: asking is ${fmtK(-gap2)} below max supportable price.`,
+      gap3>0?`<span style="color:var(--red)">✗</span> Full OPM (35% bank): asking is <strong>${fmtK(gap3)} too high</strong>.`:`<span style="color:var(--green)">✓</span> Full OPM (35% bank + 25yr): asking is ${fmtK(-gap3)} below max supportable price.`,
+    ].join('<br>');
+  }
+}
+
+// ── Creative Financing ────────────────────────────────────────────────────────
+function renderCreative() {
+  const {asking,ebitda,sde} = state;
+  const income = ebitda||sde||0;
+  const container = $('creative-cards');
+  if(!container||!asking) return;
+
+  const structures = [
+    {
+      name:'Classic SBA 7(a) + Seller Note',
+      desc:'The workhorse deal. 10% equity, 65% SBA loan, 25% seller note (interest-only, subordinated). Bank only analyzes SBA tranche in most cases.',
+      stack:[{n:'Bank',pct:65,c:'var(--blue)'},{n:'Seller IO',pct:25,c:'var(--teal)'},{n:'Equity',pct:10,c:'var(--green)'}],
+      equity:10, bankPct:65, bankRate:6.5, bankTerm:10, extraService: asking*0.25*4/100,
+      approvable:true, bestFor:'Most small business acquisitions &lt;$5M', risk:'Seller may not accept IO note',
+      pena:'Peña standard. 10% equity is the ceiling — not the floor. Push for less.'
+    },
+    {
+      name:'Interest-Only Bridge (2yr)',
+      desc:'Bank debt interest-only for 2 years, then converts to 10yr amortizing. Seller note IO throughout. Maximizes DSCR in critical first years when you\'re building cash flow.',
+      stack:[{n:'Bank IO→Amort',pct:60,c:'var(--blue)'},{n:'Seller IO',pct:30,c:'var(--teal)'},{n:'Equity',pct:10,c:'var(--green)'}],
+      equity:10, bankPct:60, bankRate:6.5, bankTerm:10, ioYears:2,
+      extraService: asking*0.30*4/100,
+      approvable:true, bestFor:'Turnarounds, businesses with improving EBITDA trend', risk:'Higher total interest cost long-term',
+      pena:'Use IO when the deal barely passes today but clearly works in 24 months. Show the bank the trajectory.'
+    },
+    {
+      name:'Majority Seller Finance',
+      desc:'Seller wants out fast or has no other buyer. You put up 15%, bank does 20%, seller carries 65%. Very low bank exposure = easy approval. High seller risk.',
+      stack:[{n:'Bank',pct:20,c:'var(--blue)'},{n:'Seller 65%',pct:65,c:'var(--teal)'},{n:'Equity',pct:15,c:'var(--green)'}],
+      equity:15, bankPct:20, bankRate:6.5, bankTerm:7, extraService: asking*0.65*4/100,
+      approvable:true, bestFor:'Aging owner, distressed business, motivated seller', risk:'Seller has huge leverage if you default',
+      pena:'When seller is desperate or just wants income stream — let them be your bank. They know the business is good. If they\'re willing to carry 65%, that\'s the best signal you can get.'
+    },
+    {
+      name:'Earnout Structure',
+      desc:'15% down, 55% bank, 30% earnout paid from future profits over 3-5 years. Bridges valuation gap between buyer and seller price expectations.',
+      stack:[{n:'Bank',pct:55,c:'var(--blue)'},{n:'Earnout',pct:30,c:'var(--orange)'},{n:'Equity',pct:15,c:'var(--green)'}],
+      equity:15, bankPct:55, bankRate:6.5, bankTerm:10, extraService:0,
+      approvable:true, bestFor:'When seller\'s asking price > current EBITDA supports', risk:'Earnout disputes are common — define metrics precisely',
+      pena:'Earnouts are seller financing dressed up as performance pay. Structure it so Year 1 earnout triggers only if revenue is above what you projected anyway.'
+    },
+    {
+      name:'Equity Rollover (Seller Retains 20%)',
+      desc:'You buy 80%, seller keeps 20% equity. You put in 5% cash, bank 55%, seller 20% note on their sold portion. Seller has skin in the game — best signal of confidence.',
+      stack:[{n:'Bank',pct:55,c:'var(--blue)'},{n:'Seller Note',pct:20,c:'var(--teal)'},{n:'Seller Equity',pct:20,c:'var(--orange)'},{n:'Equity',pct:5,c:'var(--green)'}],
+      equity:5, bankPct:55, bankRate:6.5, bankTerm:10, extraService: asking*0.20*4/100,
+      approvable:true, bestFor:'Businesses where owner is key (HVAC, healthcare, niche services)', risk:'Minority ownership disputes; need strong buy-sell agreement',
+      pena:'Make seller your partner. They stay motivated. You get their contacts. Negotiate a 3-5yr buyout of their remaining 20% at predetermined multiple.'
+    },
+    {
+      name:'PIK Mezzanine + Senior',
+      desc:'50% senior bank, 25% PIK mezz (accrues, no cash), 15% seller note, 10% equity. PIK mezz doesn\'t hit cash flow — bank DSCR calculated on senior only.',
+      stack:[{n:'Bank Senior',pct:50,c:'var(--blue)'},{n:'PIK Mezz',pct:25,c:'var(--purple)'},{n:'Seller IO',pct:15,c:'var(--teal)'},{n:'Equity',pct:10,c:'var(--green)'}],
+      equity:10, bankPct:50, bankRate:6.5, bankTerm:10, extraService: asking*0.15*4/100,
+      approvable:true, bestFor:'High-value deals where IRR supports mezz fees at exit; PE-style', risk:'PIK accrues — owe more at exit; complex structure',
+      pena:'Mezz is expensive money. Only use PIK if you have a clear exit or refinance event in 3-5 years. Never use mezz without modeling the accrued balloon at exit.'
+    },
+  ];
+
+  container.innerHTML = structures.map((s,i) => {
+    const bankAmt = asking*s.bankPct/100;
+    const bankSvc = monthlyPayment(bankAmt, s.bankRate, s.bankTerm)*12;
+    const totalSvc = bankSvc + (s.extraService||0);
+    const dscr = totalSvc>0 ? income/totalSvc : 0;
+    const dscrBank = bankSvc>0 ? income/bankSvc : 0;
+    const equityAmt = asking*s.equity/100;
+    const roi = equityAmt>0 ? (income-totalSvc)/equityAmt*100 : 0;
+    return `
+    <div class="fin-card">
+      <div class="fin-card-header">
+        <div>
+          <div class="fin-name">${i+1}. ${s.name}</div>
+          <div class="fin-meta">${s.desc}</div>
+        </div>
+        <div style="flex-shrink:0;text-align:right">
+          <div class="badge badge-${dscrBank>=1.25?'green':dscrBank>=1?'yellow':'red'}" style="margin-bottom:4px">DSCR ${dscrBank.toFixed(2)}x</div><br>
+          <div class="badge badge-${s.approvable?'blue':'gray'}">Bank: ${s.approvable?'✓ Approvable':'⚠️ Complex'}</div>
+        </div>
+      </div>
+      <div class="fin-bars">${s.stack.map(t=>`<div class="fin-bar" style="flex:${t.pct};background:${t.c}"></div>`).join('')}</div>
+      <div class="fin-legend">${s.stack.map(t=>`<span><i style="background:${t.c}"></i>${t.pct}% ${t.n}</span>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;font-size:.75rem">
+        <div style="color:var(--muted)">Equity Required<br><strong style="color:var(--text)">${fmt(equityAmt)} (${s.equity}%)</strong></div>
+        <div style="color:var(--muted)">Annual Cash Service<br><strong style="color:var(--text)">${fmt(totalSvc)}</strong></div>
+        <div style="color:var(--muted)">Equity ROI Yr1<br><strong style="color:${roi>20?'var(--green)':roi>10?'var(--yellow)':'var(--red)'}">${roi.toFixed(0)}%</strong></div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.75rem;color:var(--muted)">
+        <div>✓ Best for: ${s.bestFor}</div>
+        <div>⚠ Risk: ${s.risk}</div>
+      </div>
+      <div style="margin-top:8px;font-size:.75rem;background:rgba(108,99,255,.08);border-left:2px solid var(--accent);padding:8px 10px;color:var(--label);font-style:italic">
+        "${s.pena}"
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Sensitivity ───────────────────────────────────────────────────────────────
+function renderSensitivity() {
+  const {asking,ebitda,sde,revenue,bankPct,bankRate,bankTerm} = state;
+  const income = ebitda||sde||0;
+  const tbody = $('sensitivity-tbody');
+  if(!tbody||!asking||!income) return;
+
+  const prices = [-40,-25,-15,-5,0,5,10,20,35,50].map(p=>asking*(1+p/100));
+  tbody.innerHTML = prices.map(p => {
+    const bankAmt = p*bankPct/100;
+    const svc = monthlyPayment(bankAmt,bankRate,bankTerm)*12;
+    const d = svc>0 ? income/svc : 0;
+    const cf = income-svc;
+    const sm = sde ? (p/sde).toFixed(2)+'x' : '—';
+    const em = ebitda ? (p/ebitda).toFixed(2)+'x' : '—';
+    const cls = d>=1.25?'pass':d>=1?'warn':'fail';
+    const isCurrent = Math.abs(p-asking)<1;
+    return `<tr style="${isCurrent?'background:rgba(108,99,255,.08);':''}" class="${isCurrent?'recommended':''}">
+      <td>${fmt(p)}${isCurrent?' <span class="badge badge-blue">current</span>':''}</td>
+      <td>${sm}</td><td>${em}</td>
+      <td>${fmt(bankAmt)}</td>
+      <td>${fmt(svc)}</td>
+      <td class="${cls}">${d.toFixed(2)}x</td>
+      <td style="color:${cf>0?'var(--green)':'var(--red)'}">${fmt(cf)}</td>
+      <td><span class="badge badge-${d>=1.25?'green':d>=1?'yellow':'red'}">${d>=1.25?'PASS':d>=1?'CLOSE':'FAIL'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderGrowthScenarios() {
+  const {asking,ebitda,sde,bankPct,bankRate,bankTerm} = state;
+  const income = ebitda||sde||0;
+  const tbody = $('growth-tbody');
+  if(!tbody||!asking||!income) return;
+
+  const bankAmt = asking*bankPct/100;
+  const svc = monthlyPayment(bankAmt,bankRate,bankTerm)*12;
+  const equity = asking*(1-bankPct/100-0.25);
+
+  const rates = [-5, 0, 5, 10, 15, 20, 30];
+  tbody.innerHTML = rates.map(g => {
+    const e1=income*(1+g/100), e2=income*Math.pow(1+g/100,2), e3=income*Math.pow(1+g/100,3);
+    const d1=svc>0?e1/svc:0, d3=svc>0?e3/svc:0;
+    const roi3 = equity>0 ? (e3-svc)/equity*100 : 0;
+    return `<tr>
+      <td>${g>0?'+':''}${g}%/yr${g===0?' (flat)':''}</td>
+      <td>${fmt(e1)}</td><td>${fmt(e2)}</td><td>${fmt(e3)}</td>
+      <td class="${dscrClass(d1)}">${d1.toFixed(2)}x</td>
+      <td class="${dscrClass(d3)}">${d3.toFixed(2)}x</td>
+      <td style="color:${roi3>20?'var(--green)':roi3>10?'var(--yellow)':'var(--red)'}">${roi3.toFixed(0)}%</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Bitcoin Models ────────────────────────────────────────────────────────────
+function initBtcModels() {
+  // S2F Model
+  const GENESIS = new Date('2009-01-03').getTime();
+  const daysSince = Math.floor((Date.now()-GENESIS)/86400000);
+  const SUPPLY = 19718400; // est. May 2026
+  const FLOW   = 164250;   // post-4th halving annual flow
+  const sf     = SUPPLY/FLOW;
+  const s2fPrice = Math.exp(-1.84) * Math.pow(sf, 3.36);
+
+  // Power Law
+  const plFair  = Math.pow(10, 5.84*Math.log10(daysSince) - 17.01);
+  const plFloor = Math.pow(10, 5.84*Math.log10(daysSince) - 17.46);
+  const plTop   = Math.pow(10, 5.84*Math.log10(daysSince) - 15.77);
+
+  const s2fEl = $('s2f-content');
+  if(s2fEl) s2fEl.innerHTML = `
+    <div class="saylor-score" style="flex-direction:column;gap:8px">
+      <div class="saylor-item" style="min-width:unset"><div class="val">SF ${sf.toFixed(1)}×</div><div class="desc">Stock-to-Flow ratio (supply ${(SUPPLY/1e6).toFixed(2)}M ÷ annual flow ${(FLOW/1e3).toFixed(0)}K). Gold is ~60×.</div></div>
+      <div class="saylor-item" style="min-width:unset"><div class="val" style="color:var(--orange)">${fmtK(s2fPrice)}</div><div class="desc">S2F Model Price (Plan B). Formula: e^(-1.84) × SF^3.36. Post-4th halving cycle target.</div></div>
+      <div class="saylor-item" style="min-width:unset"><div class="val" style="color:var(--muted)">—</div><div class="desc">Live price: connect to CoinGecko via Personal MCP get_crypto_prices tool.</div></div>
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:10px;line-height:1.6">
+      SF model controversy: criticized for overfitting. Use as directional signal only, not price target.<br>
+      Next halving (5th): est. ~April 2028 → SF doubles again → model price ~${fmtK(Math.exp(-1.84)*Math.pow(sf*2,3.36))}
+    </div>`;
+
+  const plEl = $('pl-content');
+  if(plEl) plEl.innerHTML = `
+    <div class="saylor-score" style="flex-direction:column;gap:8px">
+      <div class="saylor-item" style="min-width:unset"><div class="val" style="color:var(--green)">${fmtK(plFloor)}</div><div class="desc">Power Law Floor — lowest historical price at this age (${daysSince.toLocaleString()} days since genesis)</div></div>
+      <div class="saylor-item" style="min-width:unset"><div class="val" style="color:var(--accent2)">${fmtK(plFair)}</div><div class="desc">Power Law Fair Value — center of long-run regression corridor</div></div>
+      <div class="saylor-item" style="min-width:unset"><div class="val" style="color:var(--orange)">${fmtK(plTop)}</div><div class="desc">Power Law Top — speculative ceiling (cycle top zone)</div></div>
+    </div>
+    <div style="font-size:.75rem;color:var(--muted);margin-top:10px;line-height:1.6">
+      Formula: log₁₀(price) = 5.84 × log₁₀(days) + C, where C shifts for floor/fair/top corridors.<br>
+      Power Law has held since 2010 with R² > 0.95. More robust than S2F as a long-run model.
+    </div>`;
+
+  renderBtcScenarios();
+}
+
+function renderBtcScenarios() {
+  const holdings = parseFloat($('btc-holdings')?.value)||0;
+  const costBasis = parseFloat($('btc-cost')?.value)||0;
+
+  const GENESIS = new Date('2009-01-03').getTime();
+  const daysSince = Math.floor((Date.now()-GENESIS)/86400000);
+  const currentBtcPrice = 100000; // placeholder — connect to MCP for live
+
+  const plFair5yr  = Math.pow(10, 5.84*Math.log10(daysSince+5*365) - 17.01);
+  const s2fNextCycle = Math.exp(-1.84) * Math.pow(19800000/82000, 3.36); // 5th halving approx
+
+  const scenarios = [
+    { name:'Bear Case', cagr:-30, cls:'fail' },
+    { name:'Sideways', cagr:0, cls:'warn' },
+    { name:'Conservative', cagr:25, cls:'' },
+    { name:'Base Case', cagr:50, cls:'' },
+    { name:'Power Law Fair Value', cagr:null, plPrice:plFair5yr, cls:'teal' },
+    { name:'Saylor Bull (65% CAGR)', cagr:65, cls:'blue' },
+    { name:'S2F Model (next cycle)', cagr:null, s2fPrice:s2fNextCycle, cls:'purple' },
+  ];
+
+  const tbody = $('btc-scenario-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = scenarios.map(s => {
+    const price = (yr) => {
+      if(s.cagr===null) {
+        if(s.plPrice) return s.plPrice;
+        if(s.s2fPrice) return s.s2fPrice;
+      }
+      return currentBtcPrice * Math.pow(1+s.cagr/100, yr);
+    };
+    const p1=price(1),p3=price(3),p5=price(5),p10=price(10);
+    const portf5 = holdings * p5;
+    const gain5 = costBasis>0 ? ((portf5/(holdings*costBasis)-1)*100).toFixed(0)+'%' : '—';
+    return `<tr>
+      <td>${s.name}</td>
+      <td>${s.cagr!==null?(s.cagr>0?'+':'')+s.cagr+'%':'model'}</td>
+      <td>${fmtK(p1)}</td>
+      <td>${fmtK(p3)}</td>
+      <td style="color:var(--accent2)">${fmtK(p5)}</td>
+      <td>${fmtK(p10)}</td>
+      <td style="color:var(--accent2)">${holdings?fmtK(portf5)+' ('+gain5+')':'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Saylor ────────────────────────────────────────────────────────────────────
+function initSaylor() {
+  // USD decay table
+  const usdEl = $('saylor-usd-table');
+  if(usdEl) {
+    const rows = [1,2,3,5,10,15,20].map(y=>{
+      const real = Math.pow(1/1.07, y)*100;
+      return `<tr><td style="color:var(--muted)">${y} yr</td><td>$100K</td><td style="color:var(--red)">$${(real*1000).toFixed(0).toLocaleString()}</td><td style="color:var(--muted)">${(100-real).toFixed(0)}% lost</td></tr>`;
+    }).join('');
+    usdEl.innerHTML = `<table style="width:100%;font-size:.8rem;border-collapse:collapse"><thead><tr>
+      <th style="text-align:left;padding:5px 10px;color:var(--muted);font-size:.68rem">Years</th>
+      <th style="text-align:left;padding:5px 10px;color:var(--muted);font-size:.68rem">Nominal</th>
+      <th style="text-align:left;padding:5px 10px;color:var(--muted);font-size:.68rem">Real Value</th>
+      <th style="text-align:left;padding:5px 10px;color:var(--muted);font-size:.68rem">Decay</th>
+    </tr></thead><tbody>${rows}</tbody></table>
+    <div style="margin-top:8px;font-size:.72rem;color:var(--muted)">Assumes 7% M2 money supply growth / year (Saylor's benchmark)</div>`;
+  }
+
+  // TAM table
+  const tamEl = $('saylor-tam-table');
+  if(tamEl) {
+    const markets = [
+      {name:'Gold',tam:13e12,btcSupply:19.8e6},
+      {name:'10% of Gold',tam:1.3e12,btcSupply:19.8e6},
+      {name:'50% of Gold',tam:6.5e12,btcSupply:19.8e6},
+      {name:'US Equities (1%)',tam:0.45e12,btcSupply:19.8e6},
+      {name:'Global Bonds (1%)',tam:1.3e12,btcSupply:19.8e6},
+      {name:'Global Real Estate (0.5%)',tam:1.65e12,btcSupply:19.8e6},
+      {name:'Global Wealth Store (5%)',tam:11.5e12,btcSupply:19.8e6},
+    ];
+    const rows = markets.map(m => {
+      const price = m.tam/m.btcSupply;
+      return `<tr><td style="color:var(--muted);padding:6px 8px;font-size:.78rem">${m.name}</td><td style="padding:6px 8px;font-size:.78rem;color:var(--accent2);font-weight:600">${fmtK(price)}</td></tr>`;
+    }).join('');
+    tamEl.innerHTML = `<table style="width:100%;border-collapse:collapse"><thead><tr>
+      <th style="text-align:left;padding:5px 8px;color:var(--muted);font-size:.68rem">Scenario</th>
+      <th style="text-align:left;padding:5px 8px;color:var(--muted);font-size:.68rem">Implied BTC Price</th>
+    </tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  renderSaylorcalc();
+}
+
+function renderSaylorcalc() {
+  const capital = parseFloat($('saylor-capital')?.value)||100000;
+  const years   = parseFloat($('saylor-years')?.value)||10;
+  const cagr    = parseFloat($('saylor-cagr')?.value)||50;
+  const el = $('saylor-calc-result');
+  if(!el) return;
+
+  const btcCurrentPrice = 100000;
+  const btcGrows = capital * Math.pow(1+cagr/100, years);
+  const usdDecays= capital * Math.pow(1/1.07, years);
+  const advantage = btcGrows - usdDecays;
+
+  el.innerHTML = `
+    <div class="grid3" style="gap:10px">
+      <div class="kpi fail"><div class="kpi-label">Hold USD ${years}yr</div><div class="kpi-val">${fmt(usdDecays)}</div><div class="kpi-sub">Real purchasing power</div></div>
+      <div class="kpi pass"><div class="kpi-label">BTC (${cagr}% CAGR) ${years}yr</div><div class="kpi-val">${fmtK(btcGrows)}</div><div class="kpi-sub">At ${cagr}% annual growth</div></div>
+      <div class="kpi teal"><div class="kpi-label">Advantage</div><div class="kpi-val">${fmtK(advantage)}</div><div class="kpi-sub">BTC vs USD ${years}yr</div></div>
+    </div>
+    <div style="margin-top:10px;font-size:.8rem;color:var(--muted)">
+      Saylor's argument: the choice isn't BTC vs cash — it's BTC vs <em>guaranteed purchasing power destruction</em>. USD holders are already losing ~7%/year before they make any investment decision.
+    </div>`;
+}
+
+// ── QLA Checklist ─────────────────────────────────────────────────────────────
+function initChecklist() {
+  const phases = [
+    { title:'Target Identification (HPT)', items:[
+      'Identified recurring-revenue businesses in your target industry',
+      'Screened for owner-operated businesses with succession gap',
+      'Verified asking price is below 4–5× EBITDA',
+      'Confirmed below PE radar (&lt;$5M EBITDA)',
+      'Checked no single customer &gt;30% revenue',
+      'Verified essential service / recession-resistant',
+    ]},
+    { title:'Initial Approach', items:[
+      'Sent handwritten letter directly to owner (no broker)',
+      'Called within 72 hours of letter',
+      'Had first meeting: listened 80%, talked 20%',
+      'Gathered: reason for selling, debt/liens, seller finance willingness, timeline',
+      'Did NOT reveal how much you want the business',
+      'Got basic financial overview (revenue, earnings ballpark)',
+    ]},
+    { title:'LOI — Letter of Intent', items:[
+      'LOI signed with agreed price and exclusivity period',
+      'No-shop clause active (60–90 days)',
+      'Good faith deposit paid ($5k–$25k)',
+      'Seller non-compete clause included (3–5yr, 25mi)',
+      'Key employee retention clause included',
+      'Subject-to financing and due diligence language in LOI',
+      'Earnout clause drafted if price gap exists',
+    ]},
+    { title:'Due Diligence', items:[
+      '3 years bank statements obtained and reconciled to P&L',
+      'Every SDE add-back documented with receipts',
+      'AR/AP aging reports reviewed',
+      'Top 5 customers interviewed',
+      'All licenses and permits verified as TRANSFERABLE',
+      'Litigation search completed (UCC, court records)',
+      'QoE (Quality of Earnings) report ordered (deals &gt;$750k)',
+      'Environmental assessment (if real estate)',
+      'Employee list: titles, tenure, at-risk key persons identified',
+    ]},
+    { title:'Financing', items:[
+      'Bank pre-approval letter obtained',
+      'Approached 3 banks simultaneously',
+      'SBA eligibility confirmed (if applicable)',
+      'Seller note subordination agreed in term sheet',
+      'Interest-only period negotiated (if needed for DSCR)',
+      'Equity source confirmed (business WC, investor, HELOC)',
+      'Deal structure achieves DSCR &gt; 1.25× on senior debt',
+    ]},
+    { title:'Negotiation & Close', items:[
+      'Attorney engaged for purchase agreement',
+      'Final purchase price agreed',
+      'Seller representations & warranties in agreement',
+      'Escrow/holdback for indemnification set up',
+      'Equipment, inventory, IP schedule finalized',
+      'Key employee retention bonuses / agreements signed',
+      'Closing docs reviewed, signed, funded',
+    ]},
+    { title:'100-Day Post-Acquisition Plan', items:[
+      'Days 1–30: Observed without changes. Met all employees.',
+      'Weekly cash flow reporting installed',
+      'Weekly P&L reporting installed',
+      'Top customers contacted and relationship confirmed',
+      'Biggest expense lines renegotiated with suppliers',
+      '12-month revenue target set and communicated to team',
+      'Next acquisition target identified',
+    ]},
+  ];
+
+  const container = $('checklist-phases');
+  if(!container) return;
+
+  container.innerHTML = phases.map((phase,i) => `
+    <div class="phase-block">
+      <div class="phase-header">
+        <div class="phase-num">${i+1}</div>
+        <div class="phase-title">${phase.title}</div>
+      </div>
+      ${phase.items.map((item,j) => `
+        <div class="check-item" id="chk-${i}-${j}">
+          <input type="checkbox" id="cb-${i}-${j}" onchange="updateProgress()">
+          <label for="cb-${i}-${j}">${item}</label>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+function updateProgress() {
+  const all = document.querySelectorAll('#checklist-phases input[type=checkbox]');
+  const done = document.querySelectorAll('#checklist-phases input[type=checkbox]:checked');
+  const pct = all.length ? Math.round(done.length/all.length*100) : 0;
+  const fill = $('cl-fill'); if(fill) fill.style.width=pct+'%';
+  const pctEl = $('cl-pct'); if(pctEl) pctEl.textContent=pct+'%';
+  done.forEach(cb => {
+    const row = cb.closest('.check-item'); if(row) row.classList.add('done');
+  });
+}
+
+function renderCurrentScreen(id) {
+  if(id==='deal-input'||id==='structure'||id==='dscr'||id==='creative'||id==='scenarios') recalc();
+  if(id==='btc-models') initBtcModels();
+  if(id==='saylor') initSaylor();
+  if(id==='checklist') initChecklist();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  recalc();
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if(e.target.tagName==='INPUT'||e.target.tagName==='SELECT') return;
+    const map = {d:'deal-input',s:'structure',x:'dscr',c:'creative',q:'qla',k:'checklist',n:'scenarios',b:'btc-models',y:'saylor'};
+    if(map[e.key]) show(map[e.key]);
+  });
+});
+</script>
+</body>
+</html>

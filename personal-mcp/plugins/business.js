@@ -476,4 +476,540 @@ const tools = [
   }
 ];
 
+// ── Helper: annual amortizing payment (uses monthlyPaymentCalc) ──
+function annualAmortPayment(principal, annualRate, termYears) {
+  return monthlyPaymentCalc(principal, annualRate, termYears) * 12;
+}
+
+// ── Tool 7: ma_deal_engineer ────────────────────────────────────
+tools.push({
+  name: 'ma_deal_engineer',
+  description: 'Dan Peña QLA-style multi-tranche M&A deal structure. Models bank debt + seller note + mezzanine + equity layers, DSCR per tranche, creative term engineering to hit 1.25x coverage.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      business_name:         { type: 'string' },
+      asking_price:          { type: 'number', description: 'Total acquisition price in USD' },
+      ebitda:                { type: 'number', description: 'Annual EBITDA' },
+      sde:                   { type: 'number', description: 'Seller Discretionary Earnings (if small biz)' },
+      annual_revenue:        { type: 'number' },
+      bank_pct:              { type: 'number', description: '% of price as senior bank debt (default 60)' },
+      bank_rate:             { type: 'number', description: 'Bank annual rate % (default 6.5)' },
+      bank_term_years:       { type: 'number', description: 'Bank amortization period years (default 10)' },
+      bank_io_years:         { type: 'number', description: 'Interest-only period years on bank debt (default 0)' },
+      seller_note_pct:       { type: 'number', description: '% of price as seller note (default 25)' },
+      seller_note_rate:      { type: 'number', description: 'Seller note annual rate % (default 4.0)' },
+      seller_note_term_years:{ type: 'number', description: 'Seller note term years (default 7)' },
+      seller_note_io:        { type: 'boolean', description: 'Seller note interest-only? (default true)' },
+      mezz_pct:              { type: 'number', description: 'Mezzanine layer % of price (default 0)' },
+      mezz_rate:             { type: 'number', description: 'Mezz annual rate % (default 12.0)' },
+      mezz_pik:              { type: 'boolean', description: 'Mezz PIK — accrues, no cash service (default false)' },
+      equity_pct:            { type: 'number', description: 'Override equity % (auto-calc if omitted)' }
+    },
+    required: ['asking_price', 'ebitda']
+  },
+  async handler(args) {
+    const price        = args.asking_price;
+    const ebitdaUsed   = args.ebitda || args.sde || 0;
+
+    // Tranche percentages
+    const bankPct        = args.bank_pct          ?? 60;
+    const sellerPct      = args.seller_note_pct   ?? 25;
+    const mezzPct        = args.mezz_pct          ?? 0;
+    const bankRate       = args.bank_rate         ?? 6.5;
+    const bankTerm       = args.bank_term_years   ?? 10;
+    const bankIoYears    = args.bank_io_years     ?? 0;
+    const sellerRate     = args.seller_note_rate  ?? 4.0;
+    const sellerTerm     = args.seller_note_term_years ?? 7;
+    const sellerIo       = args.seller_note_io    ?? true;
+    const mezzRate       = args.mezz_rate         ?? 12.0;
+    const mezzPik        = args.mezz_pik          ?? false;
+
+    // Tranche amounts
+    const bankAmt        = price * bankPct / 100;
+    const sellerAmt      = price * sellerPct / 100;
+    const mezzAmt        = price * mezzPct / 100;
+    const equityAmt      = args.equity_pct != null
+      ? price * args.equity_pct / 100
+      : price - bankAmt - sellerAmt - mezzAmt;
+    const equityPct      = +(equityAmt / price * 100).toFixed(2);
+
+    // Bank debt service
+    const bankServiceIo    = bankAmt * bankRate / 100;                           // interest-only annual
+    const bankServiceAmort = annualAmortPayment(bankAmt, bankRate, bankTerm);    // full amort annual
+    const bankMode         = bankIoYears > 0 ? `IO for ${bankIoYears}yr then amortizing` : 'fully amortizing';
+    // For DSCR calc: if IO period is active (year 1 perspective), use IO service; else use amort
+    const bankServiceForDscr = bankIoYears > 0 ? bankServiceIo : bankServiceAmort;
+
+    // Seller note debt service
+    const sellerServiceIo    = sellerAmt * sellerRate / 100;
+    const sellerServiceAmort = annualAmortPayment(sellerAmt, sellerRate, sellerTerm);
+    const sellerService      = sellerIo ? sellerServiceIo : sellerServiceAmort;
+
+    // Mezz service
+    const mezzCashService = mezzPik ? 0 : (mezzAmt * mezzRate / 100);
+
+    // DSCR calculations
+    const totalCashPayService = bankServiceForDscr + sellerService + mezzCashService;
+    const bankOnlyDscr  = ebitdaUsed > 0 && bankServiceForDscr > 0
+      ? +(ebitdaUsed / bankServiceForDscr).toFixed(2) : null;
+    const totalDscr     = ebitdaUsed > 0 && totalCashPayService > 0
+      ? +(ebitdaUsed / totalCashPayService).toFixed(2) : null;
+    const bankPasses    = bankOnlyDscr != null && bankOnlyDscr >= 1.25;
+
+    const annualCashflow = ebitdaUsed - totalCashPayService;
+    const equityRoi      = equityAmt > 0
+      ? +(annualCashflow / equityAmt * 100).toFixed(1) : null;
+
+    // Verdict
+    let penaVerdict;
+    if (equityPct < 5 && bankPasses)        penaVerdict = 'QLA DEAL — Zero or near-zero equity, strong cashflow coverage';
+    else if (equityPct < 15 && bankPasses)  penaVerdict = 'STRONG STRUCTURE — Low equity, bank-approvable';
+    else if (bankOnlyDscr >= 1.0)           penaVerdict = 'WORKABLE — Engineer terms further';
+    else                                     penaVerdict = 'RESTRUCTURE NEEDED — Negotiate price or extend terms';
+
+    // Applicable Dan Peña tips
+    const penaTips = [];
+    if (equityPct > 20)
+      penaTips.push("Peña: 'Use OPM. You should never put up more than 10% yourself. Go back to the seller.'");
+    if (bankOnlyDscr != null && bankOnlyDscr < 1.25 && bankIoYears === 0)
+      penaTips.push('Add 1-2 year interest-only period on bank debt — immediately improves DSCR');
+    if (bankTerm < 20)
+      penaTips.push('Extend to 20-25yr amortization (SBA real estate allows 25yr) — cuts annual service by 30-40%');
+    if (!sellerIo)
+      penaTips.push('Make seller note interest-only — subordinated IO seller notes are excluded from some bank DSCR calcs');
+    penaTips.push("Peña: 'Your first deal is your hardest. Use the business\\'s own cash flows — not yours.'");
+
+    return {
+      business_name:   args.business_name || 'Target Business',
+      asking_price:    price,
+      ebitda_used:     ebitdaUsed,
+      deal_structure: {
+        bank: {
+          amount:                   +bankAmt.toFixed(0),
+          pct:                      bankPct,
+          rate:                     bankRate,
+          term:                     bankTerm,
+          io_years:                 bankIoYears,
+          annual_debt_service_io:   +bankServiceIo.toFixed(0),
+          annual_debt_service_amort:+bankServiceAmort.toFixed(0),
+          mode:                     bankMode
+        },
+        seller_note: {
+          amount:        +sellerAmt.toFixed(0),
+          pct:           sellerPct,
+          rate:          sellerRate,
+          term:          sellerTerm,
+          io:            sellerIo,
+          annual_service:+sellerService.toFixed(0)
+        },
+        mezzanine: {
+          amount:             +mezzAmt.toFixed(0),
+          pct:                mezzPct,
+          rate:               mezzRate,
+          pik:                mezzPik,
+          annual_cash_service:+mezzCashService.toFixed(0)
+        },
+        equity_required: {
+          amount: +equityAmt.toFixed(0),
+          pct:    equityPct
+        }
+      },
+      dscr: {
+        bank_only_dscr: bankOnlyDscr,
+        total_dscr:     totalDscr,
+        bank_threshold: 1.25,
+        bank_passes:    bankPasses,
+        note:           'Bank typically analyzes senior-only DSCR. Seller note subordination is key lever.'
+      },
+      annual_cashflow_after_all_debt: +annualCashflow.toFixed(0),
+      equity_roi_pct:  equityRoi,
+      pena_verdict:    penaVerdict,
+      pena_tips:       penaTips
+    };
+  }
+});
+
+// ── Tool 8: dscr_optimizer ──────────────────────────────────────
+tools.push({
+  name: 'dscr_optimizer',
+  description: 'What-if DSCR optimizer — given a business and price, shows how adjusting loan terms, IO periods, seller note size, and price hits 1.25x bank coverage.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      asking_price: { type: 'number', description: 'Acquisition asking price in USD' },
+      ebitda:       { type: 'number', description: 'Annual EBITDA' },
+      target_dscr:  { type: 'number', description: 'Target DSCR threshold (default 1.25)' }
+    },
+    required: ['asking_price', 'ebitda']
+  },
+  async handler(args) {
+    const price  = args.asking_price;
+    const ebitda = args.ebitda;
+    const target = args.target_dscr ?? 1.25;
+
+    function bankDscr(bankAmt, rate, termYears, ioYears) {
+      const service = ioYears > 0
+        ? bankAmt * rate / 100
+        : annualAmortPayment(bankAmt, rate, termYears);
+      return { service: +service.toFixed(0), dscr: +(ebitda / service).toFixed(2) };
+    }
+
+    // Scenario helper
+    function scenario(name, bankPct, rate, termYears, ioYears) {
+      const bankAmt = price * bankPct / 100;
+      const { service, dscr } = bankDscr(bankAmt, rate, termYears, ioYears);
+      return {
+        scenario: name,
+        bank_pct:             bankPct,
+        bank_amount:          +bankAmt.toFixed(0),
+        bank_rate:            rate,
+        term_years:           termYears,
+        io_years:             ioYears,
+        annual_bank_service:  service,
+        bank_dscr:            dscr,
+        cashflow_after_bank:  +(ebitda - service).toFixed(0),
+        passes_target:        dscr >= target
+      };
+    }
+
+    const scenarios = [
+      scenario('1. Baseline (60% bank, 10yr, no IO)',                 60, 6.5, 10,  0),
+      scenario('2. Extended amortization (60% bank, 20yr)',           60, 6.5, 20,  0),
+      scenario('3. Interest-only bridge (60% bank, 2yr IO then 10yr)',60, 6.5, 10,  2),
+      scenario('4. Lower bank exposure (55% bank, 10yr)',             55, 6.5, 10,  0),
+      scenario('5. More seller carry (55% bank, 10yr) + 35% seller', 55, 6.5, 10,  0),
+      scenario('6. SBA 25yr RE (60% bank, 25yr)',                     60, 6.5, 25,  0)
+    ];
+
+    // Max supportable price: 60% bank, 25yr, DSCR = target
+    // annual_bank_service = ebitda / target
+    // bankAmt = price * 0.60; annualAmortPayment(bankAmt, 6.5, 25) = ebitda / target
+    // monthly pmt formula: bankAmt * r*(1+r)^n / ((1+r)^n - 1) * 12 = ebitda / target
+    // bankAmt = (ebitda / target) / (annualAmortPayment(1, 6.5, 25))
+    const annualServicePerDollar = annualAmortPayment(1, 6.5, 25);
+    const maxBankAmt    = (ebitda / target) / annualServicePerDollar;
+    const maxPrice      = +(maxBankAmt / 0.60).toFixed(0);
+
+    // Best scenario at or above target
+    const passing = scenarios.filter(s => s.passes_target);
+    const recommended = passing.length > 0
+      ? passing.reduce((best, s) => s.bank_dscr > best.bank_dscr ? s : best).scenario
+      : 'None achieve target — negotiate price down or increase seller note';
+
+    return {
+      asking_price:            price,
+      ebitda,
+      target_dscr:             target,
+      current_dscr_baseline:   scenarios[0].bank_dscr,
+      scenarios,
+      recommended,
+      max_supportable_price:   maxPrice,
+      max_price_note:          `At 60% bank / 25yr amortization / ${target}x DSCR target`
+    };
+  }
+});
+
+// ── Tool 9: creative_financing_structures ──────────────────────
+tools.push({
+  name: 'creative_financing_structures',
+  description: 'Show 6 creative deal financing structures — interest-only, earnout, revenue share, equity rollover, mezzanine, seller-carry majority — with bank approvability notes.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      asking_price:   { type: 'number', description: 'Acquisition asking price in USD' },
+      ebitda:         { type: 'number', description: 'Annual EBITDA' },
+      annual_revenue: { type: 'number', description: 'Annual gross revenue' }
+    },
+    required: ['asking_price', 'ebitda']
+  },
+  async handler(args) {
+    const price  = args.asking_price;
+    const ebitda = args.ebitda;
+
+    function estDscr(annualService) {
+      return annualService > 0 ? +(ebitda / annualService).toFixed(2) : null;
+    }
+
+    const structures = [
+      {
+        name: '1. Classic SBA 7(a) + Seller IO Note',
+        description: '10% buyer equity down, 65% SBA 7(a) loan, 25% seller note (interest-only, subordinated). Bank underwrites on SBA tranche only.',
+        structure_breakdown: { buyer_equity: '10%', sba_loan: '65%', seller_note_io: '25%' },
+        equity_required_pct: 10,
+        annual_cash_service: +(annualAmortPayment(price * 0.65, 6.5, 10) + (price * 0.25 * 0.04)).toFixed(0),
+        estimated_dscr:      estDscr(annualAmortPayment(price * 0.65, 6.5, 10)),
+        bank_approvable:     true,
+        best_for:            'First deal, strong EBITDA relative to price, SBA-eligible business',
+        risk:                'SBA requires personal guarantee and possible collateral; seller note is subordinated',
+        pena_notes:          "Classic Peña OPM structure. Seller note forces seller to stay invested in your success."
+      },
+      {
+        name: '2. Interest-Only Bridge (Year 1-2)',
+        description: '10% equity, 60% bank on 2-year IO then converts to 10yr amort, 30% seller IO note. Minimizes Year 1-2 cash service.',
+        structure_breakdown: { buyer_equity: '10%', bank_io_bridge: '60%', seller_note_io: '30%' },
+        equity_required_pct: 10,
+        annual_cash_service: +((price * 0.60 * 0.065) + (price * 0.30 * 0.04)).toFixed(0),
+        estimated_dscr:      estDscr((price * 0.60 * 0.065) + (price * 0.30 * 0.04)),
+        bank_approvable:     true,
+        best_for:            'Business with near-term growth catalyst; buy time to grow EBITDA before full amort kicks in',
+        risk:                'Balloon risk if business does not perform during IO period; refinance risk',
+        pena_notes:          "IO period is a cash flow gift. Use the freed-up cash to grow the business aggressively in Year 1."
+      },
+      {
+        name: '3. Majority Seller Finance',
+        description: '15% equity, 25% bank (small conventional), 60% seller note. Seller motivated for quick exit.',
+        structure_breakdown: { buyer_equity: '15%', bank_conventional: '25%', seller_majority_note: '60%' },
+        equity_required_pct: 15,
+        annual_cash_service: +(annualAmortPayment(price * 0.25, 6.5, 10) + (price * 0.60 * 0.05)).toFixed(0),
+        estimated_dscr:      estDscr(annualAmortPayment(price * 0.25, 6.5, 10) + (price * 0.60 * 0.05)),
+        bank_approvable:     true,
+        best_for:            'Aging owner who needs liquidity but not a lump sum; distressed sale; no SBA qualification',
+        risk:                'Seller could call note or create friction post-close; get strong legal protections',
+        pena_notes:          "If the seller finances 60%, they believe in the business. Use that as negotiating leverage — they want you to succeed."
+      },
+      {
+        name: '4. Earnout Structure',
+        description: '15% equity, 50% bank, 35% earnout paid from future profits over 5 years. Low upfront cash service.',
+        structure_breakdown: { buyer_equity: '15%', bank_loan: '50%', earnout_from_profits: '35%' },
+        equity_required_pct: 15,
+        annual_cash_service: +(annualAmortPayment(price * 0.50, 6.5, 10) + (price * 0.35 / 5)).toFixed(0),
+        estimated_dscr:      estDscr(annualAmortPayment(price * 0.50, 6.5, 10) + (price * 0.35 / 5)),
+        bank_approvable:     true,
+        best_for:            'Gap between buyer and seller on valuation; business with strong growth trajectory',
+        risk:                'Earnout disputes are common — define metrics precisely in the purchase agreement',
+        pena_notes:          "Earnouts bridge the valuation gap. If you're confident in the business, earnouts cost you nothing — you pay from profits you already earned."
+      },
+      {
+        name: '5. Equity Rollover + Minority Buy-In',
+        description: '5% buyer equity, 55% bank, 20% seller note, seller retains 20% equity rollover. Seller has skin in the game.',
+        structure_breakdown: { buyer_equity: '5%', bank_loan: '55%', seller_note: '20%', seller_equity_retained: '20%' },
+        equity_required_pct: 5,
+        annual_cash_service: +(annualAmortPayment(price * 0.55, 6.5, 10) + (price * 0.20 * 0.04)).toFixed(0),
+        estimated_dscr:      estDscr(annualAmortPayment(price * 0.55, 6.5, 10) + (price * 0.20 * 0.04)),
+        bank_approvable:     true,
+        best_for:            'Owner-operator business where seller relationships are critical; seller wants upside participation',
+        risk:                'Seller retains governance rights; define buyout option and timeline clearly',
+        pena_notes:          "Peña loves this — 5% equity for 80% control. Seller stays engaged, protects key relationships, and you conserve capital for the next deal."
+      },
+      {
+        name: '6. Mezzanine + Senior Stack',
+        description: '10% equity, 50% senior bank, 25% mezzanine (PIK — no cash service), 15% seller note. Mezz accrues until exit.',
+        structure_breakdown: { buyer_equity: '10%', senior_bank: '50%', mezz_pik: '25%', seller_note: '15%' },
+        equity_required_pct: 10,
+        annual_cash_service: +(annualAmortPayment(price * 0.50, 6.5, 10) + (price * 0.15 * 0.04)).toFixed(0),
+        estimated_dscr:      estDscr(annualAmortPayment(price * 0.50, 6.5, 10) + (price * 0.15 * 0.04)),
+        bank_approvable:     true,
+        best_for:            'Larger deals (>$2M); PE-style structure; plan to exit or refinance within 5 years',
+        risk:                'Mezz accrues at 12-15% — compounding is expensive if you hold long; exit timing is critical',
+        pena_notes:          "PIK mezz is invisible to your cash flow today but explodes on exit. Use it as a bridge, not a permanent structure. Always have an exit plan."
+      }
+    ];
+
+    return {
+      asking_price:    price,
+      ebitda,
+      annual_revenue:  args.annual_revenue || null,
+      ebitda_margin:   args.annual_revenue
+        ? +((ebitda / args.annual_revenue * 100).toFixed(1)) + '%'
+        : 'N/A',
+      structures,
+      summary: {
+        lowest_equity_required: structures.reduce((a, b) =>
+          a.equity_required_pct < b.equity_required_pct ? a : b).name,
+        highest_dscr: structures.reduce((a, b) =>
+          (a.estimated_dscr || 0) > (b.estimated_dscr || 0) ? a : b).name,
+        all_bank_approvable: structures.every(s => s.bank_approvable)
+      },
+      pena_principle: "OPM — Other People's Money. Your job is to structure the deal so the business pays for itself. Never use your own money if you can avoid it."
+    };
+  }
+});
+
+// ── Tool 10: qla_checklist ─────────────────────────────────────
+tools.push({
+  name: 'qla_checklist',
+  description: "Dan Peña QLA (Quantum Leap Advantage) acquisition readiness checklist — 7 phases from target identification to close.",
+  inputSchema: {
+    type: 'object',
+    properties: {
+      business_name: { type: 'string' },
+      asking_price:  { type: 'number' },
+      ebitda:        { type: 'number' },
+      stage:         { type: 'string', description: 'prospecting | loi | dd | financing | closing' }
+    }
+  },
+  async handler(args) {
+    const stage = (args.stage || 'prospecting').toLowerCase();
+
+    const phases = [
+      {
+        phase: 1,
+        name:  'Target Identification (HPT — High Performance Target)',
+        items: [
+          'Recurring revenue model confirmed (maintenance contracts, subscriptions, service agreements)',
+          'Owner-dependent operations identified — owner works IN the business, not ON it (key leverage point)',
+          'Aging owner (55+): natural exit motivation, less patient for drawn-out processes',
+          'Valuation below market multiple — targeting <4x EBITDA or <3x SDE',
+          'No PE firm or strategic already at the table — avoid auction situations',
+          'Essential service business — recession-resistant (HVAC, healthcare, utilities, waste)',
+          'Geographic market size validated — large enough to grow, small enough to dominate',
+          'Business has been running 3+ years with consistent financials'
+        ],
+        pena_quote: "'Find a business where the owner is the business. That's your leverage — and your opportunity.'"
+      },
+      {
+        phase: 2,
+        name:  'Initial Approach (Direct to Owner)',
+        items: [
+          'Approach owner directly — bypass business brokers to avoid auction and commission markup',
+          'Send handwritten letter on quality stationery — stands out in the age of email',
+          'Follow up call within 72 hours of letter delivery',
+          'Never show enthusiasm for the business — remain detached and analytical',
+          'Initial meeting agenda: learn about the owner, not the business',
+          'Identify owner\'s true motivation (retirement, health, divorce, boredom)',
+          'Never reveal your maximum price — let them anchor first',
+          'Build rapport over multiple meetings before discussing numbers'
+        ],
+        pena_quote: "'You can always renegotiate down, never up. Never show a seller how much you want his business.'"
+      },
+      {
+        phase: 3,
+        name:  'LOI (Letter of Intent)',
+        items: [
+          'Price submitted (below asking — open with 20-30% below ask)',
+          'Exclusivity period: 60-90 days minimum (prevents seller shopping while you do DD)',
+          'No-shop clause included in LOI',
+          'Good faith deposit: $5,000-$25,000 (refundable during DD, forfeited at closing if buyer walks without cause)',
+          'Seller non-compete: minimum 3 years, 25-mile radius, in writing',
+          'Key employee retention clause (CFO, top salesperson, ops manager)',
+          'Contingencies: financing, satisfactory DD, landlord consent',
+          'Asset sale vs. stock sale specified (asset sale preferred for tax efficiency and liability protection)',
+          'Working capital peg defined (avoid working capital disputes at close)'
+        ],
+        pena_quote: "'The LOI is your flag in the ground. Exclusivity is everything — time kills all deals.'"
+      },
+      {
+        phase: 4,
+        name:  'Due Diligence',
+        items: [
+          'Bank statements (24+ months) reconciled to P&L — line by line',
+          'All SDE/EBITDA add-backs verified with receipts and documentation',
+          'Customer concentration: no single customer >20% of revenue',
+          'Top 10 customers by revenue contacted (with seller permission) — validate relationships',
+          'QoE (Quality of Earnings) report from independent CPA — required for deals >$1M',
+          'All licenses, permits, certifications confirmed as transferable',
+          'Lease assignment: landlord consent obtained in writing',
+          'Employee list reviewed: identify key-person dependencies',
+          'Pending litigation search: federal and state courts',
+          'Tax compliance: IRS transcripts pulled (no surprises)',
+          'Equipment and asset inspection: condition, age, replacement timeline',
+          'Cybersecurity and IP audit (for tech/SaaS businesses)',
+          'Environmental Phase 1 (if real estate is part of the deal)'
+        ],
+        pena_quote: "'Trust but verify — then verify again. Every number the seller gives you is optimistic. Your job is to find reality.'"
+      },
+      {
+        phase: 5,
+        name:  'Financing',
+        items: [
+          'SBA 7(a) pre-approval obtained before LOI if possible',
+          'Approach minimum 3 lenders simultaneously — create competition',
+          'Seller note structured as subordinated debt (critical for bank approval)',
+          'Seller note term sheet includes: IO period, subordination agreement, default cure provisions',
+          'Interest-only period negotiated on bank debt (reduces Year 1 DSCR burden)',
+          'Bank DSCR confirmed at 1.25x or above on senior debt only',
+          'Personal financial statement prepared and submitted to all 3 banks',
+          'Business plan / CIM (Confidential Information Memorandum) drafted for bank presentation',
+          'Equity contribution minimized — target 10% or below',
+          'Closing cost budget prepared (legal, SBA fees, appraisal, environmental)'
+        ],
+        pena_quote: "'Three banks, not one. Make them compete for your business. The bank that wants you most will give you the best terms.'"
+      },
+      {
+        phase: 6,
+        name:  'Negotiation & Close',
+        items: [
+          'M&A attorney engaged — never use a general practice lawyer',
+          'Never negotiate against yourself — make one offer, then wait',
+          'Walk-away leverage established before every negotiation session',
+          'Earnout structure proposed if gap exists between bid and ask',
+          'Seller note used as bridge for any valuation gap',
+          'Purchase price allocation negotiated (tax implications for both sides)',
+          'Representations and warranties reviewed by attorney',
+          'Indemnification provisions and escrow holdback negotiated',
+          'Transition period defined: seller stays 90-180 days post-close for handoff',
+          'Closing date set and milestone checklist distributed to all parties'
+        ],
+        pena_quote: "'Silence is your most powerful negotiating tool. Make your offer and shut up. The first person to speak loses.'"
+      },
+      {
+        phase: 7,
+        name:  'Post-Acquisition (Peña 100-Day Plan)',
+        items: [
+          'Keep all key employees — do not fire anyone in the first 30 days',
+          'Do NOT change prices immediately — learn the business first',
+          'Install weekly reporting: revenue, gross margin, cash position',
+          'Meet every key customer personally within 30 days',
+          'Identify the single largest expense line — optimize it first',
+          'Establish bank relationship with operating account within 7 days of close',
+          'Review all vendor contracts for renegotiation opportunities',
+          'Map all recurring revenue streams — protect them at all costs',
+          'Identify top 3 growth levers — implement fastest one first',
+          'Seller transition: structured handoff, introduction to all key relationships',
+          'Install your own bookkeeper or CFO by Day 60',
+          'First board review / performance report by Day 90'
+        ],
+        pena_quote: "'The first 100 days determine the next 10 years. Move fast but don't break things. Learn before you lead.'"
+      }
+    ];
+
+    // Determine stage phase mapping
+    const stagePhaseMap = {
+      prospecting: [1, 2],
+      loi:         [3],
+      dd:          [4],
+      financing:   [5],
+      closing:     [6, 7]
+    };
+    const currentPhaseNums = stagePhaseMap[stage] || [1];
+    const currentPhases    = phases.filter(p => currentPhaseNums.includes(p.phase));
+    const completedPhases  = phases.filter(p => p.phase < Math.min(...currentPhaseNums));
+
+    const totalItems    = currentPhases.reduce((sum, p) => sum + p.items.length, 0);
+    const completedCount = completedPhases.reduce((sum, p) => sum + p.items.length, 0);
+    const totalAll      = phases.reduce((sum, p) => sum + p.items.length, 0);
+    const score         = +((completedCount / totalAll * 100).toFixed(0));
+
+    const penaPrinciples = [
+      "Dream 10x bigger than you think possible. Your dreams are too small.",
+      "Use other people's money, experience, and credibility. OPE, OPM, OPC.",
+      "The most dangerous words in business are 'I can\\'t afford it' and 'I don\\'t have time.'",
+      "Your first deal is your best deal. Don't wait for perfect — done is better than perfect.",
+      "High goals equal high performance. Low goals equal low performance.",
+      "Never tell the seller how much you want his business.",
+      "Cash flow is king. Buy businesses with predictable, recurring cash flow."
+    ];
+
+    let verdict;
+    if (score >= 80)       verdict = 'ON TRACK — Peña would approve. Execute with speed.';
+    else if (score >= 50)  verdict = 'PROGRESSING — Stay disciplined. Do not skip phases.';
+    else if (score >= 20)  verdict = 'EARLY STAGE — Focus on HPT criteria before approaching owner.';
+    else                    verdict = 'JUST STARTING — Study the QLA methodology before your first approach.';
+
+    return {
+      business_name:     args.business_name || 'Target Business',
+      asking_price:      args.asking_price  || null,
+      ebitda:            args.ebitda        || null,
+      stage,
+      completed_phases:  completedPhases.map(p => ({ phase: p.phase, name: p.name, items_count: p.items.length })),
+      current_phase_checklist: currentPhases,
+      all_phases_reference:    phases.map(p => ({ phase: p.phase, name: p.name, items_count: p.items.length, pena_quote: p.pena_quote })),
+      principles: penaPrinciples,
+      score:   score + '% complete (based on phases preceding current stage)',
+      verdict
+    };
+  }
+});
+
 module.exports = tools;
