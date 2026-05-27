@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personal MCP — Dashboard v2</title>
+<style>
+:root {
+  --bg:#080b12; --surface:#0f1520; --s2:#141d2e; --s3:#1a2540;
+  --border:#1e2d47; --b2:#253554;
+  --accent:#6c63ff; --a2:#00d4a0; --a3:#ff4d6d; --a4:#ffb020;
+  --blue:#3b82f6; --purple:#a855f7; --green:#22c55e; --orange:#f97316; --teal:#14b8a6;
+  --text:#dde4f0; --muted:#5e7099; --muted2:#384666;
+  --sw:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;line-height:1.5;display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;height:100vh;overflow-y:auto;scrollbar-width:none}
+.sb::-webkit-scrollbar{display:none}
+.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.logo-gem{width:34px;height:34px;background:linear-gradient(135deg,var(--accent),var(--a2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.logo-text{font-weight:800;font-size:.95rem;letter-spacing:-.02em}
+.logo-sub{font-size:.68rem;color:var(--muted);margin-top:1px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:auto;box-shadow:0 0 8px var(--green);animation:glow 2s infinite}
+@keyframes glow{0%,100%{opacity:1}50%{opacity:.4}}
+
+.sb-user{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.avatar{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;flex-shrink:0}
+.u-name{font-size:.82rem;font-weight:600}
+.u-tag{font-size:.68rem;color:var(--a2)}
+
+.nav-sec{padding:10px 14px 3px;font-size:.62rem;font-weight:700;letter-spacing:.1em;color:var(--muted2);text-transform:uppercase;margin-top:6px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:8px;margin:1px 7px;cursor:pointer;font-size:.82rem;color:var(--muted);transition:all .12s;user-select:none}
+.nav-item:hover{background:var(--s2);color:var(--text)}
+.nav-item.active{background:rgba(108,99,255,.18);color:var(--accent);font-weight:600}
+.ni{font-size:.95rem;width:18px;text-align:center}
+.badge{margin-left:auto;border-radius:10px;padding:1px 6px;font-size:.62rem;font-weight:700;color:#fff}
+.badge.g{background:var(--green)} .badge.o{background:var(--orange)} .badge.p{background:var(--purple)} .badge.r{background:var(--a3)}
+
+.sb-footer{margin-top:auto;padding:10px 14px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted)}
+.api-status{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.dot-s{width:6px;height:6px;border-radius:50%}
+.dot-s.on{background:var(--green)} .dot-s.off{background:var(--muted2)} .dot-s.warn{background:var(--a4)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0;background:var(--surface)}
+.tb-title{font-weight:700;font-size:1.05rem}
+.tb-sub{font-size:.78rem;color:var(--muted);margin-left:2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all .12s}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#7c73ff}
+.btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--border)}
+.btn-ghost:hover{background:var(--s3)}
+.btn-green{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.btn-green:hover{background:rgba(34,197,94,.25)}
+.search-box{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-size:.8rem;width:220px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+
+.content{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:var(--muted2) transparent}
+
+/* SCREEN VISIBILITY */
+.screen{display:none}
+.screen.active{display:block}
+
+/* CARDS */
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.card-sm{padding:14px}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.card-title{font-weight:700;font-size:.88rem;color:var(--text)}
+.card-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+.card-ico{font-size:1.2rem}
+.section-hd{font-size:.82rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;margin-top:20px}
+
+/* KPI CARDS */
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi-val{font-size:1.65rem;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.kpi-label{font-size:.72rem;color:var(--muted);font-weight:500}
+.kpi-delta{font-size:.75rem;font-weight:600}
+.up{color:var(--green)} .down{color:var(--a3)} .neutral{color:var(--muted)}
+
+/* PROGRESS BARS */
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.prog-label{width:90px;font-size:.78rem;color:var(--muted);flex-shrink:0}
+.prog-bar{flex:1;height:7px;background:var(--s3);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .4s}
+.prog-val{width:44px;text-align:right;font-size:.75rem;font-weight:600}
+.prog-pct{font-size:.68rem;color:var(--muted);margin-left:4px}
+
+/* ALLOCATION DONUT (CSS only) */
+.donut-wrap{display:flex;align-items:center;gap:20px}
+.donut{width:110px;height:110px;border-radius:50%;background:conic-gradient(
+  var(--blue) 0% 11.6%,
+  var(--green) 11.6% 64.8%,
+  var(--accent) 64.8% 93.6%,
+  var(--orange) 93.6% 100%
+);position:relative;flex-shrink:0}
+.donut::after{content:'';position:absolute;inset:22px;background:var(--surface);border-radius:50%}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1;font-size:.72rem;font-weight:700;color:var(--text)}
+.donut-leg{display:flex;flex-direction:column;gap:7px;font-size:.75rem}
+.leg-item{display:flex;align-items:center;gap:7px}
+.leg-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+
+/* STAT ROWS */
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.stat-row:last-child{border-bottom:none}
+.stat-lbl{font-size:.8rem;color:var(--muted)}
+.stat-val{font-size:.82rem;font-weight:600}
+
+/* TABLES */
+.tbl{width:100%;border-collapse:collapse;font-size:.8rem}
+.tbl th{padding:8px 10px;text-align:left;color:var(--muted);font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border)}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--s2)}
+
+/* BADGES */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:6px;font-size:.68rem;font-weight:700}
+.tag-green{background:rgba(34,197,94,.12);color:var(--green)}
+.tag-red{background:rgba(255,77,109,.12);color:var(--a3)}
+.tag-yellow{background:rgba(255,176,32,.12);color:var(--a4)}
+.tag-blue{background:rgba(59,130,246,.12);color:var(--blue)}
+.tag-purple{background:rgba(168,85,247,.12);color:var(--purple)}
+.tag-teal{background:rgba(20,184,166,.12);color:var(--teal)}
+.tag-gray{background:var(--s3);color:var(--muted)}
+
+/* DEAL SCORE */
+.score-ring{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;border:3px solid}
+.score-high{border-color:var(--green);color:var(--green)}
+.score-mid{border-color:var(--a4);color:var(--a4)}
+.score-low{border-color:var(--a3);color:var(--a3)}
+
+/* NET WORTH BIG NUMBER */
+.nw-hero{text-align:center;padding:24px 16px 20px}
+.nw-amount{font-size:2.8rem;font-weight:900;letter-spacing:-.04em;background:linear-gradient(135deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nw-label{font-size:.78rem;color:var(--muted);margin-top:4px}
+.nw-delta{font-size:.9rem;font-weight:600;color:var(--green);margin-top:6px}
+
+/* CASHFLOW BARS */
+.cf-bars{display:flex;align-items:flex-end;gap:6px;height:80px;padding:0 4px}
+.cf-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.cf-bar-pos{background:linear-gradient(180deg,var(--a2),rgba(0,212,160,.3));border-radius:3px 3px 0 0;width:100%;transition:height .3s}
+.cf-bar-neg{background:linear-gradient(0deg,var(--a3),rgba(255,77,109,.3));border-radius:0 0 3px 3px;width:100%}
+.cf-mo{font-size:.6rem;color:var(--muted);text-align:center}
+
+/* FIRE GAUGE */
+.fire-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 0}
+.fire-track{width:100%;height:14px;background:var(--s3);border-radius:8px;overflow:hidden;position:relative}
+.fire-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--blue),var(--purple),var(--accent))}
+.fire-marker{position:absolute;top:-3px;width:3px;height:20px;background:var(--a4);border-radius:2px}
+.fire-nums{display:flex;justify-content:space-between;width:100%;font-size:.7rem;color:var(--muted)}
+
+/* ACTIVITY FEED */
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.act-ico{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0}
+.act-ico.g{background:rgba(34,197,94,.12)} .act-ico.b{background:rgba(59,130,246,.12)} .act-ico.p{background:rgba(168,85,247,.12)} .act-ico.o{background:rgba(249,115,22,.12)}
+.act-text{font-size:.78rem}
+.act-time{font-size:.68rem;color:var(--muted)}
+
+/* INPUT GROUPS */
+.form-row{display:flex;gap:12px;margin-bottom:12px}
+.form-group{flex:1;display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.form-input{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.82rem;outline:none;width:100%}
+.form-input:focus{border-color:var(--accent)}
+.form-select{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:.82rem;width:100%;outline:none}
+
+/* TABS */
+.tab-bar{display:flex;gap:2px;background:var(--s2);border-radius:10px;padding:3px;margin-bottom:18px;width:fit-content}
+.tab{padding:5px 14px;border-radius:8px;cursor:pointer;font-size:.78rem;font-weight:600;color:var(--muted);transition:all .12s}
+.tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.4)}
+
+/* VERDICT CARD */
+.verdict-card{border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.verdict-card.buy{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)}
+.verdict-card.pass{background:rgba(255,77,109,.08);border:1px solid rgba(255,77,109,.2)}
+.verdict-card.neg{background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.2)}
+.verdict-icon{font-size:1.6rem}
+.verdict-label{font-size:1rem;font-weight:800}
+.verdict-sub{font-size:.75rem;color:var(--muted);margin-top:2px}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--muted2);border-radius:4px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sb">
+  <div class="sb-logo">
+    <div class="logo-gem">🧠</div>
+    <div>
+      <div class="logo-text">Personal MCP</div>
+      <div class="logo-sub">76 tools · 12 plugins</div>
+    </div>
+    <div class="live-dot"></div>
+  </div>
+  <div class="sb-user">
+    <div class="avatar">HM</div>
+    <div>
+      <div class="u-name">Hamza</div>
+      <div class="u-tag">localhost:3333 · connected</div>
+    </div>
+  </div>
+
+  <div class="nav-sec">Overview</div>
+  <div class="nav-item active" onclick="show('dashboard')"><span class="ni">🏠</span> Dashboard</div>
+  <div class="nav-item" onclick="show('networth')"><span class="ni">📊</span> Net Worth <span class="badge g">Live</span></div>
+  <div class="nav-item" onclick="show('portfolio')"><span class="ni">🥧</span> Allocation</div>
+
+  <div class="nav-sec">Assets</div>
+  <div class="nav-item" onclick="show('accounts')"><span class="ni">🏦</span> Accounts <span class="badge g">4</span></div>
+  <div class="nav-item" onclick="show('properties')"><span class="ni">🏘️</span> Properties <span class="badge g">2</span></div>
+  <div class="nav-item" onclick="show('crypto')"><span class="ni">₿</span> Crypto</div>
+  <div class="nav-item" onclick="show('retirement')"><span class="ni">🔥</span> Retirement / FIRE</div>
+  <div class="nav-item" onclick="show('entities')"><span class="ni">🏢</span> Entities</div>
+
+  <div class="nav-sec">Scout & Deals</div>
+  <div class="nav-item" onclick="show('scout')"><span class="ni">🔍</span> Scout Property <span class="badge p">New</span></div>
+  <div class="nav-item" onclick="show('pipeline')"><span class="ni">📋</span> Pipeline <span class="badge o">3</span></div>
+  <div class="nav-item" onclick="show('business')"><span class="ni">💼</span> Business Deals</div>
+
+  <div class="nav-sec">Money</div>
+  <div class="nav-item" onclick="show('cashflow')"><span class="ni">💸</span> Cashflow</div>
+  <div class="nav-item" onclick="show('obligations')"><span class="ni">📅</span> Obligations</div>
+  <div class="nav-item" onclick="show('goals')"><span class="ni">🎯</span> Goals & Gaps</div>
+
+  <div class="nav-sec">Brain</div>
+  <div class="nav-item" onclick="show('knowledge')"><span class="ni">🔎</span> Knowledge Search</div>
+  <div class="nav-item" onclick="show('documents')"><span class="ni">📁</span> Documents</div>
+  <div class="nav-item" onclick="show('projects')"><span class="ni">⚡</span> Projects <span class="badge g">2</span></div>
+
+  <div class="nav-sec">Market</div>
+  <div class="nav-item" onclick="show('market')"><span class="ni">📈</span> Market Data</div>
+
+  <div class="sb-footer">
+    <div class="api-status"><div class="dot-s on"></div> Server: running</div>
+    <div class="api-status"><div class="dot-s warn"></div> Rentcast: key needed</div>
+    <div class="api-status"><div class="dot-s warn"></div> FRED: key needed</div>
+    <div class="api-status"><div class="dot-s off"></div> Notion: not synced</div>
+    <div style="margin-top:8px;color:var(--muted2);font-size:.68rem">21 tables · AES-256 encrypted</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="tb-title" id="page-title">Dashboard</div>
+      <div class="tb-sub" id="page-sub">May 27, 2026 · All systems operational</div>
+    </div>
+    <div class="tb-right">
+      <input class="search-box" placeholder="🔎  Search knowledge base..." />
+      <button class="btn btn-green" onclick="show('networth')">⚡ Compute Net Worth</button>
+      <button class="btn btn-primary" onclick="show('scout')">+ Scout Property</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ═══════════════════════════════════════ DASHBOARD -->
+    <div class="screen active" id="s-dashboard">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm">
+          <div class="kpi">
+            <div class="kpi-label">Net Worth</div>
+            <div class="kpi-val" style="font-size:1.4rem">$347,500</div>
+            <div class="kpi-delta up">▲ $12,400 this month</div>
+          </div>
+        </div>
+        <div class="card card-sm">
+          <div class="kpi">
+            <div class="kpi-label">Monthly Cashflow</div>
+            <div class="kpi-val" style="font-size:1.4rem;color:var(--green)">+$3,840</div>
+            <div class="kpi-delta neutral">After obligations</div>
+          </div>
+        </div>
+        <div class="card card-sm">
+          <div class="kpi">
+            <div class="kpi-label">Properties (owned)</div>
+            <div class="kpi-val" style="font-size:1.4rem">2</div>
+            <div class="kpi-delta" style="color:var(--teal)">$185,000 equity</div>
+          </div>
+        </div>
+        <div class="card card-sm">
+          <div class="kpi">
+            <div class="kpi-label">Scout Pipeline</div>
+            <div class="kpi-val" style="font-size:1.4rem">3</div>
+            <div class="kpi-delta" style="color:var(--orange)">1 strong buy</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd">
+            <div><div class="card-title">Portfolio Allocation</div><div class="card-sub">Actual vs 10/40/35/15 target</div></div>
+          </div>
+          <div class="donut-wrap">
+            <div class="donut">
+              <div class="donut-center" style="z-index:1;position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <div style="font-size:.65rem;color:var(--muted)">Total</div>
+                <div style="font-weight:800;font-size:.85rem">$347K</div>
+              </div>
+            </div>
+            <div class="donut-leg">
+              <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div><span style="color:var(--muted)">Liquid</span><span style="margin-left:auto;font-weight:700">11.6% <span style="color:var(--a4);font-size:.68rem">↑+1.6%</span></span></div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div><span style="color:var(--muted)">Income/RE</span><span style="margin-left:auto;font-weight:700">53.2% <span style="color:var(--green);font-size:.68rem">✓</span></span></div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div><span style="color:var(--muted)">Growth</span><span style="margin-left:auto;font-weight:700">28.8% <span style="color:var(--a3);font-size:.68rem">↓-6.2%</span></span></div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--orange)"></div><span style="color:var(--muted)">Speculative</span><span style="margin-left:auto;font-weight:700">6.3% <span style="color:var(--a3);font-size:.68rem">↓-8.7%</span></span></div>
+              <div style="margin-top:6px;padding:7px 10px;background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.2);border-radius:8px;font-size:.72rem;color:var(--a4)">
+                ⚠ Growth underweight — max 401k/Roth contributions
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-title">FIRE Progress</div><div class="card-sub">$1,500,000 target · 4% SWR · $5,000/mo</div></div>
+          <div class="fire-wrap">
+            <div style="font-size:1.5rem;font-weight:800">$347,500 <span style="font-size:.85rem;color:var(--muted);font-weight:400">of $1.5M</span></div>
+            <div class="fire-track" style="width:100%">
+              <div class="fire-fill" style="width:23.2%"></div>
+              <div class="fire-marker" style="left:100%"></div>
+            </div>
+            <div class="fire-nums"><span>$0</span><span style="color:var(--accent)">23.2% there</span><span>$1.5M</span></div>
+            <div class="grid g3" style="width:100%;gap:10px;margin-top:6px">
+              <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:1.1rem;font-weight:800;color:var(--purple)">18.4</div>
+                <div style="font-size:.68rem;color:var(--muted)">years to FIRE</div>
+              </div>
+              <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:1.1rem;font-weight:800;color:var(--blue)">2044</div>
+                <div style="font-size:.68rem;color:var(--muted)">target year</div>
+              </div>
+              <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+                <div style="font-size:1.1rem;font-weight:800;color:var(--green)">7%</div>
+                <div style="font-size:.68rem;color:var(--muted)">assumed return</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">90-Day Cashflow</div></div>
+          <div class="cf-bars">
+            <div class="cf-bar-wrap"><div class="cf-bar-pos" style="height:70%"></div><div class="cf-mo">Jun</div></div>
+            <div class="cf-bar-wrap"><div class="cf-bar-pos" style="height:58%"></div><div class="cf-mo">Jul</div></div>
+            <div class="cf-bar-wrap"><div class="cf-bar-pos" style="height:85%"></div><div class="cf-mo">Aug</div></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:10px">
+            <div style="flex:1;background:var(--s2);border-radius:9px;padding:10px;text-align:center">
+              <div style="font-size:1rem;font-weight:800;color:var(--green)">+$3,840</div>
+              <div style="font-size:.68rem;color:var(--muted)">avg monthly net</div>
+            </div>
+            <div style="flex:1;background:var(--s2);border-radius:9px;padding:10px;text-align:center">
+              <div style="font-size:1rem;font-weight:800">$12,500</div>
+              <div style="font-size:.68rem;color:var(--muted)">monthly income</div>
+            </div>
+            <div style="flex:1;background:var(--s2);border-radius:9px;padding:10px;text-align:center">
+              <div style="font-size:1rem;font-weight:800;color:var(--a3)">$8,660</div>
+              <div style="font-size:.68rem;color:var(--muted)">monthly out</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Recent Activity</div></div>
+          <div class="activity-item">
+            <div class="act-ico g">🏡</div>
+            <div><div class="act-text">Scout: <b>742 Elm St, STL</b> analyzed — <span style="color:var(--green)">BUY 68/100</span></div><div class="act-time">2 hours ago</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="act-ico b">📸</div>
+            <div><div class="act-text">Net worth snapshot saved — <b>$347,500</b></div><div class="act-time">Today, 8:14am</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="act-ico p">₿</div>
+            <div><div class="act-text">BTC price updated — <b>$104,200</b> (+2.3%)</div><div class="act-time">30 min ago</div></div>
+          </div>
+          <div class="activity-item">
+            <div class="act-ico o">📄</div>
+            <div><div class="act-text">2024 Tax Return indexed to knowledge base</div><div class="act-time">Yesterday</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ NET WORTH -->
+    <div class="screen" id="s-networth">
+      <div class="nw-hero">
+        <div class="nw-amount">$347,500</div>
+        <div class="nw-label">Computed live from all assets · May 27, 2026</div>
+        <div class="nw-delta">▲ $12,400 since last snapshot (3.7%)</div>
+      </div>
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm" style="border-color:rgba(59,130,246,.3)">
+          <div style="font-size:.7rem;color:var(--blue);font-weight:700;margin-bottom:6px">ACCOUNTS</div>
+          <div style="font-size:1.3rem;font-weight:800">$140,500</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">4 accounts</div>
+          <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:40.4%;background:var(--blue)"></div></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">40.4% of total</div>
+        </div>
+        <div class="card card-sm" style="border-color:rgba(34,197,94,.3)">
+          <div style="font-size:.7rem;color:var(--green);font-weight:700;margin-bottom:6px">REAL ESTATE EQUITY</div>
+          <div style="font-size:1.3rem;font-weight:800">$185,000</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">2 properties</div>
+          <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:53.2%;background:var(--green)"></div></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">53.2% of total</div>
+        </div>
+        <div class="card card-sm" style="border-color:rgba(249,115,22,.3)">
+          <div style="font-size:.7rem;color:var(--orange);font-weight:700;margin-bottom:6px">CRYPTO</div>
+          <div style="font-size:1.3rem;font-weight:800">$22,000</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Live CoinGecko prices</div>
+          <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:6.3%;background:var(--orange)"></div></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">6.3% of total</div>
+        </div>
+        <div class="card card-sm" style="border-color:rgba(168,85,247,.3)">
+          <div style="font-size:.7rem;color:var(--purple);font-weight:700;margin-bottom:6px">ENTITIES</div>
+          <div style="font-size:1.3rem;font-weight:800">$0</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:4px">Add via save_entity</div>
+          <div class="prog-bar" style="margin-top:8px"><div class="prog-fill" style="width:0%;background:var(--purple)"></div></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:4px">0% of total</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Snapshot History</div><div class="card-sub">Monthly net worth progression</div></div>
+        <table class="tbl">
+          <thead><tr><th>Date</th><th>Label</th><th>Net Worth</th><th>Change</th></tr></thead>
+          <tbody>
+            <tr><td>2026-05-27</td><td>May 2026</td><td style="font-weight:700">$347,500</td><td class="up">▲ +$12,400</td></tr>
+            <tr><td>2026-04-30</td><td>Apr 2026</td><td style="font-weight:700">$335,100</td><td class="up">▲ +$8,200</td></tr>
+            <tr><td>2026-03-31</td><td>Mar 2026</td><td style="font-weight:700">$326,900</td><td class="up">▲ +$14,500</td></tr>
+            <tr><td>2026-02-28</td><td>Feb 2026</td><td style="font-weight:700">$312,400</td><td class="up">▲ +$5,900</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ ACCOUNTS -->
+    <div class="screen" id="s-accounts">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Total</div><div class="kpi-val">$140,500</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Liquid</div><div class="kpi-val" style="color:var(--blue)">$40,500</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Invested</div><div class="kpi-val" style="color:var(--accent)">$85,000</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Crypto</div><div class="kpi-val" style="color:var(--orange)">$15,000</div></div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div class="card-title">All Accounts</div>
+          <button class="btn btn-primary" style="font-size:.75rem">+ Add Account</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Institution</th><th>Nickname</th><th>Type</th><th>APY</th><th>Balance</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Chase</b></td><td style="color:var(--muted)">Main Checking</td>
+              <td><span class="tag tag-blue">checking</span></td>
+              <td style="color:var(--muted)">—</td>
+              <td style="font-weight:700">$12,500</td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Update</button></td>
+            </tr>
+            <tr>
+              <td><b>Ally</b></td><td style="color:var(--muted)">Emergency Fund</td>
+              <td><span class="tag tag-green">savings</span></td>
+              <td style="color:var(--green)">4.50%</td>
+              <td style="font-weight:700">$28,000</td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Update</button></td>
+            </tr>
+            <tr>
+              <td><b>Fidelity</b></td><td style="color:var(--muted)">Taxable Portfolio</td>
+              <td><span class="tag tag-purple">brokerage</span></td>
+              <td style="color:var(--muted)">—</td>
+              <td style="font-weight:700">$85,000</td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Update</button></td>
+            </tr>
+            <tr>
+              <td><b>Coinbase</b></td><td style="color:var(--muted)">BTC Wallet</td>
+              <td><span class="tag tag-yellow">crypto</span></td>
+              <td style="color:var(--muted)">—</td>
+              <td style="font-weight:700">$15,000</td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Update</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Add Account</div></div>
+        <div class="form-row">
+          <div class="form-group"><div class="form-label">Institution</div><input class="form-input" placeholder="e.g. Chase, Fidelity" /></div>
+          <div class="form-group"><div class="form-label">Nickname</div><input class="form-input" placeholder="e.g. Emergency Fund" /></div>
+          <div class="form-group"><div class="form-label">Type</div>
+            <select class="form-select"><option>checking</option><option>savings</option><option>brokerage</option><option>money_market</option><option>cd</option><option>crypto</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><div class="form-label">Balance ($)</div><input class="form-input" type="number" placeholder="28000" /></div>
+          <div class="form-group"><div class="form-label">APY %</div><input class="form-input" type="number" placeholder="4.5" /></div>
+          <div class="form-group" style="justify-content:flex-end"><button class="btn btn-primary" style="align-self:flex-end;width:100%">💾 Save Account</button></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ SCOUT -->
+    <div class="screen" id="s-scout">
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">🔍 Scout a Property</div><div class="card-sub">Address + price → full analysis + deal score</div></div>
+          <div class="form-row">
+            <div class="form-group" style="flex:2"><div class="form-label">Full Address</div><input class="form-input" value="742 Elm St, St. Louis, MO 63101" /></div>
+            <div class="form-group"><div class="form-label">Asking Price</div><input class="form-input" value="$185,000" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Monthly Rent</div><input class="form-input" value="$1,650" /></div>
+            <div class="form-group"><div class="form-label">Units</div><input class="form-input" value="1" /></div>
+            <div class="form-group"><div class="form-label">Down %</div><input class="form-input" value="20%" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><div class="form-label">Loan Rate</div><input class="form-input" value="7.0%" /></div>
+            <div class="form-group"><div class="form-label">Vacancy %</div><input class="form-input" value="8%" /></div>
+            <div class="form-group"><div class="form-label">CapEx %</div><input class="form-input" value="10%" /></div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-primary" style="flex:1">⚡ Analyze Deal</button>
+            <button class="btn btn-ghost">BRRRR Mode</button>
+            <button class="btn btn-ghost">House Hack</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Analysis Result</div><div class="card-sub">742 Elm St, St. Louis, MO</div></div>
+          <div class="verdict-card buy" style="margin-bottom:14px">
+            <div class="verdict-icon">✅</div>
+            <div>
+              <div class="verdict-label" style="color:var(--green)">BUY</div>
+              <div class="verdict-sub">Deal score 68/100 · All key thresholds met</div>
+            </div>
+            <div class="score-ring score-high" style="margin-left:auto">68</div>
+          </div>
+          <div class="grid g3" style="gap:10px;margin-bottom:12px">
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--green)">6.8%</div><div style="font-size:.65rem;color:var(--muted)">Cap Rate</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--accent)">8.4%</div><div style="font-size:.65rem;color:var(--muted)">Cash-on-Cash</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--blue)">1.24</div><div style="font-size:.65rem;color:var(--muted)">DSCR</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--purple)">9.3</div><div style="font-size:.65rem;color:var(--muted)">GRM</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800;color:var(--teal)">14.2%</div><div style="font-size:.65rem;color:var(--muted)">IRR (10yr)</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:10px;text-align:center">
+              <div style="font-size:1.1rem;font-weight:800">$240</div><div style="font-size:.65rem;color:var(--muted)">Cashflow/mo</div>
+            </div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:12px;font-size:.75rem">
+            <div class="stat-row"><span class="stat-lbl">Down Payment</span><span class="stat-val">$37,000</span></div>
+            <div class="stat-row"><span class="stat-lbl">Loan Amount</span><span class="stat-val">$148,000</span></div>
+            <div class="stat-row"><span class="stat-lbl">Monthly Payment</span><span class="stat-val">$984</span></div>
+            <div class="stat-row"><span class="stat-lbl">NOI Annual</span><span class="stat-val">$10,850</span></div>
+          </div>
+          <button class="btn btn-green" style="width:100%;margin-top:12px;justify-content:center">📋 Save to Pipeline</button>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab active">SFH / Single Unit</div>
+        <div class="tab">Multifamily</div>
+        <div class="tab">BRRRR</div>
+        <div class="tab">House Hack</div>
+        <div class="tab">Wholesale MAO</div>
+      </div>
+
+      <div class="grid g3">
+        <div class="card card-sm">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;font-weight:700">MULTIFAMILY (4-PLEX EXAMPLE)</div>
+          <div class="stat-row"><span class="stat-lbl">Price</span><span class="stat-val">$420,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Units</span><span class="stat-val">4</span></div>
+          <div class="stat-row"><span class="stat-lbl">Price/door</span><span class="stat-val">$105,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Avg rent/unit</span><span class="stat-val">$950/mo</span></div>
+          <div class="stat-row"><span class="stat-lbl">Expense ratio</span><span class="stat-val">45%</span></div>
+          <div class="stat-row"><span class="stat-lbl">NOI</span><span class="stat-val">$18,700</span></div>
+          <div style="margin-top:10px" class="verdict-card neg"><div class="verdict-icon">⚠️</div><div><div class="verdict-label" style="color:var(--a4);font-size:.82rem">NEGOTIATE</div><div class="verdict-sub">Score 38/100 · Price/door high</div></div></div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;font-weight:700">BRRRR EXAMPLE</div>
+          <div class="stat-row"><span class="stat-lbl">Purchase</span><span class="stat-val">$70,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Rehab</span><span class="stat-val">$40,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">ARV</span><span class="stat-val">$160,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">75% refi</span><span class="stat-val">$120,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Cash out</span><span class="stat-val" style="color:var(--green)">$10,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Monthly CF</span><span class="stat-val" style="color:var(--green)">+$180</span></div>
+          <div style="margin-top:10px" class="verdict-card buy"><div class="verdict-icon">✅</div><div><div class="verdict-label" style="color:var(--green);font-size:.82rem">FULL BRRRR</div><div class="verdict-sub">Cash out + cashflow positive</div></div></div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-size:.72rem;color:var(--muted);margin-bottom:6px;font-weight:700">HOUSE HACK (DUPLEX)</div>
+          <div class="stat-row"><span class="stat-lbl">Price</span><span class="stat-val">$240,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Down (5% FHA)</span><span class="stat-val">$12,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">PITI</span><span class="stat-val">$1,817</span></div>
+          <div class="stat-row"><span class="stat-lbl">Tenant rent</span><span class="stat-val">$1,100</span></div>
+          <div class="stat-row"><span class="stat-lbl">Net cost</span><span class="stat-val" style="color:var(--green)">$805/mo</span></div>
+          <div class="stat-row"><span class="stat-lbl">PITI offset</span><span class="stat-val" style="color:var(--accent)">55.7%</span></div>
+          <div style="margin-top:10px" class="verdict-card buy"><div class="verdict-icon">🏠</div><div><div class="verdict-label" style="color:var(--green);font-size:.82rem">GOOD</div><div class="verdict-sub">Tenants cover 55.7% of PITI</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PIPELINE -->
+    <div class="screen" id="s-pipeline">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd">
+          <div><div class="card-title">Property Pipeline</div><div class="card-sub">3 prospects · ranked by deal score</div></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost">Sort: Deal Score ▼</button>
+            <button class="btn btn-primary" onclick="show('scout')">+ Scout New</button>
+          </div>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Score</th><th>Address</th><th>Type</th><th>Price</th><th>Cap Rate</th><th>CoC</th><th>DSCR</th><th>CF/mo</th><th>Verdict</th><th></th></tr></thead>
+          <tbody>
+            <tr>
+              <td><div class="score-ring score-high">68</div></td>
+              <td><b>742 Elm St, STL</b><br><span style="font-size:.68rem;color:var(--muted)">SFH · Added today</span></td>
+              <td><span class="tag tag-blue">sfh</span></td>
+              <td>$185,000</td>
+              <td style="color:var(--green)">6.8%</td>
+              <td style="color:var(--green)">8.4%</td>
+              <td style="color:var(--green)">1.24</td>
+              <td style="color:var(--green)">+$240</td>
+              <td><span class="tag tag-green">BUY</span></td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Details</button></td>
+            </tr>
+            <tr>
+              <td><div class="score-ring score-mid">44</div></td>
+              <td><b>1820 Oak Ave, STL</b><br><span style="font-size:.68rem;color:var(--muted)">Duplex · Added 3 days ago</span></td>
+              <td><span class="tag tag-teal">multifamily</span></td>
+              <td>$295,000</td>
+              <td style="color:var(--a4)">5.1%</td>
+              <td style="color:var(--a4)">4.8%</td>
+              <td style="color:var(--a4)">1.08</td>
+              <td style="color:var(--a4)">+$95</td>
+              <td><span class="tag tag-yellow">NEGOTIATE</span></td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Details</button></td>
+            </tr>
+            <tr>
+              <td><div class="score-ring score-low">18</div></td>
+              <td><b>340 Pine St, KC</b><br><span style="font-size:.68rem;color:var(--muted)">SFH · Added 1 week ago</span></td>
+              <td><span class="tag tag-blue">sfh</span></td>
+              <td>$240,000</td>
+              <td style="color:var(--a3)">3.2%</td>
+              <td style="color:var(--a3)">1.1%</td>
+              <td style="color:var(--a3)">0.87</td>
+              <td style="color:var(--a3)">-$180</td>
+              <td><span class="tag tag-red">PASS</span></td>
+              <td><button class="btn btn-ghost" style="padding:3px 10px;font-size:.7rem">Archive</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Compare Prospects</div></div>
+        <div class="grid g3">
+          <div style="background:var(--s2);border-radius:10px;padding:14px;border:1px solid rgba(34,197,94,.2)">
+            <div style="font-weight:700;margin-bottom:8px">742 Elm St <span class="tag tag-green">WINNER</span></div>
+            <div class="stat-row"><span class="stat-lbl">Deal score</span><span class="stat-val">68/100</span></div>
+            <div class="stat-row"><span class="stat-lbl">Cap rate</span><span class="stat-val">6.8%</span></div>
+            <div class="stat-row"><span class="stat-lbl">Price/door</span><span class="stat-val">$185K</span></div>
+            <div class="stat-row"><span class="stat-lbl">IRR 10yr</span><span class="stat-val">14.2%</span></div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:14px">
+            <div style="font-weight:700;margin-bottom:8px">1820 Oak Ave</div>
+            <div class="stat-row"><span class="stat-lbl">Deal score</span><span class="stat-val">44/100</span></div>
+            <div class="stat-row"><span class="stat-lbl">Cap rate</span><span class="stat-val">5.1%</span></div>
+            <div class="stat-row"><span class="stat-lbl">Price/door</span><span class="stat-val">$147.5K</span></div>
+            <div class="stat-row"><span class="stat-lbl">IRR 10yr</span><span class="stat-val">9.8%</span></div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:14px;opacity:.6">
+            <div style="font-weight:700;margin-bottom:8px">340 Pine St <span class="tag tag-red">PASS</span></div>
+            <div class="stat-row"><span class="stat-lbl">Deal score</span><span class="stat-val">18/100</span></div>
+            <div class="stat-row"><span class="stat-lbl">Cap rate</span><span class="stat-val">3.2%</span></div>
+            <div class="stat-row"><span class="stat-lbl">Price/door</span><span class="stat-val">$240K</span></div>
+            <div class="stat-row"><span class="stat-lbl">IRR 10yr</span><span class="stat-val">4.1%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PORTFOLIO -->
+    <div class="screen" id="s-portfolio">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Liquid / Safe</div><div class="kpi-val" style="color:var(--blue)">$40,500</div><div class="kpi-delta">11.6% · Target 10%</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Income / RE</div><div class="kpi-val" style="color:var(--green)">$185,000</div><div class="kpi-delta">53.2% · Target 40%</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Growth</div><div class="kpi-val" style="color:var(--accent)">$100,000</div><div class="kpi-delta" style="color:var(--a3)">28.8% · Target 35%</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Speculative</div><div class="kpi-val" style="color:var(--orange)">$22,000</div><div class="kpi-delta" style="color:var(--a3)">6.3% · Target 15%</div></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Allocation Gaps</div><div class="card-sub">vs custom targets</div></div>
+          <div class="prog-row"><div class="prog-label">Liquid</div><div class="prog-bar"><div class="prog-fill" style="width:100%;background:var(--blue)"></div></div><div class="prog-val" style="color:var(--blue)">11.6%</div><span class="prog-pct tag tag-green" style="font-size:.6rem">ON TARGET</span></div>
+          <div class="prog-row"><div class="prog-label">Income/RE</div><div class="prog-bar"><div class="prog-fill" style="width:100%;background:var(--green)"></div></div><div class="prog-val" style="color:var(--green)">53.2%</div><span class="prog-pct tag tag-green" style="font-size:.6rem">OVERWEIGHT</span></div>
+          <div class="prog-row"><div class="prog-label">Growth</div><div class="prog-bar"><div class="prog-fill" style="width:82%;background:var(--accent)"></div></div><div class="prog-val" style="color:var(--accent)">28.8%</div><span class="prog-pct tag tag-red" style="font-size:.6rem">↓ 6.2%</span></div>
+          <div class="prog-row"><div class="prog-label">Speculative</div><div class="prog-bar"><div class="prog-fill" style="width:42%;background:var(--orange)"></div></div><div class="prog-val" style="color:var(--orange)">6.3%</div><span class="prog-pct tag tag-red" style="font-size:.6rem">↓ 8.7%</span></div>
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:10px;font-size:.75rem;color:var(--blue)">
+            💡 Rebalance: add ~$21,500 to growth accounts (max 401k $23,500 + IRA $7,000 = $30,500 available)
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Live Crypto Prices</div></div>
+          <table class="tbl">
+            <thead><tr><th>Asset</th><th>Price</th><th>24h</th><th>Holdings</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700">₿ BTC</td><td>$104,200</td><td class="up">+2.3%</td><td>0.12 BTC</td><td style="font-weight:700">$12,504</td></tr>
+              <tr><td style="font-weight:700">⟠ ETH</td><td>$3,840</td><td class="up">+1.1%</td><td>2.0 ETH</td><td style="font-weight:700">$7,680</td></tr>
+              <tr><td style="font-weight:700">◎ SOL</td><td>$185</td><td class="down">-0.8%</td><td>10 SOL</td><td style="font-weight:700">$1,850</td></tr>
+              <tr><td colspan="4" style="font-weight:700;text-align:right">Total</td><td style="font-weight:800;color:var(--green)">$22,034</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.2);border-radius:10px;font-size:.74rem">
+            <b>RE vs BTC Offset:</b> Redirecting $20K from a down payment to BTC Roth IRA at 20% annual growth = <span style="color:var(--green)">+$96,000 tax-free advantage</span> over 10 years
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ RETIREMENT -->
+    <div class="screen" id="s-retirement">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Total Retirement</div><div class="kpi-val">$135,500</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">FIRE Number</div><div class="kpi-val" style="color:var(--purple)">$1,500,000</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Gap</div><div class="kpi-val" style="color:var(--a3)">$1,364,500</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Years to FIRE</div><div class="kpi-val" style="color:var(--a4)">18.4 yrs</div></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Retirement Accounts</div></div>
+          <table class="tbl">
+            <thead><tr><th>Account</th><th>Type</th><th>Balance</th><th>Contribution</th><th>Limit Left</th></tr></thead>
+            <tbody>
+              <tr><td><b>Fidelity</b></td><td><span class="tag tag-purple">Roth IRA</span></td><td>$42,000</td><td>$3,500/yr</td><td style="color:var(--green)">$3,500</td></tr>
+              <tr><td><b>Vanguard</b></td><td><span class="tag tag-blue">401(k)</span></td><td>$85,000</td><td>$15,000/yr</td><td style="color:var(--green)">$8,500</td></tr>
+              <tr><td><b>Alto IRA</b></td><td><span class="tag tag-yellow">Roth + BTC</span></td><td>$8,500</td><td>$3,000/yr</td><td style="color:var(--a4)">$4,000</td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:.74rem">
+            🎯 <b>Contribution room left in 2026:</b> IRA $3,500 · 401k $8,500 · Total $12,000
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Retirement Projection</div><div class="card-sub">7% return · $30K/yr contributions</div></div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">Projected balance at target retirement age 55</div>
+          <div class="prog-row" style="margin-bottom:12px"><div class="prog-label">Progress</div><div class="prog-bar" style="height:12px"><div class="prog-fill" style="width:9%;background:linear-gradient(90deg,var(--blue),var(--purple))"></div></div><div class="prog-val" style="color:var(--purple)">9%</div></div>
+          <div class="grid g2" style="gap:10px">
+            <div style="background:var(--s2);border-radius:10px;padding:12px">
+              <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px">At age 50 (2043)</div>
+              <div style="font-size:1.15rem;font-weight:800;color:var(--blue)">$983,000</div>
+            </div>
+            <div style="background:var(--s2);border-radius:10px;padding:12px">
+              <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px">At age 55 (2048)</div>
+              <div style="font-size:1.15rem;font-weight:800;color:var(--purple)">$1,504,000</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:10px;font-size:.74rem;color:var(--purple)">
+            🔥 On track to hit FIRE number by age 55 at current savings rate
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ CASHFLOW -->
+    <div class="screen" id="s-cashflow">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Monthly Income</div><div class="kpi-val" style="color:var(--green)">$12,500</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Monthly Expenses</div><div class="kpi-val" style="color:var(--a3)">$8,660</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Net Monthly</div><div class="kpi-val" style="color:var(--green)">+$3,840</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Obligations</div><div class="kpi-val" style="color:var(--a4)">$1,200/mo</div></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">90-Day Forecast</div></div>
+          <div style="display:flex;align-items:flex-end;gap:5px;height:100px;padding:0 4px;margin-bottom:8px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="background:linear-gradient(180deg,var(--a2),rgba(0,212,160,.2));border-radius:3px 3px 0 0;width:100%;height:72px"></div>
+              <div style="font-size:.62rem;color:var(--muted)">Jun</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="background:linear-gradient(180deg,var(--a2),rgba(0,212,160,.2));border-radius:3px 3px 0 0;width:100%;height:58px"></div>
+              <div style="font-size:.62rem;color:var(--muted)">Jul</div>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="background:linear-gradient(180deg,var(--a2),rgba(0,212,160,.2));border-radius:3px 3px 0 0;width:100%;height:86px"></div>
+              <div style="font-size:.62rem;color:var(--muted)">Aug</div>
+            </div>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Month</th><th>Income</th><th>Expenses</th><th>Net</th><th>Running</th></tr></thead>
+            <tbody>
+              <tr><td>Jun 2026</td><td style="color:var(--green)">$12,500</td><td style="color:var(--a3)">$8,660</td><td class="up">+$3,840</td><td style="font-weight:700">$3,840</td></tr>
+              <tr><td>Jul 2026</td><td style="color:var(--green)">$10,200</td><td style="color:var(--a3)">$9,100</td><td class="up">+$1,100</td><td style="font-weight:700">$4,940</td></tr>
+              <tr><td>Aug 2026</td><td style="color:var(--green)">$13,800</td><td style="color:var(--a3)">$8,200</td><td class="up">+$5,600</td><td style="font-weight:700">$10,540</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Stress Test</div></div>
+          <table class="tbl">
+            <thead><tr><th>Scenario</th><th>Monthly Net</th><th>Runway</th><th>Safe?</th></tr></thead>
+            <tbody>
+              <tr><td>Base case</td><td class="up">+$3,840</td><td>∞</td><td><span class="tag tag-green">YES</span></td></tr>
+              <tr><td>Income -20%</td><td class="up">+$1,340</td><td>∞</td><td><span class="tag tag-green">YES</span></td></tr>
+              <tr><td>Income -50%</td><td class="down">-$2,010</td><td>14 mo</td><td><span class="tag tag-yellow">WATCH</span></td></tr>
+              <tr><td>Job loss</td><td class="down">-$4,660</td><td>6 mo</td><td><span class="tag tag-red">NO</span></td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;padding:10px 12px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;font-size:.74rem">
+            ✅ Emergency fund ($28,000) covers 6 months at base expenses
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ BUSINESS -->
+    <div class="screen" id="s-business">
+      <div class="grid g3" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Active Deals</div><div class="kpi-val">2</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Best DSCR</div><div class="kpi-val" style="color:var(--green)">1.57</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">SBA Loan (Modeled)</div><div class="kpi-val">$315,000</div></div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">Deals Pipeline</div><button class="btn btn-primary" style="font-size:.75rem">+ New Deal</button></div>
+        <table class="tbl">
+          <thead><tr><th>Business</th><th>Price</th><th>Revenue</th><th>DSCR</th><th>Payback</th><th>CoC</th><th>Status</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Main St Laundromat</b><br><span style="font-size:.68rem;color:var(--muted)">Service · STL, MO</span></td>
+              <td>$350,000</td><td>$180,000</td>
+              <td style="color:var(--green);font-weight:700">1.41</td>
+              <td>4.2 yrs</td>
+              <td style="color:var(--green)">23.8%</td>
+              <td><span class="tag tag-blue">analyzing</span></td>
+              <td><span class="tag tag-green">BUY</span></td>
+            </tr>
+            <tr>
+              <td><b>Eastside Car Wash</b><br><span style="font-size:.68rem;color:var(--muted)">Service · KC, MO</span></td>
+              <td>$680,000</td><td>$290,000</td>
+              <td style="color:var(--a3);font-weight:700">0.98</td>
+              <td>8.1 yrs</td>
+              <td style="color:var(--a3)">5.2%</td>
+              <td><span class="tag tag-gray">prospect</span></td>
+              <td><span class="tag tag-red">PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid g2">
+        <div class="card card-sm">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700;margin-bottom:8px">SBA 7(A) LOAN MODEL — Laundromat</div>
+          <div class="stat-row"><span class="stat-lbl">Loan amount</span><span class="stat-val">$315,000</span></div>
+          <div class="stat-row"><span class="stat-lbl">Rate / Term</span><span class="stat-val">6.5% / 10yr</span></div>
+          <div class="stat-row"><span class="stat-lbl">Monthly payment</span><span class="stat-val">$3,503</span></div>
+          <div class="stat-row"><span class="stat-lbl">DSCR at EBITDA</span><span class="stat-val" style="color:var(--green)">1.57</span></div>
+          <div class="stat-row"><span class="stat-lbl">Break-even revenue</span><span class="stat-val">$8,750/mo</span></div>
+          <div style="margin-top:10px" class="verdict-card buy"><div class="verdict-icon">✅</div><div><div class="verdict-label" style="color:var(--green);font-size:.8rem">BUY — DSCR 1.41 ≥ 1.25</div><div class="verdict-sub">Negotiate price down 10% first</div></div></div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-size:.72rem;color:var(--muted);font-weight:700;margin-bottom:8px">DD CHECKLIST — Service Business</div>
+          <div style="display:flex;flex-direction:column;gap:4px;font-size:.76rem">
+            <div style="color:var(--green)">✅ 3 years P&L statements</div>
+            <div style="color:var(--green)">✅ Tax returns reviewed</div>
+            <div style="color:var(--green)">✅ Equipment age/condition</div>
+            <div style="color:var(--a4)">⏳ Lease assignment clause</div>
+            <div style="color:var(--a4)">⏳ Key employee retention</div>
+            <div style="color:var(--a3)">❌ Non-compete agreement</div>
+            <div style="color:var(--a3)">❌ Insurance transferability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ KNOWLEDGE -->
+    <div class="screen" id="s-knowledge">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">🔎 Knowledge Search</div><div class="card-sub">SQLite FTS5 · Porter stemming · 847 docs indexed</div></div>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <input class="form-input" style="flex:1;font-size:.88rem" value="real estate FIRE strategy cash out refi" />
+          <select class="form-select" style="width:180px"><option>All categories</option><option>finance</option><option>property</option><option>plan</option><option>tax</option><option>business</option><option>notion</option></select>
+          <button class="btn btn-primary">Search</button>
+        </div>
+        <table class="tbl">
+          <thead><tr><th>Score</th><th>Title</th><th>Category</th><th>Excerpt</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td style="color:var(--green);font-weight:700">0.94</td><td><b>FIRE Strategy 2026</b></td><td><span class="tag tag-blue">plan</span></td><td style="color:var(--muted)">Target $1.5M FIRE number · real estate as primary vehicle · BTC Roth as tax-free offset…</td><td>manual</td></tr>
+            <tr><td style="color:var(--green);font-weight:700">0.87</td><td><b>Olive St SFH</b></td><td><span class="tag tag-teal">property</span></td><td style="color:var(--muted)">STL property, 3BR/1BA, $875/mo rent, DSCR 1.31, purchased 2024…</td><td>save_property</td></tr>
+            <tr><td style="color:var(--a4);font-weight:700">0.71</td><td><b>RE vs BTC Offset Analysis</b></td><td><span class="tag tag-yellow">finance</span></td><td style="color:var(--muted)">Redirecting $20K down payment to BTC Roth IRA — $96K tax advantage over 10yr…</td><td>claude-session</td></tr>
+            <tr><td style="color:var(--muted);font-weight:700">0.58</td><td><b>2024 Tax Return</b></td><td><span class="tag tag-purple">tax</span></td><td style="color:var(--muted)">AGI $185,000 · Federal $34,200 · Effective rate 18.5%…</td><td>documents</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid g3">
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:8px">📚 Index by Category</div>
+          <div class="stat-row"><span class="stat-lbl">property</span><span class="stat-val" style="color:var(--teal)">142 docs</span></div>
+          <div class="stat-row"><span class="stat-lbl">finance</span><span class="stat-val" style="color:var(--blue)">310 docs</span></div>
+          <div class="stat-row"><span class="stat-lbl">plan</span><span class="stat-val" style="color:var(--accent)">89 docs</span></div>
+          <div class="stat-row"><span class="stat-lbl">tax</span><span class="stat-val" style="color:var(--orange)">48 docs</span></div>
+          <div class="stat-row"><span class="stat-lbl">notion</span><span class="stat-val" style="color:var(--purple)">215 docs</span></div>
+          <div class="stat-row"><span class="stat-lbl">other</span><span class="stat-val" style="color:var(--muted)">43 docs</span></div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:10px">+ Index a Note</div>
+          <div class="form-group" style="margin-bottom:8px"><div class="form-label">Title</div><input class="form-input" placeholder="BRRRR strategy notes" /></div>
+          <div class="form-group" style="margin-bottom:8px">
+            <div class="form-label">Category</div>
+            <select class="form-select"><option>plan</option><option>finance</option><option>property</option><option>tax</option><option>business</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:10px"><div class="form-label">Content</div><textarea class="form-input" style="height:60px;resize:none" placeholder="Paste any text, notes, plans, or data..."></textarea></div>
+          <button class="btn btn-primary" style="width:100%;justify-content:center">📌 Index to Knowledge Base</button>
+        </div>
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:10px">🔗 Notion Sync</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:10px">Pull all Notion pages into the knowledge base for search</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:.75rem;margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Last synced</span><span>3 days ago</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Pages indexed</span><span>215</span></div>
+            <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">API key</span><span style="color:var(--a4)">not set</span></div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;justify-content:center">🔄 Sync Notion Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ DOCUMENTS -->
+    <div class="screen" id="s-documents">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Total Documents</div><div class="kpi-val">24</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Tax Returns</div><div class="kpi-val" style="color:var(--purple)">3 yrs</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Avg Eff Tax Rate</div><div class="kpi-val" style="color:var(--a4)">18.2%</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Last Upload</div><div class="kpi-val" style="font-size:1rem">Yesterday</div></div></div>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Tax Summary</div></div>
+          <table class="tbl">
+            <thead><tr><th>Year</th><th>AGI</th><th>Federal Tax</th><th>State Tax</th><th>Eff Rate</th></tr></thead>
+            <tbody>
+              <tr><td>2024</td><td>$185,000</td><td>$34,200</td><td>$9,250</td><td style="color:var(--a4);font-weight:700">18.5%</td></tr>
+              <tr><td>2023</td><td>$162,000</td><td>$28,900</td><td>$8,100</td><td style="color:var(--a4);font-weight:700">17.8%</td></tr>
+              <tr><td>2022</td><td>$144,000</td><td>$24,800</td><td>$7,200</td><td style="color:var(--a4);font-weight:700">18.3%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-hd"><div class="card-title">Document Vault</div><button class="btn btn-primary" style="font-size:.75rem">+ Add Record</button></div>
+          <table class="tbl">
+            <thead><tr><th>Category</th><th>Year</th><th>File</th><th>Indexed</th></tr></thead>
+            <tbody>
+              <tr><td><span class="tag tag-purple">tax</span></td><td>2024</td><td>1040_2024.pdf</td><td><span class="tag tag-green">✓</span></td></tr>
+              <tr><td><span class="tag tag-purple">tax</span></td><td>2023</td><td>1040_2023.pdf</td><td><span class="tag tag-green">✓</span></td></tr>
+              <tr><td><span class="tag tag-teal">property</span></td><td>2024</td><td>HUD1_OliveStSFH.pdf</td><td><span class="tag tag-green">✓</span></td></tr>
+              <tr><td><span class="tag tag-blue">bank</span></td><td>2026</td><td>Chase_May2026.pdf</td><td><span class="tag tag-yellow">pending</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ MARKET -->
+    <div class="screen" id="s-market">
+      <div class="grid g3" style="margin-bottom:16px">
+        <div class="card card-sm">
+          <div style="font-size:.7rem;color:var(--muted);font-weight:700;margin-bottom:6px">MORTGAGE RATES · FRED</div>
+          <div class="stat-row"><span class="stat-lbl">30-yr fixed</span><span class="stat-val" style="color:var(--a4)">6.82%</span></div>
+          <div class="stat-row"><span class="stat-lbl">15-yr fixed</span><span class="stat-val" style="color:var(--a4)">6.14%</span></div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:6px">Updated weekly · National avg</div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-size:.7rem;color:var(--muted);font-weight:700;margin-bottom:6px">ECONOMIC INDICATORS</div>
+          <div class="stat-row"><span class="stat-lbl">Fed Funds Rate</span><span class="stat-val">5.25%</span></div>
+          <div class="stat-row"><span class="stat-lbl">CPI (YoY)</span><span class="stat-val">3.1%</span></div>
+          <div class="stat-row"><span class="stat-lbl">Unemployment</span><span class="stat-val">3.8%</span></div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-size:.7rem;color:var(--muted);font-weight:700;margin-bottom:6px">HUD FAIR MARKET RENTS · MO</div>
+          <div class="stat-row"><span class="stat-lbl">1BR</span><span class="stat-val">$780/mo</span></div>
+          <div class="stat-row"><span class="stat-lbl">2BR</span><span class="stat-val">$975/mo</span></div>
+          <div class="stat-row"><span class="stat-lbl">3BR</span><span class="stat-val">$1,280/mo</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Investment Comparison</div><div class="card-sub">Annualized return across asset classes</div></div>
+        <table class="tbl">
+          <thead><tr><th>Asset</th><th>Cost</th><th>Current Value</th><th>Hold</th><th>CAGR</th><th>Total Return</th></tr></thead>
+          <tbody>
+            <tr><td><b>Olive St SFH</b></td><td>$145,000</td><td>$168,000</td><td>2 yrs</td><td style="color:var(--green);font-weight:700">7.5%</td><td class="up">+$23,000</td></tr>
+            <tr><td><b>Fidelity Portfolio</b></td><td>$62,000</td><td>$85,000</td><td>3 yrs</td><td style="color:var(--green);font-weight:700">11.2%</td><td class="up">+$23,000</td></tr>
+            <tr><td><b>BTC (Coinbase)</b></td><td>$8,200</td><td>$12,504</td><td>1.5 yrs</td><td style="color:var(--green);font-weight:700">28.4%</td><td class="up">+$4,304</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PROJECTS -->
+    <div class="screen" id="s-projects">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-title">Active Projects</div><button class="btn btn-primary" style="font-size:.75rem">+ New Project</button></div>
+        <table class="tbl">
+          <thead><tr><th>Project</th><th>Stack</th><th>Progress</th><th>Repo</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Personal MCP</b><br><span style="font-size:.68rem;color:var(--muted)">Financial brain · 76 tools · 12 plugins</span></td>
+              <td><span class="tag tag-green">Node.js</span> <span class="tag tag-blue">SQLite</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="prog-bar"><div class="prog-fill" style="width:85%;background:var(--green)"></div></div>
+                  <span style="font-size:.75rem;font-weight:700">85%</span>
+                </div>
+              </td>
+              <td style="font-size:.75rem;color:var(--accent)">gitSITTI/Hamza</td>
+              <td><span class="tag tag-green">active</span></td>
+            </tr>
+            <tr>
+              <td><b>NetWorth GUI</b><br><span style="font-size:.68rem;color:var(--muted)">Net worth projection · 3449 lines · no build step</span></td>
+              <td><span class="tag tag-yellow">Vanilla JS</span></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="prog-bar"><div class="prog-fill" style="width:70%;background:var(--a4)"></div></div>
+                  <span style="font-size:.75rem;font-weight:700">70%</span>
+                </div>
+              </td>
+              <td style="font-size:.75rem;color:var(--accent)">gitSITTI/Hamza</td>
+              <td><span class="tag tag-green">active</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="grid g3">
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:6px">Session Context</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">What Claude gets when you connect</div>
+          <div style="background:var(--bg);border-radius:8px;padding:10px;font-size:.7rem;font-family:monospace;color:var(--a2)">
+            user: "Hamza"<br>
+            net_worth: $347,500<br>
+            active_projects: 2<br>
+            properties: [...]<br>
+            goals: [...]<br>
+            obligations: [...]
+          </div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:8px">Goals & Gap Analysis</div>
+          <div class="stat-row"><span class="stat-lbl">FIRE $1.5M</span><span class="stat-val" style="color:var(--a3)">-$1,152,500</span></div>
+          <div class="stat-row"><span class="stat-lbl">5 properties</span><span class="stat-val" style="color:var(--a3)">-3 props</span></div>
+          <div class="stat-row"><span class="stat-lbl">RE portfolio $1M</span><span class="stat-val" style="color:var(--a3)">-$815K equity</span></div>
+          <div style="margin-top:8px;font-size:.7rem;color:var(--muted)">Run gap_analysis for full detail</div>
+        </div>
+        <div class="card card-sm">
+          <div style="font-weight:700;margin-bottom:8px">SOS Entities</div>
+          <div style="font-size:.75rem;color:var(--muted);margin-bottom:8px">MO/VA Secretary of State lookup</div>
+          <div class="form-group" style="margin-bottom:8px">
+            <input class="form-input" placeholder="Search entity name..." />
+          </div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:.72rem">Search MO</button>
+            <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:.72rem">Search VA</button>
+          </div>
+          <div style="font-size:.72rem;color:var(--muted)">No entities saved yet · use save_entity</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ GOALS -->
+    <div class="screen" id="s-goals">
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Goals & Gap Analysis</div><button class="btn btn-primary" style="font-size:.75rem">+ Add Goal</button></div>
+        <table class="tbl">
+          <thead><tr><th>Goal</th><th>Category</th><th>Current</th><th>Target</th><th>Gap</th><th>% Done</th><th>By</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>FIRE Number</b></td>
+              <td><span class="tag tag-purple">retirement</span></td>
+              <td>$347,500</td>
+              <td>$1,500,000</td>
+              <td style="color:var(--a3)">-$1,152,500</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div class="prog-bar" style="width:60px"><div class="prog-fill" style="width:23%;background:var(--purple)"></div></div><span>23%</span></div></td>
+              <td>2044</td>
+              <td><span class="tag tag-yellow">behind</span></td>
+            </tr>
+            <tr>
+              <td><b>5 Investment Properties</b></td>
+              <td><span class="tag tag-teal">property</span></td>
+              <td>2</td>
+              <td>5</td>
+              <td style="color:var(--a3)">-3</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div class="prog-bar" style="width:60px"><div class="prog-fill" style="width:40%;background:var(--teal)"></div></div><span>40%</span></div></td>
+              <td>2030</td>
+              <td><span class="tag tag-yellow">behind</span></td>
+            </tr>
+            <tr>
+              <td><b>Emergency Fund 6mo</b></td>
+              <td><span class="tag tag-blue">finance</span></td>
+              <td>$28,000</td>
+              <td>$52,000</td>
+              <td style="color:var(--a4)">-$24,000</td>
+              <td><div style="display:flex;align-items:center;gap:6px"><div class="prog-bar" style="width:60px"><div class="prog-fill" style="width:54%;background:var(--blue)"></div></div><span>54%</span></div></td>
+              <td>2027</td>
+              <td><span class="tag tag-yellow">behind</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ PROPERTIES -->
+    <div class="screen" id="s-properties">
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Owned</div><div class="kpi-val">2</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Total Equity</div><div class="kpi-val" style="color:var(--green)">$185,000</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Monthly Rent</div><div class="kpi-val" style="color:var(--a2)">$2,525</div></div></div>
+        <div class="card card-sm"><div class="kpi"><div class="kpi-label">Pipeline</div><div class="kpi-val" style="color:var(--orange)">3 prospects</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><div class="card-title">Owned Properties</div><button class="btn btn-primary" style="font-size:.75rem">+ Add Property</button></div>
+        <table class="tbl">
+          <thead><tr><th>Property</th><th>Type</th><th>Value</th><th>Mortgage</th><th>Equity</th><th>Rent/mo</th><th>CF/mo</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><b>Olive St SFH</b><br><span style="font-size:.68rem;color:var(--muted)">St. Louis, MO · 3BR/1BA</span></td>
+              <td><span class="tag tag-blue">sfh</span></td>
+              <td>$168,000</td><td>$118,000</td>
+              <td style="color:var(--green);font-weight:700">$50,000</td>
+              <td>$875</td>
+              <td class="up">+$187</td>
+            </tr>
+            <tr>
+              <td><b>Cedar Lane SFH</b><br><span style="font-size:.68rem;color:var(--muted)">Kansas City, MO · 4BR/2BA</span></td>
+              <td><span class="tag tag-blue">sfh</span></td>
+              <td>$210,000</td><td>$145,000</td>
+              <td style="color:var(--green);font-weight:700">$65,000</td>
+              <td>$1,650</td>
+              <td class="up">+$310</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════ OTHER SCREENS (placeholders) -->
+    <div class="screen" id="s-crypto"><div class="card"><div class="card-hd"><div class="card-title">Crypto Portfolio</div></div><p style="color:var(--muted);font-size:.82rem">Click Portfolio/Allocation tab for full crypto view →</p></div></div>
+    <div class="screen" id="s-retirement-x"></div>
+    <div class="screen" id="s-entities"><div class="card"><div class="card-hd"><div class="card-title">Business Entities</div><button class="btn btn-primary" style="font-size:.75rem">Search MO/VA SOS</button></div><p style="color:var(--muted);font-size:.82rem;margin-top:8px">No entities saved yet. Use save_entity or search SOS to add your LLCs and businesses.</p></div></div>
+    <div class="screen" id="s-obligations"><div class="card"><div class="card-hd"><div class="card-title">Obligations</div></div><div class="stat-row"><span class="stat-lbl">Child support</span><span class="stat-val" style="color:var(--a3)">$1,200/mo</span></div><div style="margin-top:10px;font-size:.78rem;color:var(--muted)">Total: $1,200/mo · Ends 2031</div></div></div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('s-' + id);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const titles = {
+    dashboard:'Dashboard', networth:'Net Worth', portfolio:'Portfolio Allocation',
+    accounts:'Accounts', properties:'Properties', crypto:'Crypto',
+    retirement:'Retirement / FIRE', entities:'Business Entities',
+    scout:'Scout Property', pipeline:'Property Pipeline', business:'Business Deals',
+    cashflow:'Cashflow', obligations:'Obligations', goals:'Goals & Gap Analysis',
+    knowledge:'Knowledge Base', documents:'Document Vault', projects:'Projects',
+    market:'Market Data'
+  };
+  const subs = {
+    dashboard:'May 27, 2026 · All systems operational',
+    networth:'Computed live from accounts + property + crypto + entities',
+    scout:'Address → full analysis → deal score → auto-save to pipeline',
+    pipeline:'3 prospects · ranked by deal score',
+    portfolio:'4 risk buckets · target 10/40/35/15%',
+    accounts:'Bank, brokerage, and crypto accounts · AES-256 encrypted balances',
+    properties:'Owned + pipeline · equity + cashflow summary',
+    retirement:'IRA/401k/Roth balances · FIRE calculator · contribution optimizer',
+    cashflow:'90-day forecast · stress tests · recurring events',
+    business:'Acquisition analysis · SBA modeling · DD checklist',
+    knowledge:'SQLite FTS5 full-text search · 847 documents · Notion sync',
+    documents:'Tax returns, bank statements, deeds, legal docs · indexed for search',
+    projects:'Active projects · goals · session context · SOS entity lookup',
+    market:'FRED rates · Polygon quotes · HUD fair market rents',
+    goals:'Gap analysis vs all financial and life goals'
+  };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  document.getElementById('page-sub').textContent = subs[id] || '';
+  // highlight nav item
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') === `show('${id}')`) n.classList.add('active');
+  });
+}
+// Keyboard shortcut: D = dashboard, S = scout, P = pipeline
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'd') show('dashboard');
+  if (e.key === 's') show('scout');
+  if (e.key === 'p') show('pipeline');
+  if (e.key === 'n') show('networth');
+  if (e.key === 'k') show('knowledge');
+});
+</script>
+</body>
+</html>
