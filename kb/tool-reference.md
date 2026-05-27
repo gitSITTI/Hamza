@@ -1787,3 +1787,309 @@ Side-by-side comparison of multiple saved deals.
   "recommended": "Laundromat — higher DSCR, faster payback"
 }
 ```
+
+---
+
+## Property Scout Tools — Phase 5 (8)
+
+### scout_property
+
+One-shot property analysis from address + asking price. Auto-enriches with Rentcast rent data if `RENTCAST_API_KEY` is set. Saves to pipeline automatically. Returns deal score (0–100) and verdict.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| address | string | yes | Full street address |
+| asking_price | number | yes | Listing price |
+| monthly_rent | number | no | Expected rent (auto-fetched from Rentcast if omitted) |
+| unit_count | number | no | Units (default 1) |
+| down_payment_pct | number | no | % down (default 20) |
+| loan_rate | number | no | Interest rate % (default 7.0) |
+| vacancy_rate | number | no | Vacancy % (default 8) |
+| capex_pct | number | no | CapEx reserve % of rent (default 10) |
+| mgmt_pct | number | no | PM fee % (default 0) |
+| save_to_pipeline | boolean | no | Auto-save prospect (default true) |
+
+**Example response:**
+```json
+{
+  "address": "742 Evergreen Terrace, Springfield, MO 65801",
+  "asking_price": 185000,
+  "verdict": "BUY",
+  "deal_score": 58,
+  "metrics": {
+    "cap_rate": 6.42, "cash_on_cash": 7.81, "dscr": 1.18,
+    "grm": 9.37, "irr_10yr": 14.2,
+    "cashflow_annual": 2880, "cashflow_monthly": 240
+  },
+  "financing": { "down_payment": 37000, "loan_amount": 148000, "monthly_payment": 984.22 },
+  "saved_id": "uuid-..."
+}
+```
+
+---
+
+### multifamily_analysis
+
+Deep analysis for 2–100+ unit multifamily. Handles rent roll input, per-door metrics, commercial vs residential loan detection, and lender DSCR benchmarks.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| asking_price | number | yes | |
+| unit_count | number | yes | 2–100+ |
+| avg_rent_per_unit | number | no* | Average monthly rent per unit |
+| rent_roll | array | no* | Per-unit rent data `[{unit, beds, monthly_rent, occupied}]` |
+| expense_ratio | number | no | Operating expenses % of gross rents (default 45 for 2-4, 50 for 5+) |
+| down_payment_pct | number | no | Default 20 residential / 25 commercial (5+ units) |
+
+*Either `avg_rent_per_unit` or `rent_roll` required.
+
+**Example response:**
+```json
+{
+  "verdict": "BUY",
+  "deal_score": 61,
+  "loan_type": "residential (2-4 units)",
+  "income": { "gross_monthly": 3800, "noi": 18700 },
+  "metrics": { "cap_rate": 7.1, "cash_on_cash": 9.2, "dscr": 1.31, "cashflow_per_unit": 87 },
+  "per_door": { "price_per_door": 92500, "rent_per_door": 950, "noi_per_door": 4675 },
+  "lender_notes": ["All lender benchmarks met"]
+}
+```
+
+---
+
+### brrrr_analysis
+
+BRRRR (Buy, Rehab, Rent, Refinance, Repeat) calculator. Shows whether you pull all cash out after refinancing and what cashflow looks like post-refi.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| purchase_price | number | yes | Distressed purchase price |
+| rehab_cost | number | yes | Rehab budget |
+| arv | number | yes | After Repair Value |
+| monthly_rent | number | yes | Post-rehab rent |
+| refi_ltv | number | no | Refi LTV % (default 75) |
+| refi_rate | number | no | Refi rate % (default 7.0) |
+| holding_months | number | no | Months purchase → refi (default 6) |
+
+**Example response:**
+```json
+{
+  "verdict": "FULL BRRRR — all cash out, positive cashflow",
+  "all_in_cost": 110000,
+  "equity_created": 50000,
+  "refinance": {
+    "loan_amount": 120000, "cash_out": 10000, "cash_left_in_deal": 0, "equity_retained": 40000
+  },
+  "cashflow": {
+    "monthly_cashflow": 180, "annual_cashflow": 2160, "cap_rate_on_arv": 8.1, "cash_on_cash": "infinite"
+  }
+}
+```
+
+---
+
+### house_hack_analysis
+
+Owner-occupied multifamily analysis. Models how rental income from other units offsets your mortgage (PITI). Supports FHA 5% down for 2-4 unit properties.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| purchase_price | number | yes | |
+| unit_count | number | yes | Total units (you occupy 1) |
+| rent_per_other_unit | number | yes | Monthly rent per rented unit |
+| down_payment_pct | number | no | Default 5 (FHA 2-4 unit) |
+| market_rent_owner_unit | number | no | What your unit would rent for |
+
+**Example response:**
+```json
+{
+  "verdict": "GOOD — tenants cover 50–70% of your housing cost",
+  "financing": { "total_piti": 1816.89, "loan_type": "FHA/Conventional 2-4 unit (residential rates)" },
+  "rental_income": { "gross_per_month": 1100, "effective_per_month": 1012 },
+  "housing_cost": {
+    "net_monthly_cost": 804.89, "piti_offset_pct": 55.7,
+    "vs_renting_monthly_delta": 295,
+    "note": "Saves $295/mo vs renting + building equity"
+  }
+}
+```
+
+---
+
+### wholesale_mao
+
+Maximum Allowable Offer for wholesale deals. Backs into your MAO from ARV, rehab, buyer profit target, and your assignment fee.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| arv | number | yes | After Repair Value |
+| rehab_cost | number | yes | Full rehab estimate |
+| wholesale_fee | number | no | Your assignment fee (default $10,000) |
+| buyer_profit_target | number | no | End buyer profit in $ (default 20% of ARV) |
+
+**Example response:**
+```json
+{
+  "your_mao": 95200,
+  "rule_70_check": 105000,
+  "buyer_max_purchase": 105200,
+  "breakdown": {
+    "arv": 200000, "minus_buyer_profit": 40000, "minus_closing_costs": 6000,
+    "minus_holding_costs": 7800, "minus_rehab": 35000, "your_mao": 95200
+  }
+}
+```
+
+---
+
+### market_rent_check
+
+Pulls HUD Fair Market Rents (by state) and Rentcast estimates (by address) to benchmark expected rental income for any area.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| state | string | yes | 2-letter state code |
+| address | string | no | Address for Rentcast estimate |
+| bedrooms | number | no | Bedroom count (default 2) |
+
+---
+
+### list_prospects
+
+List all scouted properties in your pipeline, ranked by deal score.
+
+**Input:**
+| Field | Type | Description |
+|-------|------|-------------|
+| sort_by | string | deal_score \| price \| cashflow (default: deal_score) |
+
+---
+
+### compare_prospects
+
+Side-by-side comparison table for multiple pipeline properties with a buy recommendation.
+
+**Input:**
+| Field | Type | Description |
+|-------|------|-------------|
+| addresses | array | Partial address strings to match |
+| ids | array | Property UUIDs (alternative) |
+
+---
+
+## Account Management Tools (5)
+
+### add_account
+
+Add a bank, brokerage, or cash account. Balance is AES-256 encrypted at rest.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type | string | yes | checking \| savings \| brokerage \| money_market \| cd \| hsa \| crypto \| other |
+| institution | string | yes | e.g. Chase, Fidelity |
+| nickname | string | no | Short label |
+| balance | number | yes | Current balance |
+| rate | number | no | APY % |
+
+---
+
+### list_accounts
+
+List all accounts with decrypted balances grouped by type.
+
+**Input:** None (optional `type` filter)
+
+**Example response:**
+```json
+{
+  "accounts": [
+    { "type": "checking", "institution": "Chase", "nickname": "Main Checking", "balance": 12500 },
+    { "type": "savings", "institution": "Ally", "nickname": "Emergency Fund", "balance": 28000, "rate": 4.5 }
+  ],
+  "totals_by_type": { "checking": 12500, "savings": 28000, "brokerage": 85000 },
+  "grand_total": 125500
+}
+```
+
+---
+
+### update_account_balance
+
+Update the balance on an existing account.
+
+**Input:**
+| Field | Type | Description |
+|-------|------|-------------|
+| id | string | Account UUID (from list_accounts) |
+| nickname | string | Or partial name to look up |
+| balance | number | New balance |
+
+---
+
+### compute_net_worth
+
+Aggregates all stored assets into a live net worth: accounts + property equity + crypto (live prices) + business entities. Saves a snapshot automatically.
+
+**Input:**
+| Field | Type | Description |
+|-------|------|-------------|
+| save_snapshot | boolean | Auto-save (default true) |
+| label | string | Snapshot label |
+
+**Example response:**
+```json
+{
+  "net_worth": 347500,
+  "as_of": "2026-05-27T...",
+  "breakdown": {
+    "accounts": { "total": 140500, "items": [...] },
+    "real_estate_equity": { "total": 185000, "items": [...] },
+    "crypto": { "total": 22000 },
+    "business_entities": { "total": 0 }
+  },
+  "monthly_obligations": 1200,
+  "snapshot_saved": "2026-05-27"
+}
+```
+
+---
+
+### portfolio_allocation
+
+Analyze your portfolio across 4 risk buckets and show gaps vs targets.
+
+**Input:**
+| Field | Type | Description |
+|-------|------|-------------|
+| target_liquid_pct | number | Target % liquid/safe (default 10) |
+| target_income_pct | number | Target % income/RE (default 40) |
+| target_growth_pct | number | Target % growth/retirement (default 35) |
+| target_speculative_pct | number | Target % speculative/crypto (default 15) |
+
+**Example response:**
+```json
+{
+  "total_portfolio": 347500,
+  "actual_allocation": {
+    "liquid":      { "value": 40500,  "pct": 11.6 },
+    "income":      { "value": 185000, "pct": 53.2 },
+    "growth":      { "value": 100000, "pct": 28.8 },
+    "speculative": { "value": 22000,  "pct": 6.3 }
+  },
+  "gaps": {
+    "growth":      { "status": "UNDERWEIGHT", "gap_pct": -6.2, "dollar_gap": -21500 },
+    "speculative": { "status": "UNDERWEIGHT", "gap_pct": -8.7, "dollar_gap": -30225 }
+  },
+  "advice": [
+    "Growth underweight — max 401k/Roth contributions (2025 limits: 401k $23,500, IRA $7,000)"
+  ]
+}
+```
