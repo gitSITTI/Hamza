@@ -13,7 +13,7 @@ Two projects live here:
 | Project | Directory | What it does |
 |---|---|---|
 | NetWorth GUI | `local-networthgui/` | Vanilla JS single-page net worth projection app |
-| Personal MCP | `personal-mcp/` | Node.js MCP server — financial brain, 76 tools, 12 plugins, SQLite RAG |
+| Personal MCP | `personal-mcp/` | Node.js MCP server — financial brain, 94 tools, 14 plugins, SQLite RAG |
 
 ---
 
@@ -27,10 +27,14 @@ Two projects live here:
 │   ├── index.html               ← do not touch without discussion
 │   ├── styles.css               ← do not touch without discussion
 │   ├── app_backup_20260525.js   ← backup before last changes
+│   ├── app_backup_20260527.js   ← backup before MCP wiring changes
 │   ├── suggestions.html         ← persona-based feature suggestions UI
 │   ├── suggestions-data.html    ← data collection & MCP architecture plan
 │   ├── suggestions-personal-mcp.html ← Personal MCP full architecture
-│   └── personal-mcp-ui.html     ← 19-screen UI mockup for Personal MCP
+│   ├── personal-mcp-ui.html     ← 19-screen UI mockup for Personal MCP
+│   ├── mcp-dashboard-v2.html    ← 16-screen live MCP dashboard
+│   ├── ma-workbook.html         ← M&A deal engineering workbook (9 screens, QLA/Dan Peña)
+│   └── trading-income.html      ← 10-screen trading income dashboard (ETFs, options, wheel)
 ├── personal-mcp/
 │   ├── server.js                ← Express entry point, port 3333
 │   ├── mcp.js                   ← JSON-RPC 2.0 dispatcher
@@ -39,7 +43,7 @@ Two projects live here:
 │   ├── .env                     ← secrets (never commit — already gitignored)
 │   ├── .env.example             ← template for new installs
 │   ├── plugins/
-│   │   ├── index.js             ← plugin registry (12 plugins, 76 tools)
+│   │   ├── index.js             ← plugin registry (14 plugins, 94 tools)
 │   │   ├── identity.js          ← 11 tools: profile, snapshots, obligations, accounts, net worth, allocation
 │   │   ├── property.js          ← 5 tools: lookup, analyze, vault, stress test
 │   │   ├── market.js            ← 6 tools: FRED, Polygon, HUD, comparisons
@@ -50,8 +54,10 @@ Two projects live here:
 │   │   ├── retirement.js        ← 6 tools: IRA/401k/Roth balances, FIRE calc, contribution optimizer
 │   │   ├── cashflow.js          ← 5 tools: 90-day forecast, events, stress test
 │   │   ├── documents.js         ← 6 tools: document vault, tax summary, extract_tax_data
-│   │   ├── business.js          ← 6 tools: acquisition analysis, SBA loan, DD checklist, deals
-│   │   └── scout.js             ← 8 tools: property scouting, multifamily, BRRRR, house hack, MAO
+│   │   ├── business.js          ← 10 tools: acquisition, SBA, DD, deals + QLA M&A engineer, DSCR optimizer, creative financing, checklist
+│   │   ├── scout.js             ← 8 tools: property scouting, multifamily, BRRRR, house hack, MAO
+│   │   ├── bitcoin.js           ← 4 tools: S2F model, power law corridor, Saylor thesis, BTC scenarios
+│   │   └── trading.js           ← 10 tools: income ETFs, options P&L, broker snapshots, freedom number, wheel
 │   └── scripts/
 │       └── setup.js             ← first-run: generates keys, seeds DB, prints config
 ├── docs/
@@ -81,12 +87,14 @@ Vanilla JS single-page app. No build step. Open `local-networthgui/index.html` i
 
 ### Current Status
 - MCP connector panel is in the Profile/Export section — enter endpoint URL and API key, click Connect
-- `connectToPersonalMCP()` calls `get_session_context` and auto-populates matching slider values
+- `connectToPersonalMCP()` makes 5 parallel MCP calls and auto-populates 13+ slider values
 - `pushSnapshotToMCP()` sends current projection state to `save_snapshot`
+- `propertyPortfolioMode` auto-detected from property data (primary / rentals / both)
 
 ### What's Next
 - Enable `useValidatedProjectionModel` flag to `true` once user validates the projection numbers
 - Wire scout property results back into the GUI's real estate sliders
+- Link trading-income.html from the main dashboard or nav
 
 ### Rules — READ BEFORE TOUCHING app.js
 
@@ -102,7 +110,7 @@ Vanilla JS single-page app. No build step. Open `local-networthgui/index.html` i
 ## Personal MCP — Rules and Status
 
 ### What it is
-Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-256 encryption. 76 tools across 12 plugin files. JSON-RPC 2.0 protocol — directly usable by Claude Code.
+Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-256 encryption. 94 tools across 14 plugin files. JSON-RPC 2.0 protocol — directly usable by Claude Code.
 
 ### Current Status (Phases 1–5 complete)
 | Phase | What was built | Tools |
@@ -113,7 +121,10 @@ Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-25
 | 4 | Business acquisition analysis, SBA loan model, DD checklist | +6 |
 | 5 | Property Scout: multifamily, BRRRR, house hack, MAO, prospect pipeline | +8 |
 | + | Account management (add/list/update), compute_net_worth, portfolio_allocation | +5 |
-| **Total** | | **76** |
+| 6 | Bitcoin: S2F, power law, Saylor thesis, scenarios | +4 |
+| 6 | M&A: QLA engineer, DSCR optimizer, creative financing, checklist (in business.js) | +4 |
+| 7 | Trading income: income ETFs, options P&L, broker snapshots, freedom number, wheel | +10 |
+| **Total** | | **94** |
 
 - `personal-mcp.db` initialized and running
 - NetWorth GUI has MCP connector wired in (Profile/Export panel → connect button)
@@ -121,10 +132,13 @@ Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-25
 
 ### What's Next
 - Fill in API keys in `.env` (Rentcast, FRED, Polygon, HUD, Notion)
-- Set up Cloudflare tunnel for remote access: `cloudflared tunnel --url http://localhost:3333`
+- Set up Cloudflare tunnel for remote access — **must run on your local machine** (container network policy blocks it here): `cloudflared tunnel --url http://localhost:3333`
 - Feed personal data: use `add_account`, `save_property`, `save_crypto_position`, `save_obligation`
 - Run `compute_net_worth` to get first live net worth calculation
 - Enable `useValidatedProjectionModel` in NetWorth GUI once validated
+- Log income ETF positions: `save_income_position`
+- Log options trades: `log_options_trade` / `close_options_trade`
+- Take broker snapshots: `broker_snapshot` (Robinhood, Schwab, TOS)
 
 ### How to Start the Server
 
@@ -207,6 +221,11 @@ The API key is in `/home/user/Hamza/personal-mcp/.env` as `MCP_API_KEY`.
 | Plugin: documents | `/home/user/Hamza/personal-mcp/plugins/documents.js` |
 | Plugin: business | `/home/user/Hamza/personal-mcp/plugins/business.js` |
 | Plugin: scout | `/home/user/Hamza/personal-mcp/plugins/scout.js` |
+| Plugin: bitcoin | `/home/user/Hamza/personal-mcp/plugins/bitcoin.js` |
+| Plugin: trading | `/home/user/Hamza/personal-mcp/plugins/trading.js` |
+| GUI: M&A workbook | `/home/user/Hamza/local-networthgui/ma-workbook.html` |
+| GUI: Trading income | `/home/user/Hamza/local-networthgui/trading-income.html` |
+| GUI: MCP dashboard | `/home/user/Hamza/local-networthgui/mcp-dashboard-v2.html` |
 | Tech docs: GUI | `/home/user/Hamza/docs/networthgui.md` |
 | Tech docs: MCP | `/home/user/Hamza/docs/personal-mcp.md` |
 | Setup guide | `/home/user/Hamza/docs/setup.md` |
