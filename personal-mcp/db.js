@@ -165,6 +165,18 @@ function migrate(db) {
       ttl_seconds INTEGER DEFAULT 3600
     );
 
+    CREATE TABLE IF NOT EXISTS cashflow_events (
+      id         TEXT PRIMARY KEY,
+      type       TEXT,
+      label      TEXT,
+      amount     REAL,
+      date       TEXT,
+      recurring  INTEGER DEFAULT 0,
+      frequency  TEXT,
+      end_date   TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS audit_log (
       id     INTEGER PRIMARY KEY AUTOINCREMENT,
       caller TEXT,

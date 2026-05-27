@@ -1,9 +1,14 @@
-const identityTools = require('./identity');
-const propertyTools = require('./property');
-const marketTools   = require('./market');
-const cryptoTools   = require('./crypto');
-const projectTools  = require('./projects');
+const identityTools  = require('./identity');
+const propertyTools  = require('./property');
+const marketTools    = require('./market');
+const cryptoTools    = require('./crypto');
+const projectTools   = require('./projects');
 const { tools: ragTools } = require('./rag');
+const sosTools       = require('./sos');
+const retirementTools= require('./retirement');
+const cashflowTools  = require('./cashflow');
+const documentTools  = require('./documents');
+const businessTools  = require('./business');
 
 const allTools = [
   ...identityTools,
@@ -11,7 +16,12 @@ const allTools = [
   ...marketTools,
   ...cryptoTools,
   ...projectTools,
-  ...ragTools
+  ...ragTools,
+  ...sosTools,
+  ...retirementTools,
+  ...cashflowTools,
+  ...documentTools,
+  ...businessTools
 ];
 
 const toolMap = Object.fromEntries(allTools.map(t => [t.name, t]));
