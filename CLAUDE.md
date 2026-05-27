@@ -132,7 +132,8 @@ Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-25
 
 ### What's Next
 - Fill in API keys in `.env` (Rentcast, FRED, Polygon, HUD, Notion)
-- Set up Cloudflare tunnel for remote access — **must run on your local machine** (container network policy blocks it here): `cloudflared tunnel --url http://localhost:3333`
+- Cloudflare tunnel **LIVE**: `https://cheapest-worth-und-interpretation.trycloudflare.com` → `http://localhost:3333`
+  - Run on your local machine to keep it active: `cloudflared tunnel --url http://localhost:3333`
 - Feed personal data: use `add_account`, `save_property`, `save_crypto_position`, `save_obligation`
 - Run `compute_net_worth` to get first live net worth calculation
 - Enable `useValidatedProjectionModel` in NetWorth GUI once validated
@@ -167,9 +168,20 @@ Add to `.claude/settings.json` under `mcpServers`:
 ```json
 "personal-mcp": {
   "type": "http",
+  "url": "https://cheapest-worth-und-interpretation.trycloudflare.com/mcp",
+  "headers": {
+    "x-api-key": "pmcp-1291e4ecf2b11865157cc8467a2bcab5a12d5a60d156a666"
+  }
+}
+```
+
+Local fallback (when on same network):
+```json
+"personal-mcp": {
+  "type": "http",
   "url": "http://localhost:3333/mcp",
   "headers": {
-    "x-api-key": "<value of MCP_API_KEY from personal-mcp/.env>"
+    "x-api-key": "pmcp-1291e4ecf2b11865157cc8467a2bcab5a12d5a60d156a666"
   }
 }
 ```

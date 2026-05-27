@@ -107,7 +107,7 @@ const state = {
     useGovernmentBenchmarks: true,
     showAssumptionQualityScore: true,
   },
-  mcpEndpoint: "",
+  mcpEndpoint: "https://cheapest-worth-und-interpretation.trycloudflare.com/mcp",
   mcpApiKey: "",
   mcpStatus: "disconnected",
   mcpLastSync: null,
