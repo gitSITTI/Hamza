@@ -3183,90 +3183,31 @@ async function mcpCall(method, params = {}) {
 async function connectToPersonalMCP() {
   state.mcpStatus = "connecting";
   render();
-
-  const parseResult = (settled) => {
-    if (settled.status !== "fulfilled") return null;
-    try { return JSON.parse(settled.value?.content?.[0]?.text || "null"); }
-    catch { return null; }
-  };
-
   try {
-    // Initialize
     const info = await mcpCall("initialize", { protocolVersion: "2024-11-05", capabilities: {} });
     state.mcpServerInfo = info?.serverInfo || null;
 
-    // Fetch all data sources in parallel
-    const [acctRes, propRes, cryptoRes, obligRes, retRes] = await Promise.allSettled([
-      mcpCall("tools/call", { name: "list_accounts",           arguments: {} }),
-      mcpCall("tools/call", { name: "list_properties",         arguments: { status: "owned" } }),
-      mcpCall("tools/call", { name: "get_portfolio_value",     arguments: {} }),
-      mcpCall("tools/call", { name: "list_obligations",        arguments: {} }),
-      mcpCall("tools/call", { name: "list_retirement_accounts",arguments: {} }),
-    ]);
+    // Pull session context and populate sliders
+    const ctxResult = await mcpCall("tools/call", { name: "get_session_context", arguments: {} });
+    const ctx = JSON.parse(ctxResult?.content?.[0]?.text || "{}");
 
-    // ── Accounts → brokerage / retirement balances ──────────────────────────
-    const acctData = parseResult(acctRes);
-    if (acctData?.accounts?.length) {
-      const byType = {};
-      acctData.accounts.forEach(a => {
-        const t = (a.type || "other").toLowerCase();
-        byType[t] = (byType[t] || 0) + (Number(a.balance) || 0);
-      });
-      const brokerageTotal = (byType.brokerage || 0) + (byType.taxable || 0) + (byType.investment || 0);
-      if (brokerageTotal > 0) state.sliders.stocksAltBalance = brokerageTotal;
+    if (ctx.net_worth) {
+      // Snapshot net worth as a note
+      state.notes = (state.notes || "") + `\n[Personal MCP] Net worth snapshot: $${Number(ctx.net_worth.value || 0).toLocaleString()} (${ctx.net_worth.date || "no date"})`;
     }
 
-    // ── Properties → primary home + investment portfolio ────────────────────
-    const propData = parseResult(propRes);
-    if (propData?.properties?.length) {
-      const props = propData.properties;
-      // Identify primary home: prefer one with "primary"/"home"/"main" in nickname, else first
-      const isPrimary = p => /primary|home|main|residence/i.test(p.nickname || p.address || "");
-      const primary   = props.find(isPrimary) || props[0];
-      const rentals   = props.filter(p => p !== primary);
-
-      if (primary) {
-        if (primary.current_value)    state.sliders.primaryHomeValue            = Number(primary.current_value);
-        if (primary.mortgage_balance) state.sliders.primaryHomeMortgageBalance  = Number(primary.mortgage_balance);
-        if (primary.mortgage_rate)    state.sliders.primaryHomeMortgageRate     = Number(primary.mortgage_rate);
-        if (primary.mortgage_term)    state.sliders.primaryHomeMortgageTerm     = Number(primary.mortgage_term);
-      }
-      if (rentals.length) {
-        state.sliders.investmentPropertyCount           = rentals.length;
-        const totVal  = rentals.reduce((s, p) => s + (Number(p.current_value)    || 0), 0);
-        const totMort = rentals.reduce((s, p) => s + (Number(p.mortgage_balance) || 0), 0);
-        const totRent = rentals.reduce((s, p) => s + (Number(p.monthly_rent)     || 0), 0);
-        if (totVal)  state.sliders.investmentPropertyValue           = totVal;
-        if (totMort) state.sliders.investmentPropertyMortgageBalance = totMort;
-        if (totRent) state.sliders.investmentPropertyMonthlyRent     = totRent;
-      }
-
-      // Set property portfolio mode
-      if (primary && rentals.length)    state.propertyPortfolioMode = "Primary + rentals";
-      else if (primary && !rentals.length) state.propertyPortfolioMode = "Primary home only";
-      else if (!primary && rentals.length) state.propertyPortfolioMode = "Investment properties only";
+    if (Array.isArray(ctx.properties) && ctx.properties.length) {
+      const p = ctx.properties[0];
+      if (p.current_value) state.sliders.primaryHomeValue = Number(p.current_value) || 0;
+      if (p.mortgage_balance) state.sliders.primaryHomeMortgageBalance = Number(p.mortgage_balance) || 0;
     }
 
-    // ── Crypto portfolio → live value ────────────────────────────────────────
-    const cryptoData = parseResult(cryptoRes);
-    if (cryptoData?.total_value > 0) state.sliders.cryptoBalance = cryptoData.total_value;
-
-    // ── Obligations → child support ──────────────────────────────────────────
-    const obligData = parseResult(obligRes);
-    if (obligData?.obligations?.length) {
-      const cs = obligData.obligations.find(o => o.type === "child_support");
+    if (Array.isArray(ctx.obligations)) {
+      const cs = ctx.obligations.find(o => o.type === "child_support");
       if (cs) {
         state.childSupportMode = "Paying child support";
         state.sliders.childSupportMonthly = Number(cs.monthly_amount) || 0;
       }
-    }
-
-    // ── Retirement accounts → total balance summary in notes ─────────────────
-    const retData = parseResult(retRes);
-    if (retData?.accounts?.length) {
-      const retTotal = retData.total_balance || 0;
-      const retLabel = retData.accounts.map(a => `${a.label}: $${Number(a.balance).toLocaleString()}`).join(", ");
-      state.notes = (state.notes || "") + `\n[MCP Sync] Retirement accounts ($${retTotal.toLocaleString()}): ${retLabel}`;
     }
 
     state.mcpStatus = "connected";
@@ -3279,53 +3220,29 @@ async function connectToPersonalMCP() {
 
 async function pushSnapshotToMCP() {
   try {
-    const homeEquity   = (state.sliders.primaryHomeValue || 0) - (state.sliders.primaryHomeMortgageBalance || 0);
-    const rentalEquity = (state.sliders.investmentPropertyValue || 0) - (state.sliders.investmentPropertyMortgageBalance || 0);
-    const netWorth     = homeEquity + rentalEquity +
-      (state.sliders.cryptoBalance     || 0) +
-      (state.sliders.stocksAltBalance  || 0) +
-      (state.sliders.commoditiesBalance|| 0);
-
+    const netWorth =
+      (state.sliders.primaryHomeValue || 0) - (state.sliders.primaryHomeMortgageBalance || 0) +
+      (state.sliders.cryptoBalance || 0) +
+      (state.sliders.stocksAltBalance || 0);
     await mcpCall("tools/call", {
       name: "save_snapshot",
       arguments: {
-        label:     "NetWorth GUI — " + new Date().toISOString().slice(0, 10),
+        label: "NetWorth GUI — " + new Date().toISOString().slice(0, 10),
         net_worth: netWorth,
-        data: {
-          sliders:              state.sliders,
-          childSupportMode:     state.childSupportMode,
-          propertyPortfolioMode:state.propertyPortfolioMode,
-          relationshipStatus:   state.relationshipStatus,
-          filingStatus:         state.filingStatus,
-          featureFlags:         state.featureFlags,
-        }
+        data: { sliders: state.sliders, childSupportMode: state.childSupportMode, propertyPortfolioMode: state.propertyPortfolioMode }
       }
     });
-    alert(`Snapshot saved to Personal MCP ✓\nNet worth: $${netWorth.toLocaleString()}`);
+    alert("Snapshot saved to Personal MCP");
   } catch (e) {
-    alert("Push failed: " + e.message);
+    alert("Error: " + e.message);
   }
 }
 
 function renderMCPConnector() {
-  const status      = state.mcpStatus || "disconnected";
+  const status = state.mcpStatus || "disconnected";
   const isConnected = status === "connected";
-  const isConnecting= status === "connecting";
+  const isConnecting = status === "connecting";
   const statusColor = isConnected ? "#22c55e" : (status.startsWith("error") ? "#ef4444" : "#94a3b8");
-
-  const fmt = (n) => n ? "$" + Number(n).toLocaleString() : "—";
-
-  const syncRows = isConnected ? [
-    ["Primary home value",           fmt(state.sliders.primaryHomeValue)],
-    ["Primary mortgage balance",      fmt(state.sliders.primaryHomeMortgageBalance)],
-    ["Investment properties",         state.sliders.investmentPropertyCount ? `${state.sliders.investmentPropertyCount} × ${fmt(state.sliders.investmentPropertyValue / (state.sliders.investmentPropertyCount||1))} avg` : "—"],
-    ["Investment monthly rent",       state.sliders.investmentPropertyMonthlyRent ? fmt(state.sliders.investmentPropertyMonthlyRent) + "/mo" : "—"],
-    ["Crypto portfolio (live)",       fmt(state.sliders.cryptoBalance)],
-    ["Brokerage / taxable accounts",  fmt(state.sliders.stocksAltBalance)],
-    ["Child support / month",         state.sliders.childSupportMonthly ? fmt(state.sliders.childSupportMonthly) + "/mo" : "—"],
-    ["Property portfolio mode",       state.propertyPortfolioMode || "—"],
-  ] : [];
-
   return accordion("Personal MCP Connection", false, [
     h("p", { class: "section-copy" }, "Connect to your Personal MCP server to auto-populate sliders from your real financial data and push snapshots back."),
     h("div", { class: "control-grid single" }, [
@@ -3333,7 +3250,7 @@ function renderMCPConnector() {
         h("label", { class: "label" }, "MCP Server URL"),
         h("input", {
           class: "text-input",
-          placeholder: "http://localhost:3333/mcp  or  https://xxxx.trycloudflare.com/mcp",
+          placeholder: "http://localhost:3333/mcp  or  https://mcp.you.cloudflareaccess.com/mcp",
           value: state.mcpEndpoint,
           oninput: (e) => { state.mcpEndpoint = e.target.value; },
         }),
@@ -3354,7 +3271,7 @@ function renderMCPConnector() {
         class: "btn",
         disabled: isConnecting,
         onclick: connectToPersonalMCP,
-      }, isConnecting ? "Connecting…" : isConnected ? "Re-sync from MCP" : "Connect & Pull Data"),
+      }, isConnecting ? "Connecting…" : "Connect & Pull Data"),
       isConnected ? h("button", { class: "btn", onclick: pushSnapshotToMCP }, "Push Snapshot → MCP") : null,
     ]),
     h("div", { style: `margin-top:10px;font-size:12px;color:${statusColor}` }, [
@@ -3362,17 +3279,6 @@ function renderMCPConnector() {
       state.mcpLastSync ? `  ·  Last sync: ${new Date(state.mcpLastSync).toLocaleTimeString()}` : "",
       state.mcpServerInfo ? `  ·  ${state.mcpServerInfo.name} v${state.mcpServerInfo.version}` : "",
     ]),
-    isConnected ? h("div", { style: "margin-top:14px" }, [
-      h("p", { class: "label", style: "margin-bottom:6px" }, "Synced from MCP vault:"),
-      h("table", { style: "font-size:12px;width:100%;border-collapse:collapse" },
-        syncRows.map(([label, val]) =>
-          h("tr", {}, [
-            h("td", { style: "padding:3px 10px 3px 0;color:#94a3b8;width:55%" }, label),
-            h("td", { style: "padding:3px 0;color:#e2e8f0;font-weight:600" }, val),
-          ])
-        )
-      ),
-    ]) : null,
   ]);
 }
 
