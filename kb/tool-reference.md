@@ -1214,3 +1214,576 @@ Retrieves the most relevant documents for a topic, formatted as injection blocks
   ]
 }
 ```
+
+---
+
+## SOS / Entity Tools — Phase 2 (6)
+
+### lookup_entity_mo
+
+Look up a business entity registered with Missouri Secretary of State.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | yes | Business name to search |
+
+**Example call:**
+```json
+{
+  "jsonrpc": "2.0", "id": 1,
+  "method": "tools/call",
+  "params": { "name": "lookup_entity_mo", "arguments": { "name": "Acme LLC" } }
+}
+```
+
+**Example response:**
+```json
+{
+  "source": "MO SOS",
+  "query": "Acme LLC",
+  "results": [
+    { "name": "ACME LLC", "status": "Good Standing", "id": "LC1234567", "registered_agent": "John Doe" }
+  ]
+}
+```
+
+---
+
+### lookup_entity_va
+
+Look up a business entity with Virginia State Corporation Commission.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | yes | Business name to search |
+
+---
+
+### search_entity
+
+Search both MO SOS and VA SCC simultaneously.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | yes | Business name |
+| state | string | no | Filter: MO \| VA (default: both) |
+
+---
+
+### save_entity
+
+Save a business entity to your local database.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | yes | Entity name |
+| type | string | no | LLC \| Corp \| LP \| Sole Prop |
+| state | string | no | State of formation |
+| sos_id | string | no | SOS filing ID |
+| role | string | no | owner \| partner \| investor |
+| ownership_pct | number | no | 0–100 |
+| equity_value | number | no | Estimated value in USD |
+| annual_revenue | number | no | Annual revenue |
+| notes | string | no | Free text |
+
+---
+
+### list_entities
+
+List all saved business entities with equity summary.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "entities": [
+    { "id": "...", "name": "Hamza Holdings LLC", "type": "LLC", "state": "MO", "role": "owner", "ownership_pct": 100, "equity_value": 250000 }
+  ],
+  "total_equity": 250000
+}
+```
+
+---
+
+### entity_valuation
+
+Run SDE/EBITDA/Revenue multiple valuation for a business.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| entity_id | string | no | Look up saved entity |
+| annual_revenue | number | no | Override revenue |
+| ebitda | number | no | EBITDA |
+| sde | number | no | Seller's Discretionary Earnings |
+| industry | string | no | retail \| service \| saas \| manufacturing \| restaurant |
+| growth_rate | number | no | Annual growth % |
+
+**Example response:**
+```json
+{
+  "sde_value": { "low": 180000, "mid": 225000, "high": 270000 },
+  "ebitda_value": { "low": 160000, "mid": 200000, "high": 240000 },
+  "revenue_value": { "low": 120000, "mid": 150000, "high": 180000 },
+  "recommended_range": "$180,000 – $270,000",
+  "multiples_used": { "sde": "2.0–3.0x", "ebitda": "2.5–3.5x", "revenue": "0.4–0.6x" }
+}
+```
+
+---
+
+## Retirement Tools — Phase 2 (6)
+
+### add_retirement_account
+
+Add a retirement account (IRA, 401k, Roth, SEP, HSA, etc.).
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type | string | yes | traditional_ira \| roth_ira \| 401k \| roth_401k \| solo_401k \| sep_ira \| hsa \| pension |
+| institution | string | no | Fidelity, Vanguard, etc. |
+| nickname | string | no | "My Roth IRA" |
+| balance | number | no | Current balance |
+| annual_contribution | number | no | How much you contribute per year |
+| employer_match_pct | number | no | 0–100 |
+| expected_return_pct | number | no | Annual return assumption |
+| notes | string | no | |
+
+---
+
+### list_retirement_accounts
+
+List all retirement accounts with totals.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "accounts": [...],
+  "totals": { "traditional": 85000, "roth": 42000, "hsa": 8500, "total": 135500 }
+}
+```
+
+---
+
+### get_retirement_summary
+
+Comprehensive retirement picture: totals, 2025 contribution limits, gap vs FIRE number.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "total_retirement_assets": 135500,
+  "contribution_limits_2025": {
+    "traditional_ira": 7000, "roth_ira": 7000, "401k": 23500,
+    "solo_401k": 70000, "sep_ira": 70000, "hsa_individual": 4300, "hsa_family": 8550
+  },
+  "fire_number_estimate": 1500000,
+  "gap_to_fire": 1364500
+}
+```
+
+---
+
+### project_retirement
+
+Project portfolio growth to a target retirement age.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| target_age | number | yes | Age you want to retire |
+| current_age | number | yes | Your current age |
+| annual_contribution | number | no | Total annual contribution across all accounts |
+| expected_return_pct | number | no | Annual return % (default 7) |
+
+**Example response:**
+```json
+{
+  "years_to_retirement": 22,
+  "projected_balance": 1247832,
+  "annual_contribution": 30000,
+  "return_pct": 7,
+  "year_by_year": [
+    { "year": 2026, "age": 34, "balance": 174850 },
+    ...
+  ]
+}
+```
+
+---
+
+### contribution_optimizer
+
+Show how much you can still contribute this year across all accounts.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "accounts": [
+    { "type": "roth_ira", "limit": 7000, "contributed": 3500, "remaining": 3500 },
+    { "type": "solo_401k", "limit": 70000, "contributed": 15000, "remaining": 55000 }
+  ],
+  "total_remaining_room": 58500
+}
+```
+
+---
+
+### fire_calculator
+
+Calculate your FIRE number and how long until you hit it.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| target_monthly_income | number | yes | Monthly income you need in retirement |
+| safe_withdrawal_rate | number | no | % per year (default 4) |
+| current_portfolio | number | no | Current investable assets |
+| annual_savings | number | no | Amount saved per year |
+| expected_return_pct | number | no | Annual return (default 7) |
+
+**Example response:**
+```json
+{
+  "fire_number": 1500000,
+  "current_portfolio": 135500,
+  "gap": 1364500,
+  "years_to_fire": 18.4,
+  "target_date": "2044",
+  "monthly_income_at_fire": 5000
+}
+```
+
+---
+
+## Cashflow Tools — Phase 3 (5)
+
+### get_cashflow_forecast
+
+90-day rolling cashflow forecast built from your accounts, properties, obligations, and events.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| days | number | no | Forecast window in days (default 90) |
+
+**Example response:**
+```json
+{
+  "forecast_days": 90,
+  "monthly_income": 12500,
+  "monthly_expenses": 8200,
+  "monthly_net": 4300,
+  "running_balance": [
+    { "month": "2026-06", "income": 12500, "expenses": 8200, "net": 4300, "cumulative": 4300 },
+    ...
+  ]
+}
+```
+
+---
+
+### add_cashflow_event
+
+Add a one-time or recurring cashflow event.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type | string | yes | income \| expense |
+| label | string | yes | Description |
+| amount | number | yes | Dollar amount |
+| date | string | yes | YYYY-MM-DD (start date) |
+| recurring | boolean | no | true for repeating |
+| frequency | string | no | monthly \| weekly \| quarterly \| annual |
+| end_date | string | no | YYYY-MM-DD — when recurring stops |
+
+---
+
+### list_cashflow_events
+
+List all cashflow events.
+
+**Input:** None
+
+---
+
+### get_monthly_summary
+
+Income vs expense breakdown for a specific month.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| month | string | yes | YYYY-MM |
+
+---
+
+### cashflow_stress_test
+
+Run cashflow stress scenarios: income drop, expense spike, job loss.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| scenario | string | yes | income_drop_20 \| income_drop_50 \| expense_spike_30 \| job_loss \| custom |
+| custom_income_change | number | no | % change for custom scenario |
+| custom_expense_change | number | no | % change for custom scenario |
+
+**Example response:**
+```json
+{
+  "scenario": "income_drop_20",
+  "baseline_monthly_net": 4300,
+  "stressed_monthly_net": 1900,
+  "months_until_negative": 14,
+  "verdict": "Manageable — 14 months of runway before cash goes negative"
+}
+```
+
+---
+
+## Document Tools — Phase 3 (6)
+
+### save_document_record
+
+Save a document record (tax return, bank statement, deed, etc.) and index its summary for RAG search.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| category | string | yes | tax \| bank \| property \| legal \| insurance \| investment \| business |
+| year | number | no | Tax year or document year |
+| filename | string | yes | Original filename |
+| summary | string | no | What this document contains |
+| parsed_data | string | no | JSON string of extracted key data |
+
+---
+
+### list_documents
+
+List all saved document records, optionally filtered by category/year.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| category | string | no | Filter by category |
+| year | number | no | Filter by year |
+
+---
+
+### get_document_record
+
+Get a specific document record by ID.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| id | string | yes | Document UUID |
+
+---
+
+### search_documents
+
+Full-text search across all document summaries and metadata.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| query | string | yes | Search terms |
+| category | string | no | Filter by category |
+
+---
+
+### extract_tax_data
+
+Parse key fields from a tax return summary: AGI, taxable income, federal/state tax paid, refund/balance due.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| document_id | string | yes | ID from save_document_record |
+| tax_year | number | no | Override year |
+
+---
+
+### get_tax_summary
+
+Aggregate tax summary across all stored tax documents.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "years": [
+    { "year": 2024, "agi": 185000, "federal_tax": 34200, "state_tax": 9250, "effective_rate": 18.5 },
+    { "year": 2023, "agi": 162000, "federal_tax": 28900, "state_tax": 8100, "effective_rate": 17.8 }
+  ],
+  "avg_effective_rate": 18.2
+}
+```
+
+---
+
+## Business Acquisition Tools — Phase 4 (6)
+
+### analyze_acquisition
+
+Full acquisition analysis: SDE/EBITDA/Revenue multiples, DSCR, payback period, and buy/pass verdict.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| business_name | string | yes | Name of target business |
+| asking_price | number | yes | Seller's asking price |
+| annual_revenue | number | yes | Trailing 12-month revenue |
+| ebitda | number | no | EBITDA (preferred over SDE) |
+| sde | number | no | Seller's Discretionary Earnings |
+| industry | string | no | retail \| service \| saas \| manufacturing \| restaurant |
+| down_payment_pct | number | no | % down (default 10 for SBA 7a) |
+| loan_rate | number | no | Interest rate (default 6.5%) |
+| loan_term_years | number | no | Loan term (default 10) |
+
+**Example response:**
+```json
+{
+  "business_name": "Main St Laundromat",
+  "asking_price": 350000,
+  "valuation": {
+    "sde_range": "$210,000 – $315,000",
+    "ebitda_range": "$240,000 – $336,000",
+    "verdict": "Overpriced by ~$35,000 at midpoint"
+  },
+  "deal_metrics": {
+    "down_payment": 35000,
+    "monthly_loan_payment": 3892,
+    "annual_debt_service": 46704,
+    "dscr": 1.41,
+    "payback_years": 4.2,
+    "cash_on_cash_return_pct": 23.8
+  },
+  "verdict": "BUY — DSCR 1.41 exceeds 1.25 threshold. Negotiate price down 10% first."
+}
+```
+
+---
+
+### sba_loan_analysis
+
+SBA 7(a) loan modeling with break-even and DSCR stress table.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| loan_amount | number | yes | Amount to borrow |
+| rate | number | no | Interest rate % (default 6.5) |
+| term_years | number | no | Loan term (default 10) |
+| business_ebitda | number | no | Business EBITDA for DSCR calc |
+
+**Example response:**
+```json
+{
+  "loan_amount": 315000,
+  "monthly_payment": 3503,
+  "annual_debt_service": 42036,
+  "dscr_at_current_ebitda": 1.57,
+  "break_even_monthly_revenue": 8750,
+  "stress_table": [
+    { "scenario": "Revenue -10%", "ebitda_stressed": 56700, "dscr": 1.35, "safe": true },
+    { "scenario": "Revenue -20%", "ebitda_stressed": 50400, "dscr": 1.20, "safe": false }
+  ]
+}
+```
+
+---
+
+### dd_checklist
+
+Generate a due diligence checklist customized by business type and size.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| business_type | string | yes | retail \| service \| saas \| manufacturing \| restaurant \| ecommerce |
+| asking_price | number | no | Deal size adjusts checklist depth |
+
+**Example response:**
+```json
+{
+  "business_type": "restaurant",
+  "categories": {
+    "financials": ["3 years P&L", "Tax returns", "POS sales reports", "Food cost % by month"],
+    "operations": ["Health inspection history", "Lease assignment clause", "Equipment condition/age"],
+    "legal": ["Liquor license transferability", "Pending litigation", "Franchise agreement if applicable"],
+    "employees": ["Key staff retention plan", "Org chart", "Any non-competes in place"]
+  }
+}
+```
+
+---
+
+### save_deal
+
+Save an acquisition deal to track across sessions.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | yes | Deal/business name |
+| asking_price | number | yes | |
+| status | string | no | prospect \| analyzing \| loi \| under_contract \| closed \| passed |
+| notes | string | no | |
+| analysis | object | no | Output from analyze_acquisition |
+
+---
+
+### list_deals
+
+List all saved deals with status and key metrics.
+
+**Input:** None
+
+**Example response:**
+```json
+{
+  "deals": [
+    { "id": "...", "name": "Main St Laundromat", "asking_price": 350000, "status": "analyzing", "dscr": 1.41 }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### compare_deals
+
+Side-by-side comparison of multiple saved deals.
+
+**Input:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| deal_ids | array | yes | Array of deal UUIDs to compare |
+
+**Example response:**
+```json
+{
+  "comparison": [
+    { "name": "Laundromat", "asking_price": 350000, "dscr": 1.41, "payback_years": 4.2, "verdict": "BUY" },
+    { "name": "Car Wash", "asking_price": 680000, "dscr": 0.98, "payback_years": 8.1, "verdict": "PASS" }
+  ],
+  "recommended": "Laundromat — higher DSCR, faster payback"
+}
+```
