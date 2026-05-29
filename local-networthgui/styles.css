@@ -547,6 +547,21 @@ body.theme-dark .nav-item {
   color: #9aa7bb;
 }
 
+.metric-item .delta.positive,
+.metric-item .delta-percent.positive {
+  color: #2f9e44;
+}
+
+.metric-item .delta.negative,
+.metric-item .delta-percent.negative {
+  color: #d94841;
+}
+
+.metric-item .delta-percent {
+  font-size: 11px;
+  color: var(--muted);
+}
+
 .toggle-row {
   display: flex;
   align-items: center;
@@ -638,7 +653,7 @@ body.theme-dark .subtle-note {
 .ghost-btn {
   border-radius: 11px;
   border: 1px solid var(--line-strong);
-  background: #ffffff;
+  background: var(--panel);
   min-height: 42px;
   padding: 10px 18px;
   color: var(--heading);
@@ -648,7 +663,7 @@ body.theme-dark .subtle-note {
 
 .btn.primary {
   border-color: var(--line-strong);
-  background: #f0f3f8;
+  background: var(--panel-2);
 }
 
 .pill-row,
@@ -1100,12 +1115,36 @@ input[type="range"]::-moz-range-thumb {
   background: #f2f5fa;
 }
 
+.stepper-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stepper-input {
+  width: 100%;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.stepper-input:focus {
+  outline: none;
+}
+
+.stepper-suffix {
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .stepper button {
   width: 36px;
   height: 36px;
   border-radius: 9px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--panel);
   color: var(--heading);
   cursor: pointer;
 }

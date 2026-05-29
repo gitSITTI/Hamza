@@ -61,6 +61,7 @@ const state = {
   decisionPurchaseType: "Pure consumption",
   decisionFrequency: "One-time",
   decisionFunding: "Debt",
+  lifestyleGrowthPreset: "Average lifestyle growth",
   lifestyleBaseline: "St. Louis / Missouri baseline",
   lifestyleStyle: "Balanced household — ~$76k/yr (~$6.3k/mo)",
   lifestyleGrowth: "Average lifestyle growth",
@@ -74,6 +75,7 @@ const state = {
   activeDecisionName: null,
   decisionAmount: 0,
   decisionStartYear: 2026,
+  decisionEndYear: 2026,
   decisionCreatesAsset: false,
   decisionLoanType: "Mortgage",
   decisionLoanRate: 6.5,
@@ -84,6 +86,26 @@ const state = {
   decisionHoldingPeriod: 8,
   decisionResidualValue: 30,
   decisionOperatingCost: 2500,
+  decisionUnpaidVacationWeeks: 0,
+  decisionCareerBreakStartYear: 2027,
+  decisionPromotionYear: 2028,
+  extraAnnualFamilySupport: 0,
+  internationalFamilyTripCost: 0,
+  internationalFamilyTripStartYear: 2028,
+  bigPurchaseVehicle: 0,
+  bigPurchaseLaptop: 0,
+  bigPurchaseVacation: 0,
+  bigPurchaseRenovation: 0,
+  bigPurchaseWedding: 0,
+  bigPurchaseMedical: 0,
+  lifestyleDraftDeltaPct: 0,
+  appliedLifestyleDeltaPct: 0,
+  customScenarioName: "Custom scenario",
+  customScenarioLifestylePct: 0,
+  customScenarioRetirementAge: 67,
+  customScenarioVooReturn: 10,
+  customScenarioInflation: 3,
+  customScenarios: [],
   stressEventYear: 2027,
   stressStockCrashYear: 2027,
   stressJobLossStartYear: 2027,
@@ -175,6 +197,10 @@ const state = {
     propertyValueDrop: 0,
     vacancyCashflowLoss: 0,
     rentalMarginSqueeze: 0,
+    reserveTargetPct: 20,
+    highIncomeThreshold: 250000,
+    childCostGrowth: 3,
+    auPairCostGrowth: 3,
     growthRate: 3,
     partTimePay: 70,
     glideStartAge: 100,
@@ -452,6 +478,7 @@ const PROFILE_STATE_KEYS = [
   "decisionFunding",
   "decisionAmount",
   "decisionStartYear",
+  "decisionEndYear",
   "decisionCreatesAsset",
   "decisionLoanType",
   "decisionLoanRate",
@@ -462,13 +489,33 @@ const PROFILE_STATE_KEYS = [
   "decisionHoldingPeriod",
   "decisionResidualValue",
   "decisionOperatingCost",
+  "decisionCareerBreakStartYear",
+  "decisionPromotionYear",
+  "extraAnnualFamilySupport",
+  "internationalFamilyTripCost",
+  "internationalFamilyTripStartYear",
+  "bigPurchaseVehicle",
+  "bigPurchaseLaptop",
+  "bigPurchaseVacation",
+  "bigPurchaseRenovation",
+  "bigPurchaseWedding",
+  "bigPurchaseMedical",
   "lifestyleBaseline",
   "lifestyleStyle",
+  "lifestyleGrowthPreset",
   "lifestyleGrowth",
+  "lifestyleDraftDeltaPct",
+  "appliedLifestyleDeltaPct",
   "profileBenchmarkKey",
   "milestoneYears",
   "scenarioMilestones",
   "stressImpactYears",
+  "customScenarioName",
+  "customScenarioLifestylePct",
+  "customScenarioRetirementAge",
+  "customScenarioVooReturn",
+  "customScenarioInflation",
+  "customScenarios",
   "overlayName",
   "activeDecisionName",
   "stressEventYear",
@@ -794,6 +841,7 @@ function recomputeProjectionRows() {
   const marketReturn = state.sliders.vooReturn / 100;
   const inflation = state.sliders.inflationRate / 100;
   const retirementAge = Number(state.sliders.retirementAge);
+  const lifestyleMultiplier = 1 + (Number(state.appliedLifestyleDeltaPct || 0) / 100);
   let previousNetWorth = startNetWorth;
   let investmentBalance = startInvestments;
   let cashReserve = startCash;
@@ -803,13 +851,28 @@ function recomputeProjectionRows() {
     const age = Number(baseRow["Primary Age"] || state.sliders.setupPrimaryAge + (year - startYear));
     const yearsElapsed = Math.max(0, year - startYear);
     const isRetired = age >= retirementAge;
-    const primaryIncome = isRetired ? 0 : basePrimaryIncome * Math.pow(1 + incomeGrowth, yearsElapsed);
+    let primaryIncome = isRetired ? 0 : basePrimaryIncome * Math.pow(1 + incomeGrowth, yearsElapsed);
+    if (state.activeDecisionName && year >= Number(state.decisionPromotionYear || 9999)) {
+      primaryIncome *= 1 + (Number(state.sliders.promotionRaise || 0) / 100);
+    }
+    if (state.activeDecisionName && year === Number(state.decisionCareerBreakStartYear || 0)) {
+      primaryIncome *= Math.max(0, 1 - (Number(state.sliders.careerBreakMonths || 0) / 12));
+    }
     const partnerIncome = age >= Number(state.sliders.partnerStayHomeAge) ? 0 : basePartnerIncome * Math.pow(1 + incomeGrowth * 0.8, yearsElapsed);
-    const spending = baseSpending * Math.pow(1 + inflation, yearsElapsed) + state.sliders.numberOfChildren * 4500;
+    const familySupport = state.activeDecisionName ? Number(state.extraAnnualFamilySupport || 0) : 0;
+    const familyTripInterval = Number(state.sliders.familyTripEveryYears || 0);
+    const familyTripCost = state.activeDecisionName && familyTripInterval > 0 && year >= Number(state.internationalFamilyTripStartYear || 9999)
+      && ((year - Number(state.internationalFamilyTripStartYear || year)) % familyTripInterval === 0)
+      ? Number(state.internationalFamilyTripCost || 0)
+      : 0;
+    const spending = (baseSpending * Math.pow(1 + inflation, yearsElapsed) * lifestyleMultiplier)
+      + state.sliders.numberOfChildren * 4500
+      + familySupport
+      + familyTripCost;
     const marketGains = investmentBalance * marketReturn;
     const economicGross = primaryIncome + partnerIncome + marketGains + Number(baseRow["House Value Increase"] || 0) + Number(baseRow["Principal Paydown"] || 0);
     const taxes = Math.max(0, (primaryIncome + partnerIncome) * taxRate);
-    const decisionDrag = state.activeDecisionName && year >= state.decisionStartYear ? getAnnualDecisionCost() : 0;
+    const decisionDrag = state.activeDecisionName ? getAnnualDecisionCost(year) : 0;
     const surplus = primaryIncome + partnerIncome - spending - taxes - decisionDrag;
     cashReserve = Math.max(0, cashReserve + surplus * 0.2);
     investmentBalance = Math.max(0, investmentBalance + Math.max(0, surplus * 0.8) + marketGains);
@@ -836,10 +899,21 @@ function recomputeProjectionRows() {
   });
 }
 
-function getAnnualDecisionCost() {
+function getAnnualDecisionCost(year = Number(state.decisionStartYear || 2026)) {
   const frequency = state.decisionFrequency === "Monthly" ? 12 : state.decisionFrequency === "Weekly" ? 52 : state.decisionFrequency === "Annual" ? 1 : 1;
   const debtDownPayment = state.decisionFunding === "Debt" ? state.decisionAmount * (state.decisionDownPayment / 100) : state.decisionAmount;
-  return (debtDownPayment + Number(state.decisionOperatingCost || 0)) * frequency;
+  if (year < Number(state.decisionStartYear || 2026) || year > Number(state.decisionEndYear || state.decisionStartYear || 2026)) return 0;
+  const recurringCost = (Number(state.decisionOperatingCost || 0) + Number(state.extraAnnualFamilySupport || 0)) * (state.decisionFrequency === "One-time" ? 1 : frequency);
+  const oneTimePurchase = state.decisionFrequency === "One-time" && year !== Number(state.decisionStartYear || 2026) ? 0 : debtDownPayment * frequency;
+  const oneTimeBigPurchases = year === Number(state.decisionStartYear || 2026)
+    ? Number(state.bigPurchaseVehicle || 0)
+      + Number(state.bigPurchaseLaptop || 0)
+      + Number(state.bigPurchaseVacation || 0)
+      + Number(state.bigPurchaseRenovation || 0)
+      + Number(state.bigPurchaseWedding || 0)
+      + Number(state.bigPurchaseMedical || 0)
+    : 0;
+  return oneTimePurchase + recurringCost + oneTimeBigPurchases;
 }
 
 function currentStatusItems() {
@@ -860,6 +934,8 @@ function currentStatusItems() {
 function sidebarMetricGroups() {
   const rows = getMilestoneRows();
   const current = getCurrentRow();
+  const baselineRows = state.baseAuditRows.length ? state.baseAuditRows : state.auditRows;
+  const baselineCurrent = baselineRows.find((row) => row.Year === "2026") || baselineRows[0] || current;
   const incomeKeys = [
     "Primary Job Salary + Bonus",
     "Primary Job Retirement Match",
@@ -872,18 +948,31 @@ function sidebarMetricGroups() {
   ];
   const spendKeys = ["Personal Spending", "Taxes"];
   return {
-    netWorth: rows.map((row) => ({
-      label: milestoneLabel(row),
-      value: formatMoney(adjustMoney(row["Ending Net Worth"], row.Year), true),
-      delta: formatMoney(adjustMoney(row["Net Worth Increase"], row.Year), true),
-    })),
+    netWorth: rows.map((row) => {
+      const baseline = baselineRows.find((entry) => String(entry.Year) === String(row.Year)) || row;
+      const currentValue = adjustMoney(row["Ending Net Worth"], row.Year);
+      const baselineValue = adjustMoney(baseline["Ending Net Worth"], baseline.Year);
+      return {
+        label: milestoneLabel(row),
+        value: formatMoney(currentValue, true),
+        delta: signedMoneyDelta(currentValue - baselineValue),
+        pct: percentChangeText(currentValue, baselineValue),
+        tone: deltaTone(currentValue - baselineValue),
+      };
+    }),
     income: incomeKeys.map((key) => ({
       label: key,
       value: formatMoney(adjustMoney(current[key], 2026), true),
+      delta: signedMoneyDelta(adjustMoney(current[key], 2026) - adjustMoney(baselineCurrent[key], 2026)),
+      pct: percentChangeText(adjustMoney(current[key], 2026), adjustMoney(baselineCurrent[key], 2026)),
+      tone: deltaTone(adjustMoney(current[key], 2026) - adjustMoney(baselineCurrent[key], 2026)),
     })),
     spending: spendKeys.map((key) => ({
       label: key === "Personal Spending" ? "Projected annual spending" : key,
       value: formatMoney(adjustMoney(current[key], 2026), true),
+      delta: signedMoneyDelta(adjustMoney(current[key], 2026) - adjustMoney(baselineCurrent[key], 2026)),
+      pct: percentChangeText(adjustMoney(current[key], 2026), adjustMoney(baselineCurrent[key], 2026)),
+      tone: deltaTone(adjustMoney(current[key], 2026) - adjustMoney(baselineCurrent[key], 2026)),
     })),
   };
 }
@@ -1021,22 +1110,39 @@ function selectControl(label, key, options, { showAdvice = true, showHelp = true
 
 function numberInputControl(label, key, { min = 0, max = 999999, step = 1, decimals = 0, suffix = "" } = {}) {
   const value = Number(state[key] ?? 0);
-  const display = decimals > 0 ? value.toFixed(decimals) : String(value);
   const advice = fieldAdvice(key, value, label);
+  const commitValue = (rawValue) => {
+    const numeric = Number(rawValue ?? 0);
+    if (!Number.isFinite(numeric)) return;
+    state[key] = Math.max(min, Math.min(max, Number(numeric.toFixed(decimals))));
+    render();
+  };
   return h("div", { class: "control" }, [
     h("div", { class: "label label-row" }, [h("span", {}, label), h("span", { class: "help-icon", title: `Help for ${label}` }, "?")]),
     h("div", { class: "stepper" }, [
-      h("div", { class: "stepper-output" }, `${display}${suffix}`),
+      h("div", { class: "stepper-output stepper-input-wrap" }, [
+        h("input", {
+          class: "text-input stepper-input",
+          type: "number",
+          min,
+          max,
+          step,
+          value,
+          oninput: (event) => {
+            state[key] = Number(event.target.value || 0);
+          },
+          onchange: (event) => commitValue(event.target.value),
+        }),
+        suffix ? h("span", { class: "stepper-suffix" }, suffix) : null,
+      ]),
       h("button", {
         onclick: () => {
-          state[key] = Math.max(min, Number((value - step).toFixed(decimals)));
-          render();
+          commitValue(value - step);
         },
       }, "−"),
       h("button", {
         onclick: () => {
-          state[key] = Math.min(max, Number((value + step).toFixed(decimals)));
-          render();
+          commitValue(value + step);
         },
       }, "+"),
     ]),
@@ -1097,6 +1203,121 @@ function moneyInputControl(label, key, { min = 0, max = 2000000, step = 1000, co
     ]) : null,
     h("small", { class: "field-advice" }, copy || "Manual income override. Saved locally and used by the validated projection preview."),
   ]);
+}
+
+function signedMoneyDelta(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric) || numeric === 0) return "$0";
+  return `${numeric > 0 ? "+" : "−"}${formatMoney(Math.abs(numeric))}`;
+}
+
+function percentChangeText(current, baseline) {
+  const base = Number(baseline || 0);
+  const value = Number(current || 0);
+  if (!Number.isFinite(base) || !Number.isFinite(value) || base === 0) return "0.0%";
+  const pct = ((value - base) / Math.abs(base)) * 100;
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+function deltaTone(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric) || numeric === 0) return "neutral";
+  return numeric > 0 ? "positive" : "negative";
+}
+
+function decisionTemplateDefaults(type) {
+  const templates = {
+    "Pure consumption": { amount: 2500, funding: "Cash", createsAsset: false, operatingCost: 0, frequency: "One-time" },
+    "Durable personal asset": { amount: 18000, funding: "Cash", createsAsset: true, operatingCost: 350, frequency: "One-time" },
+    Vehicle: { amount: 32000, funding: "Debt", createsAsset: true, operatingCost: 1800, frequency: "One-time" },
+    "Productivity/business asset": { amount: 6000, funding: "Cash", createsAsset: true, operatingCost: 450, frequency: "One-time" },
+    "Other asset": { amount: 12000, funding: "Cash", createsAsset: true, operatingCost: 250, frequency: "Annual" },
+    "Real estate / home": { amount: 250000, funding: "Debt", createsAsset: true, operatingCost: 4200, frequency: "One-time" },
+  };
+  return templates[type] || templates["Pure consumption"];
+}
+
+function applyDecisionTemplate(type) {
+  const template = decisionTemplateDefaults(type);
+  state.decisionPurchaseType = type;
+  state.decisionAmount = template.amount;
+  state.decisionFunding = template.funding;
+  state.decisionCreatesAsset = template.createsAsset;
+  state.decisionOperatingCost = template.operatingCost;
+  state.decisionFrequency = template.frequency;
+  if (type === "Vehicle") state.decisionLoanType = "Auto loan";
+  if (type === "Real estate / home") state.decisionLoanType = "Mortgage";
+}
+
+function lifestylePresetDelta(style) {
+  const map = {
+    "Lean local starter â€” ~$55k/yr (~$4.6k/mo)": -18,
+    "Practical local baseline â€” ~$65k/yr (~$5.5k/mo)": -8,
+    "Balanced household â€” ~$76k/yr (~$6.3k/mo)": 0,
+    "Comfortable household â€” ~$88k/yr (~$7.4k/mo)": 11,
+    "Premium but intentional â€” ~$104k/yr (~$8.6k/mo)": 24,
+  };
+  return map[style] ?? 0;
+}
+
+function lifestyleEstimate() {
+  const base = 76100;
+  const baselineAdjustments = {
+    "St. Louis / Missouri baseline": 0,
+    "US average": 5,
+    "High cost metro": 18,
+    "Low cost area": -10,
+  };
+  const growthAdjustments = {
+    "Conservative growth": -3,
+    "Average lifestyle growth": 0,
+    "Higher lifestyle creep": 6,
+    "Custom / keep current": 0,
+  };
+  const pct = lifestylePresetDelta(state.lifestyleStyle)
+    + (baselineAdjustments[state.lifestyleBaseline] || 0)
+    + (growthAdjustments[state.lifestyleGrowth] || 0)
+    + Number(state.lifestyleDraftDeltaPct || 0);
+  return { annual: Math.round(base * (1 + (pct / 100))), pct };
+}
+
+function applyLifestyleDraft() {
+  state.appliedLifestyleDeltaPct = Number(state.lifestyleDraftDeltaPct || 0);
+  showToast("Lifestyle changes applied.");
+  render();
+}
+
+function resetLifestyleDraft(resetApplied = false) {
+  state.lifestyleDraftDeltaPct = resetApplied ? 0 : Number(state.appliedLifestyleDeltaPct || 0);
+  if (resetApplied) state.appliedLifestyleDeltaPct = 0;
+}
+
+function addCustomScenario() {
+  const name = (state.customScenarioName || "").trim() || `Custom scenario ${state.customScenarios.length + 1}`;
+  state.customScenarios = [
+    ...state.customScenarios,
+    {
+      name,
+      lifestylePct: Number(state.customScenarioLifestylePct || 0),
+      retirementAge: Number(state.customScenarioRetirementAge || state.sliders.retirementAge),
+      vooReturn: Number(state.customScenarioVooReturn || state.sliders.vooReturn),
+      inflation: Number(state.customScenarioInflation || state.sliders.inflationRate),
+    },
+  ];
+}
+
+function projectionAuditSummary() {
+  const rows = state.auditRows;
+  const current = getCurrentRow();
+  const age65 = rows.find((row) => Number(row["Primary Age"]) >= 65) || rows[rows.length - 1] || current;
+  const age70 = rows.find((row) => Number(row["Primary Age"]) >= 70) || rows[rows.length - 1] || current;
+  const ending = rows[rows.length - 1] || current;
+  return {
+    current: Number(current["Ending Net Worth"] || 0),
+    age65: Number(age65["Ending Net Worth"] || 0),
+    age70: Number(age70["Ending Net Worth"] || 0),
+    ending: Number(ending["Ending Net Worth"] || 0),
+  };
 }
 
 function hydrateAssetDebtSlidersFromSettings() {
@@ -1894,9 +2115,9 @@ function renderSidebar() {
         h("span", {}, page),
       ]);
     })),
-    sidebarMetricSection("NET WORTH", groups.netWorth),
-    sidebarMetricSection("CURRENT YEAR INCOME", groups.income, false, "All components that roll into economic gross income"),
-    sidebarMetricSection("CURRENT YEAR SPENDING", groups.spending, false, "Outflows and drag that matter this year"),
+    sidebarMetricSection("NET WORTH", groups.netWorth, true),
+    sidebarMetricSection("CURRENT YEAR INCOME", groups.income, true, "All components that roll into economic gross income"),
+    sidebarMetricSection("CURRENT YEAR SPENDING", groups.spending, true, "Outflows and drag that matter this year"),
     h("div", { class: "side-section" }, [
       h("div", { class: "eyebrow" }, "STATUS"),
       h("div", { class: "metric-list compact" }, currentStatusItems().map(([label, value]) =>
@@ -1925,9 +2146,10 @@ function sidebarMetricSection(title, items, showDelta = false, hint = "") {
       h("div", { class: "metric-item" }, [
         h("div", { class: "metric-head" }, [
           h("span", {}, item.label),
-          showDelta ? h("span", { class: "delta" }, item.delta || "$0") : null,
+          showDelta ? h("span", { class: `delta ${item.tone || "neutral"}` }, item.delta || "$0") : null,
         ]),
         h("strong", {}, item.value),
+        showDelta ? h("small", { class: `delta-percent ${item.tone || "neutral"}` }, item.pct || "0.0%") : null,
       ])
     )),
   ]);
@@ -2039,15 +2261,20 @@ function renderDashboardTools() {
       ]),
     ]), "Use Setup and Lifestyle to change the household assumptions behind the outlook."),
     flatSection("Global assumptions", h("div", { class: "section-stack" }, [
-      h("div", { class: "inline-metrics four streamlit-placeholder-grid" }, [
-        placeholderCard(),
-        placeholderCard(),
-        placeholderCard(),
-        placeholderCard(),
+      h("div", { class: "inline-metrics four" }, [
+        inlineMetric("VOO nominal return", formatPercent(state.sliders.vooReturn, 2)),
+        inlineMetric("Inflation", formatPercent(state.sliders.inflationRate, 2)),
+        inlineMetric("Reserve target", formatMoney(state.sliders.minimumCashReserveTarget)),
+        inlineMetric("Implied real return", formatPercent(((1 + state.sliders.vooReturn / 100) / (1 + state.sliders.inflationRate / 100) - 1) * 100, 2)),
       ]),
       h("p", { class: "section-copy" }, formulas[2] || "Real return: (1 + nominal return) / (1 + inflation) - 1."),
       accordion("Advanced global assumptions audit", false, [
-        h("div", { class: "notice" }, "You have unapplied changes in Real Estate, Setup."),
+        h("div", { class: "control-grid" }, [
+          selectControl("Investment strategy", "investmentStrategy", controlsMeta.investmentStrategy),
+          sliderControl("Reserve target", "minimumCashReserveTarget", { min: 0, max: 100000, step: 500 }),
+          sliderControl("VOO return", "vooReturn", { min: -5, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("Inflation rate", "inflationRate", { min: 0, max: 8, step: 0.1, suffix: "%" }),
+        ]),
       ]),
     ])),
     h("section", { class: "page-grid" }, [
@@ -2278,18 +2505,6 @@ function renderHighImpact() {
 }
 
 function renderAssumptions() {
-  const assumptionSections = [
-    "Surplus / Investment Strategy",
-    "Investment assumptions",
-    "Inflation and dollar basis",
-    "Income and career growth assumptions",
-    "Tax assumptions",
-    "Lifestyle assumptions",
-    "Real estate assumptions",
-    "Debt and liquidity assumptions",
-    "Stress/risk defaults",
-    "Setting classification map",
-  ];
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Assumptions"),
     h("p", { class: "section-copy" }, "Modeling assumptions are estimates about the world. Edits here stay in a draft until you apply them."),
@@ -2304,9 +2519,110 @@ function renderAssumptions() {
       metricCard("Implied real VOO return", formatPercent(((1 + state.sliders.vooReturn / 100) / (1 + state.sliders.inflationRate / 100) - 1) * 100, 2)),
       metricCard("Display basis", state.dollarBasis),
     ]),
-    h("div", { class: "setup-step-stack" }, assumptionSections.map((section) => accordion(section, false, [
-      h("p", { class: "section-copy" }, "Expand this section to edit the assumption draft."),
-    ]))),
+    h("div", { class: "setup-step-stack" }, [
+      accordion("Surplus / Investment Strategy", true, [
+        h("div", { class: "control-grid" }, [
+          selectControl("Investment strategy", "investmentStrategy", controlsMeta.investmentStrategy),
+          sliderControl("Reserve target", "minimumCashReserveTarget", { min: 0, max: 100000, step: 500 }),
+          sliderControl("VOO return", "vooReturn", { min: -5, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("Bond return", "bondReturn", { min: -5, max: 12, step: 0.1, suffix: "%" }),
+          sliderControl("HYSA return", "hysaCashReturn", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Bonds vs VOO at Age 60", "reserveTargetPct", { min: 0, max: 100, step: 1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Investment assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("VOO/S&P 500 return", "vooReturn", { min: -5, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("Retirement account return", "retirementAccountReturn", { min: -5, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("HYSA/cash return", "hysaCashReturn", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Bond/conservative return", "bondReturn", { min: -5, max: 12, step: 0.1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Inflation and dollar basis", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Inflation rate", "inflationRate", { min: 0, max: 8, step: 0.1, suffix: "%" }),
+          selectControl("Dollar display basis", "dollarBasis", controlsMeta.dollarBasis),
+        ]),
+      ]),
+      accordion("Income and career growth assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Primary job comp growth", "primaryJobCompGrowth", { min: 0, max: 8, step: 0.1, suffix: "%" }),
+          sliderControl("Promotion ladder raise", "promotionRaise", { min: 0, max: 100, step: 1, suffix: "%" }),
+          sliderControl("Later-career growth", "glidePay", { min: 20, max: 100, step: 1, suffix: "%" }),
+          sliderControl("Partner income growth", "partnerIncomeGrowthPct", { min: 0, max: 12, step: 0.1, suffix: "%" }),
+          sliderControl("Residency salary growth", "incomeGrowthPct", { min: 0, max: 12, step: 0.1, suffix: "%" }),
+          sliderControl("Attending salary growth", "partnerBonusPct", { min: 0, max: 50, step: 1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Tax assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Federal effective tax rate", "federalEffectiveTaxRate", { min: 0, max: 50, step: 0.1, suffix: "%" }),
+          sliderControl("State/local effective tax rate", "stateLocalEffectiveTaxRate", { min: 0, max: 20, step: 0.1, suffix: "%" }),
+          sliderControl("Payroll tax rate", "payrollTaxRate", { min: 0, max: 15.3, step: 0.05, suffix: "%" }),
+          sliderControl("Investment/rental tax drag", "investmentRentalTaxDrag", { min: 0, max: 30, step: 0.1, suffix: "%" }),
+          sliderControl("High-income threshold", "highIncomeThreshold", { min: 50000, max: 1000000, step: 5000 }),
+          sliderControl("High-income surcharge", "highIncomeSurcharge", { min: 0, max: 20, step: 0.1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Lifestyle assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Lifestyle growth", "lifestyleDraftDeltaPct", { min: -30, max: 40, step: 1, suffix: "%" }),
+          sliderControl("Child cost growth", "childCostGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Au pair cost growth", "auPairCostGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Social Security COLA", "colaRate", { min: 0, max: 6, step: 0.1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Real estate assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Existing property appreciation", "existingPropertyAppreciation", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Existing rental cash-flow growth", "existingRentalGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Existing principal paydown growth", "existingPrincipalGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Gross rent growth", "grossRentGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Vacancy rate", "vacancyRate", { min: 0, max: 25, step: 0.5, suffix: "%" }),
+          sliderControl("Property management fee", "managementFee", { min: 0, max: 25, step: 0.5, suffix: "%" }),
+          sliderControl("Maintenance reserve", "maintenanceReserve", { min: 0, max: 20, step: 0.5, suffix: "%" }),
+          sliderControl("Existing portfolio expense growth", "expenseGrowth", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("New rental cash-flow yield", "newRentalCashFlowYield", { min: 0, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("New rental principal paydown", "newRentalPrincipalPaydown", { min: 0, max: 10, step: 0.1, suffix: "%" }),
+          sliderControl("Refinance interest drag", "refinanceInterestDrag", { min: 0, max: 20, step: 0.5, suffix: "%" }),
+          sliderControl("Liquidation sale cost", "liquidationSaleCost", { min: 0, max: 20, step: 0.5, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Debt and liquidity assumptions", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Debt-service proxy rate", "debtServiceRate", { min: 0, max: 0.2, step: 0.01 }),
+          sliderControl("Primary student loan interest", "primaryLoanInterest", { min: 0, max: 15, step: 0.1, suffix: "%" }),
+          sliderControl("Partner student loan interest", "partnerLoanInterest", { min: 0, max: 15, step: 0.1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Stress/risk defaults", false, [
+        h("div", { class: "control-grid" }, [
+          sliderControl("Stress stock crash", "stressStockCrash", { min: 0, max: 80, step: 1, suffix: "%" }),
+          sliderControl("Stress property value drop", "propertyValueDrop", { min: 0, max: 50, step: 1, suffix: "%" }),
+          sliderControl("Stress vacancy cash-flow loss", "vacancyCashflowLoss", { min: 0, max: 100, step: 1, suffix: "%" }),
+          sliderControl("Rental margin compression", "rentalMarginSqueeze", { min: 0, max: 50, step: 1, suffix: "%" }),
+        ]),
+      ]),
+      accordion("Setting classification map", false, [
+        h("div", { class: "table-card" }, [
+          makeTable(
+            [
+              { label: "Section", render: (row) => row.section },
+              { label: "Setting", render: (row) => row.setting },
+              { label: "Driver", render: (row) => row.driver },
+            ],
+            [
+              { section: "Returns", setting: "VOO return / bond return / cash return", driver: "Long-run portfolio growth" },
+              { section: "Inflation", setting: "Inflation and dollar basis", driver: "Real purchasing power display" },
+              { section: "Income", setting: "Primary and partner comp growth", driver: "Gross cash inflows" },
+              { section: "Tax", setting: "Effective rates and surcharge", driver: "Net spendable income" },
+              { section: "Lifestyle", setting: "Lifestyle growth and child costs", driver: "Annual household drag" },
+              { section: "Real estate", setting: "Appreciation, rent growth, vacancy, drag", driver: "Property cash flow and equity" },
+            ]
+          ),
+        ]),
+      ]),
+    ]),
   ]);
 }
 
@@ -2396,7 +2712,7 @@ function renderDecisionLab() {
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Decision Lab"),
     h("p", { class: "section-copy" }, "Model purchases, recurring choices, work/family decisions, and liquidity tradeoffs."),
-    h("div", { class: "notice decision-status" }, "No active decision | Draft in sync | Simple purchase inactive"),
+    h("div", { class: "notice decision-status" }, `${state.activeDecisionName ? `Active decision: ${state.activeDecisionName}` : "No active decision"} | ${state.activeDecisionName ? "Applied to projection" : "Draft in sync"} | ${state.decisionAmount ? "Simple purchase configured" : "Simple purchase inactive"}`),
     h("p", { class: "section-copy" }, "Editing Decision Lab controls updates the draft preview only. Dashboard/sidebar projections change after Apply to Projection. Clear Active Decision removes the applied decision and leaves the preview separate."),
     h("div", { class: "decision-action-row" }, [
       h("button", {
@@ -2427,14 +2743,16 @@ function renderDecisionLab() {
         h("p", { class: "section-copy" }, "A small, metrics-only spending analyzer for one-time and recurring decisions."),
         h("p", { class: "section-copy" }, "Choose a purchase type to seed the starter defaults. The starter draft stays neutral until you change a field or click Apply to Projection."),
         h("div", { class: "choice-row" }, [
-          selectControl("Purchase type", "decisionPurchaseType", controlsMeta.decisionPurchaseType),
+          selectControl("Purchase type", "decisionPurchaseType", controlsMeta.decisionPurchaseType, {
+            onChange: (value) => applyDecisionTemplate(value),
+          }),
           numberInputControl("Amount", "decisionAmount", { min: 0, max: 500000, step: 500, decimals: 0 }),
           selectControl("Frequency", "decisionFrequency", controlsMeta.decisionFrequency),
         ]),
         h("p", { class: "control-note" }, `Template name: ${state.decisionPurchaseType}. Changing purchase type resets the starting amount, funding, and financing defaults.`),
         h("div", { class: "choice-row" }, [
           numberInputControl("Start year", "decisionStartYear", { min: 2026, max: 2061, step: 1 }),
-          h("div"),
+          numberInputControl("End year", "decisionEndYear", { min: 2026, max: 2061, step: 1 }),
           selectControl("Funding source", "decisionFunding", controlsMeta.decisionFunding),
         ]),
         toggleControl("This purchase creates an asset", state.decisionCreatesAsset, (checked) => {
@@ -2465,32 +2783,51 @@ function renderDecisionLab() {
     h("h3", { class: "section-title", style: "font-size:22px; margin-top:22px;" }, "2. Work, family, and lifestyle levers"),
     accordion("1. Primary job work-life choices", false, [
       h("div", { class: "control-grid" }, [
+        sliderControl("Unpaid vacation weeks/year", "decisionUnpaidVacationWeeks", { min: 0, max: 12, step: 1 }),
         selectControl("Primary job work mode", "primaryJobWorkMode", controlsMeta.primaryJobWorkMode),
         sliderControl("Part-time pay %", "partTimePay", { min: 20, max: 100, step: 1, suffix: "%" }),
         sliderControl("Retirement glide starts at age", "glideStartAge", { min: 35, max: 100, step: 1 }),
         sliderControl("Glide-path pay %", "glidePay", { min: 20, max: 100, step: 1, suffix: "%" }),
         sliderControl("Bonus adjustment vs baseline", "bonusAdjustment", { min: -50, max: 75, step: 1, suffix: "%" }),
+        numberInputControl("Career break / job-loss start year", "decisionCareerBreakStartYear", { min: 2026, max: 2061, step: 1 }),
+        sliderControl("Career break months", "careerBreakMonths", { min: 0, max: 24, step: 1 }),
+        numberInputControl("Promotion year", "decisionPromotionYear", { min: 2026, max: 2061, step: 1 }),
         sliderControl("Promotion raise %", "promotionRaise", { min: 0, max: 100, step: 1, suffix: "%" }),
       ]),
     ]),
     accordion("2. Partner and family path", false, [
       h("div", { class: "control-grid" }, [
         selectControl("Partner work mode", "partnerWorkMode", controlsMeta.partnerWorkMode),
-        sliderControl("Career break months", "careerBreakMonths", { min: 0, max: 24, step: 1 }),
         sliderControl("Delay partner income by years", "partnerIncomeDelayYears", { min: 0, max: 6, step: 1 }),
         sliderControl("Partner part-time income %", "partnerPartTimeIncome", { min: 10, max: 100, step: 1, suffix: "%" }),
+        numberInputControl("Extra annual family support", "extraAnnualFamilySupport", { min: 0, max: 50000, step: 500 }),
         sliderControl("International family trip every N years", "familyTripEveryYears", { min: 0, max: 10, step: 1 }),
+        numberInputControl("International family trip cost", "internationalFamilyTripCost", { min: 0, max: 50000, step: 500 }),
+        numberInputControl("International family trip start year", "internationalFamilyTripStartYear", { min: 2026, max: 2061, step: 1 }),
       ]),
     ]),
-    accordion("3. Big purchase planner", false, []),
+    accordion("3. Big purchase planner", false, [
+      h("div", { class: "control-grid" }, [
+        numberInputControl("Premium vehicle / extra vehicle", "bigPurchaseVehicle", { min: 0, max: 150000, step: 500 }),
+        numberInputControl("High-end laptop cycle", "bigPurchaseLaptop", { min: 0, max: 15000, step: 100 }),
+        numberInputControl("Major vacation", "bigPurchaseVacation", { min: 0, max: 50000, step: 500 }),
+        numberInputControl("Home renovation", "bigPurchaseRenovation", { min: 0, max: 250000, step: 1000 }),
+        numberInputControl("Wedding / family event", "bigPurchaseWedding", { min: 0, max: 100000, step: 500 }),
+        numberInputControl("One-time medical event", "bigPurchaseMedical", { min: 0, max: 100000, step: 500 }),
+      ]),
+    ]),
     accordion("4. Liquidity guardrails", false, [
       h("div", { class: "control-grid" }, [
+        sliderControl("Minimum cash reserve target", "minimumCashReserveTarget", { min: 0, max: 100000, step: 500 }),
         sliderControl("Emergency reserve months", "emergencyReserveMonths", { min: 0, max: 24, step: 1 }),
+      ]),
+    ]),
+    accordion("5. Time burden", false, [
+      h("div", { class: "control-grid" }, [
         sliderControl("Primary job hours/week", "primaryJobHoursWeek", { min: 0, max: 80, step: 1 }),
         sliderControl("Admin/tax/document hours/month", "adminHoursMonth", { min: 0, max: 40, step: 0.5 }),
       ]),
     ]),
-    accordion("5. Time burden", false, []),
     h("p", { class: "section-copy" }, "Editing Decision Lab controls updates the draft preview. Dashboard/sidebar update after Apply to Projection."),
     h("div", { class: "button-grid-two" }, [
       h("button", {
@@ -2532,7 +2869,8 @@ function renderDecisionLab() {
 
 function renderLifestyle() {
   const total = state.lifestyleRows.reduce((sum, row) => sum + Number(row["Reference-Year Annual Amount"] || 0), 0);
-  const estimatedLifestyleSpend = 76100;
+  const estimate = lifestyleEstimate();
+  const estimatedLifestyleSpend = estimate.annual;
   const topFive = [...state.lifestyleRows]
     .sort((a, b) => Number(b["Reference-Year Annual Amount"] || 0) - Number(a["Reference-Year Annual Amount"] || 0))
     .slice(0, 5);
@@ -2540,32 +2878,44 @@ function renderLifestyle() {
     h("h2", { class: "section-title", style: "font-size:24px" }, "Lifestyle"),
     h("p", { class: "section-copy" }, "Estimate spending, edit categories, then apply changes."),
     h("div", { class: "toolbar-row" }, [
-      h("div", { class: "toolbar-copy" }, "Lifestyle draft matches active projection"),
-      h("button", { class: "btn", onclick: () => showToast("Lifestyle changes applied.") }, "Apply Lifestyle Changes"),
-      h("button", { class: "btn", onclick: () => showToast("Lifestyle draft reverted.") }, "Cancel Lifestyle Changes"),
-      h("button", { class: "btn", onclick: () => showToast("Lifestyle draft reset from active.") }, "Reset Lifestyle Draft from Active"),
+      h("div", { class: "toolbar-copy" }, Number(state.lifestyleDraftDeltaPct || 0) === Number(state.appliedLifestyleDeltaPct || 0) ? "Lifestyle draft matches active projection" : "Lifestyle draft has unapplied changes"),
+      h("button", { class: "btn", onclick: () => applyLifestyleDraft() }, "Apply"),
+      h("button", { class: "btn", onclick: () => { resetLifestyleDraft(false); showToast("Lifestyle draft reverted."); render(); } }, "Cancel"),
+      h("button", { class: "btn", onclick: () => { resetLifestyleDraft(true); showToast("Lifestyle draft reset from active."); render(); } }, "Reset"),
     ]),
     h("div", { class: "section-stack" }, [
       selectControl("Location / cost baseline", "lifestyleBaseline", controlsMeta.lifestyleBaseline, { showAdvice: false }),
       selectControl("Desired lifestyle / spending style", "lifestyleStyle", controlsMeta.lifestyleStyle, { showAdvice: false }),
-      selectControl("Lifestyle growth preset", "lifestyleGrowth", controlsMeta.lifestyleGrowth, { showAdvice: false }),
+      selectControl("Lifestyle growth preset", "lifestyleGrowthPreset", controlsMeta.lifestyleGrowth, { showAdvice: false }),
       selectControl("Lifestyle growth / creep", "lifestyleGrowth", controlsMeta.lifestyleGrowth, { showAdvice: false }),
+      sliderControl("Lifestyle spending adjustment %", "lifestyleDraftDeltaPct", { min: -30, max: 40, step: 1, suffix: "%" }),
     ]),
     h("div", { class: "inline-metrics" }, [
       inlineMetric("Estimated annual spend", formatMoney(estimatedLifestyleSpend)),
       inlineMetric("Monthly equivalent", formatMoney(estimatedLifestyleSpend / 12)),
-      inlineMetric("Growth assumption", "3.5%"),
+      inlineMetric("Growth assumption", `${estimate.pct >= 0 ? "+" : ""}${estimate.pct.toFixed(1)}%`),
     ]),
-    h("button", { class: "btn", onclick: () => showToast("Applied estimate to lifestyle draft.") }, "Apply estimate to lifestyle draft"),
-    accordion("Profile default reset", false, []),
+    h("button", { class: "btn", onclick: () => { state.lifestyleDraftDeltaPct = estimate.pct; showToast("Applied estimate to lifestyle draft."); render(); } }, "Apply estimate to lifestyle draft"),
+    accordion("Growth preset", false, [
+      h("div", { class: "control-grid" }, [
+        selectControl("Lifestyle growth preset", "lifestyleGrowthPreset", controlsMeta.lifestyleGrowth, { showAdvice: false }),
+        h("div", { class: "notice" }, `Active preset suggests a ${estimate.pct >= 0 ? "higher" : "lower"} spend path of ${estimate.pct >= 0 ? "+" : ""}${estimate.pct.toFixed(1)}%.`),
+      ]),
+    ]),
     h("div", { class: "inline-metrics four" }, [
       inlineMetric("Reference-year annual spending", formatMoney(total)),
       inlineMetric("Monthly average", formatMoney(total / 12)),
       inlineMetric("Active categories", "13"),
-      inlineMetric("Average growth", "3.0%"),
+      inlineMetric("Average growth", `${estimate.pct >= 0 ? "+" : ""}${estimate.pct.toFixed(1)}%`),
     ]),
     h("h3", { class: "section-title", style: "font-size:16px;" }, "Edit one category"),
     selectControl("Category to edit", "overlayName", state.lifestyleRows.slice(0, 10).map((row) => row.Category), { showAdvice: false }),
+    h("div", { class: "inline-metrics four" }, [
+      inlineMetric("Category active", state.overlayName),
+      inlineMetric("Annual amount", formatMoney(topFive[0]?.["Reference-Year Annual Amount"] || 0)),
+      inlineMetric("Monthly amount", formatMoney((topFive[0]?.["Reference-Year Annual Amount"] || 0) / 12)),
+      inlineMetric("Growth rate %", `${Number(state.lifestyleDraftDeltaPct || 0).toFixed(1)}%`),
+    ]),
     accordion("Detailed category edits", false, [
       h("div", { class: "table-card" }, [
         makeTable(
@@ -2579,18 +2929,40 @@ function renderLifestyle() {
         ),
       ]),
     ]),
+    accordion("Top spending categories", false, [
+      h("div", { class: "table-card" }, [
+        makeTable(
+          [
+            { label: "Category", render: (row) => row.Category },
+            { label: "Annual amount", render: (row) => formatMoney(row["Reference-Year Annual Amount"]) },
+            { label: "Tier", render: (row) => row.Tier },
+          ],
+          topFive
+        ),
+      ]),
+    ]),
   ]);
 }
 
 function renderScenarioComparison() {
   const milestoneRows = getMilestoneRows().slice(0, 5);
+  const currentNetWorth = Number(getCurrentRow()?.["Ending Net Worth"] || 0);
   const scenarios = [
     { name: "Baseline", factor: 1, cashDelta: 0 },
-    { name: "Lower lifestyle spending", factor: 0.31, cashDelta: -311 },
-    { name: "Higher lifestyle spending", factor: 0.24, cashDelta: -311 },
-    { name: "Retire 5 years earlier", factor: 1, cashDelta: 0 },
-    { name: "Retire 5 years later", factor: 1, cashDelta: 0 },
-    { name: "Partner works full-time", factor: 1, cashDelta: 0 },
+    { name: "Lower lifestyle spending", factor: 1.12, cashDelta: 3200 },
+    { name: "Higher lifestyle spending", factor: 0.89, cashDelta: -4200 },
+    { name: "Retire 5 years earlier", factor: 0.78, cashDelta: -1800 },
+    { name: "Retire 5 years later", factor: 1.14, cashDelta: 1600 },
+    { name: "Partner works full-time", factor: 1.09, cashDelta: 5800 },
+    ...state.customScenarios.map((scenario) => ({
+      name: scenario.name,
+      factor: 1
+        + (Number(state.sliders.retirementAge) - Number(scenario.retirementAge || state.sliders.retirementAge)) * 0.025
+        + (Number(scenario.vooReturn || state.sliders.vooReturn) - Number(state.sliders.vooReturn)) * 0.01
+        - (Number(scenario.inflation || state.sliders.inflationRate) - Number(state.sliders.inflationRate)) * 0.012
+        - (Number(scenario.lifestylePct || 0) * 0.01),
+      cashDelta: Math.round((-1 * Number(scenario.lifestylePct || 0) * 220)),
+    })),
   ];
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Scenario comparison"),
@@ -2608,7 +2980,40 @@ function renderScenarioComparison() {
       selectControl("Scenario milestone years", "scenarioMilestoneSelect", controlsMeta.scenarioMilestoneSelect),
       multiselectChips("Scenario milestone years", "scenarioMilestones", controlsMeta.scenarioMilestoneSelect),
     ]),
-    accordion("Custom Scenario Builder", false, []),
+    accordion("Custom Scenario Builder", false, [
+      h("div", { class: "control-grid" }, [
+        h("div", { class: "control" }, [
+          h("div", { class: "label label-row" }, [h("span", {}, "Scenario name"), h("span", { class: "help-icon", title: "Custom scenario name" }, "?")]),
+          h("input", {
+            class: "text-input",
+            value: state.customScenarioName,
+            oninput: (event) => {
+              state.customScenarioName = event.target.value;
+            },
+          }),
+        ]),
+        sliderControl("Lifestyle spending adjustment %", "customScenarioLifestylePct", { min: -30, max: 40, step: 1, suffix: "%" }),
+        numberInputControl("Retirement age override", "customScenarioRetirementAge", { min: 35, max: 95, step: 1 }),
+        numberInputControl("VOO/S&P 500 return override", "customScenarioVooReturn", { min: -5, max: 15, step: 0.1, decimals: 1, suffix: "%" }),
+        numberInputControl("Inflation override", "customScenarioInflation", { min: 0, max: 8, step: 0.1, decimals: 1, suffix: "%" }),
+      ]),
+      h("div", { class: "button-row" }, [
+        h("button", { class: "btn primary", onclick: () => { addCustomScenario(); showToast("Custom scenario added."); render(); } }, "Add custom scenario"),
+        h("button", { class: "btn", onclick: () => { state.customScenarios = []; showToast("Custom scenarios cleared."); render(); } }, "Clear custom scenarios"),
+      ]),
+      state.customScenarios.length ? h("div", { class: "table-card" }, [
+        makeTable(
+          [
+            { label: "Scenario", render: (row) => row.name },
+            { label: "Lifestyle adjustment", render: (row) => `${row.lifestylePct >= 0 ? "+" : ""}${row.lifestylePct}%` },
+            { label: "Retirement age", render: (row) => row.retirementAge },
+            { label: "VOO return", render: (row) => `${Number(row.vooReturn).toFixed(1)}%` },
+            { label: "Inflation", render: (row) => `${Number(row.inflation).toFixed(1)}%` },
+          ],
+          state.customScenarios
+        ),
+      ]) : h("p", { class: "section-copy" }, "Add at least one custom scenario to compare it with the baseline."),
+    ]),
     h("h3", { class: "section-title", style: "font-size:22px; margin-top:20px;" }, "Scenario summary"),
     h("p", { class: "section-copy" }, state.renderedScenario ? "Scenario results current" : "Scenario results not rendered"),
     h("p", { class: "section-copy" }, `Active scenario/result status: ${state.renderedScenario ? "Scenario results current" : "Scenario results not rendered"}`),
@@ -2616,7 +3021,7 @@ function renderScenarioComparison() {
       makeTable(
         [
           { label: "Scenario", render: (row) => row.name },
-          { label: "Current-year net worth delta", render: (row) => formatMoney((173361 * row.factor) - 173361) },
+          { label: "Current-year net worth delta", render: (row) => formatMoney((currentNetWorth * row.factor) - currentNetWorth) },
           { label: "Cash reserve delta", render: (row) => formatMoney(row.cashDelta) },
           { label: "Debt delta", render: () => "$0" },
           { label: "2027 · age 36", render: (row) => formatMoney(Number(milestoneRows[1]?.["Ending Net Worth"] || 0) * row.factor) },
@@ -2632,8 +3037,8 @@ function renderScenarioComparison() {
         makeTable(
           [
             { label: "Scenario", render: (row) => row.name },
-            { label: "Current-year net worth", render: (row) => formatMoney(173361 * row.factor) },
-            { label: "Current-year net worth delta", render: (row) => formatMoney((173361 * row.factor) - 173361) },
+            { label: "Current-year net worth", render: (row) => formatMoney(currentNetWorth * row.factor) },
+            { label: "Current-year net worth delta", render: (row) => formatMoney((currentNetWorth * row.factor) - currentNetWorth) },
             { label: "Cash reserve delta", render: (row) => formatMoney(row.cashDelta) },
             { label: "Debt delta", render: () => "$0" },
           ],
@@ -2647,6 +3052,18 @@ function renderScenarioComparison() {
 function renderStressTests() {
   const stressStatus = state.stressSeverity === "None" ? "Stress Off" : `Stress ${state.stressSeverity}`;
   const stressResultsStatus = state.renderedStress ? "Stress results current" : "Stress results not rendered";
+  const summary = projectionAuditSummary();
+  const severityMap = { None: 0, Mild: 0.08, Base: 0.16, Severe: 0.34, Custom: 0.22 };
+  const severityFactor = severityMap[state.stressSeverity] ?? 0;
+  const crashPenalty = state.stressStockCrashEnabled ? Number(state.stressStockCrash || 0) / 100 : 0;
+  const jobPenalty = state.stressJobLossEnabled ? Number(state.stressJobLossMonths || 0) / 24 : 0;
+  const totalPenalty = Math.min(0.85, severityFactor + crashPenalty * 0.6 + jobPenalty * 0.45);
+  const stressRows = [
+    { scenario: "Mild recession", y2030: formatMoney(summary.current * (1 - totalPenalty * 0.35)), y2035: formatMoney(summary.current * (1.6 - totalPenalty * 0.55)), age65: formatMoney(summary.age65 * (1 - totalPenalty * 0.28)) },
+    { scenario: "Bad job year", y2030: formatMoney(summary.current * (1 - totalPenalty * 0.48)), y2035: formatMoney(summary.current * (1.45 - totalPenalty * 0.68)), age65: formatMoney(summary.age65 * (1 - totalPenalty * 0.37)) },
+    { scenario: "Market crash", y2030: formatMoney(summary.current * (1 - totalPenalty * 0.42)), y2035: formatMoney(summary.current * (1.58 - totalPenalty * 0.61)), age65: formatMoney(summary.age65 * (1 - totalPenalty * 0.31)) },
+    { scenario: "Combined severe stress", y2030: formatMoney(summary.current * (1 - totalPenalty * 0.88)), y2035: formatMoney(summary.current * (0.8 - totalPenalty * 0.72)), age65: formatMoney(summary.age65 * (1 - totalPenalty * 0.74)) },
+  ];
   const renderStress = (message) => {
     state.renderedStress = true;
     showToast(message);
@@ -2746,12 +3163,7 @@ function renderStressTests() {
               { label: "2035", render: (row) => row.y2035 },
               { label: "Age 65", render: (row) => row.age65 },
             ],
-            [
-              { scenario: "Mild recession", y2030: "$221,506", y2035: "$361,406", age65: "$2,801,161" },
-              { scenario: "Bad job year", y2030: "$196,499", y2035: "$321,132", age65: "$2,503,121" },
-              { scenario: "Market crash", y2030: "$219,064", y2035: "$357,278", age65: "$2,768,557" },
-              { scenario: "Combined severe stress", y2030: "$50,971", y2035: "$86,758", age65: "$768,694" },
-            ]
+            stressRows
           ),
         ]),
         h("p", { class: "section-copy" }, "Worst year net worth and worst year cash reserve help highlight the most severe stress year in each scenario."),
@@ -2765,6 +3177,7 @@ function renderStressTests() {
 function renderProjectionAudit() {
   const sample = state.auditRows.slice(0, 8);
   const sourceYears = ["2026", "2030", "2035"].map((year) => getRowByYear(year)).filter(Boolean);
+  const auditSummary = projectionAuditSummary();
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Projection Audit View"),
     h("p", { class: "section-copy strong-copy" }, "Render the full projection matrix and supporting charts when you need to inspect the model output."),
@@ -2779,16 +3192,18 @@ function renderProjectionAudit() {
       ]),
     ]),
     h("div", { class: "inline-metrics five" }, [
-      inlineMetric("Current-year net worth", "$173,361"),
-      inlineMetric("Age 65 net worth", "$3,200,192"),
-      inlineMetric("Age 70 net worth", "$4,062,108"),
-      inlineMetric("Ending net worth", "$6,362,668"),
+      inlineMetric("Current-year net worth", formatMoney(auditSummary.current)),
+      inlineMetric("Age 65 net worth", formatMoney(auditSummary.age65)),
+      inlineMetric("Age 70 net worth", formatMoney(auditSummary.age70)),
+      inlineMetric("Ending net worth", formatMoney(auditSummary.ending)),
       inlineMetric("Status", state.renderedAudit ? "Rendered" : "Overlay off", { help: true }),
     ]),
     h("p", { class: "section-copy" }, "Applied decision: current projection. Overlay off."),
     h("p", { class: "section-copy" }, "Projection Audit View keeps the same columns and display behavior, but renders only when requested."),
     selectControl("Projection audit view mode", "auditViewMode", controlsMeta.auditViewMode, { showHelp: false }),
-    h("p", { class: "section-copy" }, "Plain stable table is the default. Styled projection matrix is still available after render."),
+    h("p", { class: "section-copy" }, state.auditViewMode === "Plain stable table"
+      ? "Plain stable table is the default. Styled projection matrix is still available after render."
+      : "Styled projection matrix keeps the same numbers, but emphasizes the current rendered output for review."),
     state.renderedAudit ? h("div", { class: "page-grid" }, [
       h("section", { class: "table-card" }, [
         h("h3", { class: "section-title" }, "Rendered audit rows"),
@@ -3017,6 +3432,7 @@ function renderGovernmentData() {
 }
 
 function renderModelNotes() {
+  const auditSummary = projectionAuditSummary();
   return pageFrame("Household Wealth Strategy Simulator", GENERIC_LEDE, [
     h("h2", { class: "section-title", style: "font-size:24px" }, "Model notes"),
     h("p", { class: "section-copy strong-copy" }, "This dashboard is a household planning simulator. Results reflect the configured assumptions and inputs."),
@@ -3031,6 +3447,21 @@ function renderModelNotes() {
         helpBox("Reference profile", state.profileMeta?.profile_code || "silver-lion-8366"),
       ]),
     ]),
+    h("div", { class: "button-row" }, [
+      h("button", { class: "btn", onclick: () => { state.renderedAudit = true; showToast("Projection audit rendered."); render(); } }, "Render"),
+      h("button", { class: "btn", onclick: () => { state.renderedAudit = false; showToast("Projection audit cleared."); render(); } }, "Clear"),
+      h("button", { class: "btn", onclick: () => window.open("../deep-interactions/downloads/projection-audit.csv", "_blank") }, "Export CSV"),
+    ]),
+    h("div", { class: "inline-metrics five" }, [
+      inlineMetric("Current-year net worth", formatMoney(auditSummary.current)),
+      inlineMetric("Age 65 net worth", formatMoney(auditSummary.age65)),
+      inlineMetric("Age 70 net worth", formatMoney(auditSummary.age70)),
+      inlineMetric("Ending net worth", formatMoney(auditSummary.ending)),
+      inlineMetric("Status", state.renderedAudit ? "Rendered" : "Overlay off"),
+    ]),
+    h("p", { class: "section-copy" }, "Applied decision: current projection. Overlay off."),
+    h("p", { class: "section-copy" }, "Projection Audit View keeps the same columns and display behavior, but renders only when requested."),
+    selectControl("Projection audit view mode", "auditViewMode", controlsMeta.auditViewMode, { showHelp: false }),
     formulaValidationSection(),
     savedControlPositionsSection(),
     accordion("JSON backup", true, [
