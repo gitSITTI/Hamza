@@ -80,6 +80,21 @@ npm start          # node dist/index.js
 }
 ```
 
+## Dashboard
+
+`dashboard.html` is a self-contained progress view: it shows the stored tax
+situation, the refund/owe estimate, and the exact settings seeded into the Net
+Worth GUI (with live `includeHousehold` / target-year toggles). It loads the
+live `data/finance-profile.json`, falls back to the example, and recomputes the
+same mapping the server uses — so it renders even with no data yet.
+
+```bash
+# serve the finance-mcp directory and open dashboard.html, e.g.
+npx serve local-networthgui/finance-mcp     # then open /dashboard.html
+```
+
+It also renders when opened directly (`file://`), using an embedded example.
+
 ## Configuration
 
 | Env var | Default | Meaning |
