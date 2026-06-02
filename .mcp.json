@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "personal-finance": {
+      "command": "node",
+      "args": ["local-networthgui/finance-mcp/dist/index.js"],
+      "env": {}
+    }
+  }
+}
