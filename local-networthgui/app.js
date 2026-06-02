@@ -1880,7 +1880,8 @@ function saveMcpSettings() {
 }
 
 function loadMcpSettings() {
-  state.mcpEndpoint = localStorage.getItem("nwgui-mcp-endpoint") || "";
+  // Permanent Cloudflare Worker endpoint — overridable by anything saved locally.
+  state.mcpEndpoint = localStorage.getItem("nwgui-mcp-endpoint") || "https://mcp.twohittz.com/mcp";
   state.mcpApiKey   = localStorage.getItem("nwgui-mcp-apikey")   || "";
 }
 
