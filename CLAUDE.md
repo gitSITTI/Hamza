@@ -60,6 +60,15 @@ Two projects live here:
 │   │   └── trading.js           ← 10 tools: income ETFs, options P&L, broker snapshots, freedom number, wheel
 │   └── scripts/
 │       └── setup.js             ← first-run: generates keys, seeds DB, prints config
+├── personal-mcp-worker/         ← Cloudflare Worker port (always-on, D1 + WebCrypto)
+│   ├── wrangler.toml            ← bound to D1 + custom domain mcp.twohittz.com
+│   ├── package.json
+│   ├── README.md                ← deploy steps
+│   └── src/
+│       ├── index.js             ← fetch handler, CORS, auth, JSON-RPC dispatch, audit log
+│       ├── db.js                ← async D1 helpers + AES-256-GCM field encryption
+│       ├── registry.js          ← aggregates all 14 plugins (94 tools)
+│       └── plugins/             ← Worker/D1 ports of every plugin (ESM, async handlers)
 ├── docs/
 │   ├── networthgui.md           ← NetWorth GUI full technical docs
 │   ├── personal-mcp.md          ← Personal MCP full technical docs
@@ -141,7 +150,36 @@ Node.js + Express MCP server. Port 3333. SQLite database with field-level AES-25
 - Log options trades: `log_options_trade` / `close_options_trade`
 - Take broker snapshots: `broker_snapshot` (Robinhood, Schwab, TOS)
 
-### How to Start the Server
+### Cloudflare Worker — primary deployment (always-on, no laptop)
+
+The MCP server now has a serverless twin in `personal-mcp-worker/` that runs on Cloudflare
+Workers, backed by **D1** (edge SQLite) with **WebCrypto AES-256-GCM** field encryption.
+Full 94-tool parity with the Node server. This is the preferred live deployment — no tunnel,
+no machine kept running.
+
+| Thing | Value |
+|---|---|
+| Live endpoint (after deploy) | `https://mcp.twohittz.com/mcp` (health: `/health`) |
+| D1 database | `personal-mcp` — id `ae401f9e-1b83-43ea-a989-da205beef639` (region ENAM, 20 tables) |
+| Custom domain | `mcp.twohittz.com` — DNS + TLS auto-provisioned (twohittz.com is in the account) |
+| Secrets (set via `wrangler secret`, never committed) | `MCP_API_KEY`, `DB_SECRET`, optional `COINGECKO_API_KEY` / `RENTCAST_API_KEY` / `FRED_API_KEY` / `POLYGON_API_KEY` |
+
+**Deploy (one time, from your machine — Worker code push can't run from the cloud sandbox):**
+```bash
+cd personal-mcp-worker && npm install
+npx wrangler login
+npx wrangler secret put MCP_API_KEY      # the pmcp-... key
+npx wrangler secret put DB_SECRET        # 32-byte hex — encrypts balances at rest
+npx wrangler deploy
+```
+Or connect the repo in the dashboard (**Workers & Pages → Create → Connect to Git**, root
+`personal-mcp-worker`) for auto-deploy on every push.
+
+**Worker port notes:** D1 is async-only (every handler awaits `db.*`); Node `crypto` →
+WebCrypto; `node-fetch` → global `fetch`; `uuid` → `crypto.randomUUID()`; RAG search uses
+`LIKE` (D1 has no FTS5). The original Node server below still works for local/offline use.
+
+### How to Start the Node Server (local / offline)
 
 ```bash
 cd /home/user/Hamza/personal-mcp
