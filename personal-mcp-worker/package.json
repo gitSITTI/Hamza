@@ -1,0 +1,16 @@
+{
+  "name": "personal-mcp-worker",
+  "version": "2.0.0",
+  "description": "Personal MCP financial brain — Cloudflare Worker port (D1 + WebCrypto). JSON-RPC 2.0 MCP server.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "db:console": "wrangler d1 execute personal-mcp --command \"SELECT name FROM sqlite_master WHERE type='table'\""
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

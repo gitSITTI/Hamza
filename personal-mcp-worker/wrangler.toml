@@ -1,0 +1,25 @@
+name = "personal-mcp"
+main = "src/index.js"
+compatibility_date = "2026-06-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+
+# Custom domain — DNS + TLS auto-provisioned because twohittz.com is in this account.
+# Live endpoint after deploy: https://mcp.twohittz.com/mcp
+routes = [
+  { pattern = "mcp.twohittz.com", custom_domain = true }
+]
+
+# D1 database (already provisioned). Bound as env.DB inside the Worker.
+[[d1_databases]]
+binding = "DB"
+database_name = "personal-mcp"
+database_id = "ae401f9e-1b83-43ea-a989-da205beef639"
+
+# Secrets are NOT set here. Set them once with wrangler:
+#   wrangler secret put MCP_API_KEY        (your pmcp-... key)
+#   wrangler secret put DB_SECRET          (32+ char random — encrypts balances at rest)
+#   wrangler secret put COINGECKO_API_KEY  (optional, free tier works without)
+#   wrangler secret put RENTCAST_API_KEY   (optional)
+#   wrangler secret put FRED_API_KEY       (optional)
+#   wrangler secret put POLYGON_API_KEY    (optional)
