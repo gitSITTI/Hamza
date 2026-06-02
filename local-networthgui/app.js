@@ -107,7 +107,7 @@ const state = {
     useGovernmentBenchmarks: true,
     showAssumptionQualityScore: true,
   },
-  mcpEndpoint: "https://cheapest-worth-und-interpretation.trycloudflare.com/mcp",
+  mcpEndpoint: "",
   mcpApiKey: "",
   mcpStatus: "disconnected",
   mcpLastSync: null,
@@ -1874,6 +1874,16 @@ function saveApiKeyDrafts() {
   localStorage.setItem("nwgui-api-key-status", JSON.stringify(state.apiKeyDrafts));
 }
 
+function saveMcpSettings() {
+  localStorage.setItem("nwgui-mcp-endpoint", state.mcpEndpoint);
+  localStorage.setItem("nwgui-mcp-apikey",   state.mcpApiKey);
+}
+
+function loadMcpSettings() {
+  state.mcpEndpoint = localStorage.getItem("nwgui-mcp-endpoint") || "";
+  state.mcpApiKey   = localStorage.getItem("nwgui-mcp-apikey")   || "";
+}
+
 function apiKeySetupSection() {
   const sources = keyGatedSources();
   return sectionCard("API key readiness", h("div", { class: "section-stack" }, [
@@ -3335,7 +3345,7 @@ function renderMCPConnector() {
           class: "text-input",
           placeholder: "http://localhost:3333/mcp  or  https://xxxx.trycloudflare.com/mcp",
           value: state.mcpEndpoint,
-          oninput: (e) => { state.mcpEndpoint = e.target.value; },
+          oninput: (e) => { state.mcpEndpoint = e.target.value; saveMcpSettings(); },
         }),
       ]),
       h("div", { class: "control" }, [
@@ -3345,7 +3355,7 @@ function renderMCPConnector() {
           type: "password",
           placeholder: "pmcp-xxxxxxxx",
           value: state.mcpApiKey,
-          oninput: (e) => { state.mcpApiKey = e.target.value; },
+          oninput: (e) => { state.mcpApiKey = e.target.value; saveMcpSettings(); },
         }),
       ]),
     ]),
@@ -3641,6 +3651,7 @@ async function loadData() {
   loadSavedProfiles();
   applyProfileFromUrl();
   loadApiKeyDrafts();
+  loadMcpSettings();
   recomputeProjectionRows();
 }
 
