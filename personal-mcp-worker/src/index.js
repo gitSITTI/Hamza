@@ -66,7 +66,8 @@ export default {
 // ── Request context shared by every tool handler ──────────────────
 function makeCtx(env, request) {
   const db = makeDb(env);
-  const { encrypt, decrypt } = makeCrypto(env.DB_SECRET || 'change-me');
+  if (!env.DB_SECRET) throw new Error('DB_SECRET is not set — deploy with: wrangler secret put DB_SECRET');
+  const { encrypt, decrypt } = makeCrypto(env.DB_SECRET);
   const caller = request.headers.get('x-caller') || 'unknown';
   const ctx = { env, db, encrypt, decrypt, caller };
   ctx.indexDoc = (doc) => indexDoc(ctx, doc);

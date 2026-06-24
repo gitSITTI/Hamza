@@ -118,7 +118,7 @@ export default [
       },
     },
     async handler(args, { db, decrypt }) {
-      let startBalance = args.balance || 0, rate = args.rate || 7, accountType = null, accountLabel = null;
+      let startBalance = args.balance ?? 0, rate = args.rate != null ? args.rate : 7, accountType = null, accountLabel = null;
       if (args.account_id) {
         const acc = await db.get('SELECT * FROM accounts WHERE id = ?', args.account_id);
         if (acc) {
@@ -192,24 +192,28 @@ export default [
       required: ['target_monthly_income', 'current_portfolio', 'annual_savings'],
     },
     async handler(args) {
-      const swr = (args.safe_withdrawal_rate || 4) / 100;
-      const returnRate = (args.expected_return_pct || 7) / 100;
+      const swr = (args.safe_withdrawal_rate != null ? args.safe_withdrawal_rate : 4) / 100;
+      const returnRate = (args.expected_return_pct != null ? args.expected_return_pct : 7) / 100;
       const annualIncome = args.target_monthly_income * 12;
       const fireNumber = annualIncome / swr;
       const gap = Math.max(0, fireNumber - args.current_portfolio);
       let yearsToFire = null;
       for (let y = 0; y <= 100; y++) {
-        const fv = args.current_portfolio * Math.pow(1 + returnRate, y) + (args.annual_savings * (Math.pow(1 + returnRate, y) - 1)) / returnRate;
+        const fv = returnRate === 0
+          ? args.current_portfolio + args.annual_savings * y
+          : args.current_portfolio * Math.pow(1 + returnRate, y) + (args.annual_savings * (Math.pow(1 + returnRate, y) - 1)) / returnRate;
         if (fv >= fireNumber) { yearsToFire = y; break; }
       }
       let savingsNeeded = null;
       if (args.target_years) {
         const n = args.target_years;
-        const remaining = fireNumber - args.current_portfolio * Math.pow(1 + returnRate, n);
-        savingsNeeded = remaining <= 0 ? 0 : +((remaining * returnRate) / (Math.pow(1 + returnRate, n) - 1) / 12).toFixed(0);
+        const remaining = fireNumber - args.current_portfolio * (returnRate === 0 ? 1 : Math.pow(1 + returnRate, n));
+        savingsNeeded = remaining <= 0 ? 0 : returnRate === 0
+          ? +((remaining / n) / 12).toFixed(0)
+          : +((remaining * returnRate) / (Math.pow(1 + returnRate, n) - 1) / 12).toFixed(0);
       }
       return {
-        inputs: { target_monthly_income: args.target_monthly_income, safe_withdrawal_rate: `${args.safe_withdrawal_rate || 4}%`, expected_return: `${args.expected_return_pct || 7}%`, current_portfolio: args.current_portfolio, annual_savings: args.annual_savings },
+        inputs: { target_monthly_income: args.target_monthly_income, safe_withdrawal_rate: `${args.safe_withdrawal_rate ?? 4}%`, expected_return: `${args.expected_return_pct ?? 7}%`, current_portfolio: args.current_portfolio, annual_savings: args.annual_savings },
         fire_number: +fireNumber.toFixed(0), current_portfolio: args.current_portfolio, gap_to_fire: +gap.toFixed(0),
         years_to_fire: yearsToFire !== null ? yearsToFire : 'Portfolio cannot reach FIRE with current savings',
         fire_date_estimate: yearsToFire !== null ? new Date(Date.now() + yearsToFire * 365.25 * 86400000).getFullYear() : null,

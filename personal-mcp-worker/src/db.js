@@ -49,10 +49,13 @@ const fromHex = (hex) => {
 };
 
 export function makeCrypto(secret) {
+  // Derive once per request context — PBKDF2 at 100k iterations is expensive per-call.
+  let keyPromise = null;
+  const getKey = () => { if (!keyPromise) keyPromise = deriveKey(secret); return keyPromise; };
   return {
     async encrypt(text) {
       if (text === null || text === undefined || text === '') return text;
-      const key = await deriveKey(secret);
+      const key = await getKey();
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const ct = await crypto.subtle.encrypt(
         { name: 'AES-GCM', iv }, key, new TextEncoder().encode(String(text))
@@ -63,7 +66,7 @@ export function makeCrypto(secret) {
       if (!blob || !String(blob).includes(':')) return blob;
       try {
         const [ivHex, ctHex] = String(blob).split(':');
-        const key = await deriveKey(secret);
+        const key = await getKey();
         const pt = await crypto.subtle.decrypt(
           { name: 'AES-GCM', iv: fromHex(ivHex) }, key, fromHex(ctHex)
         );
