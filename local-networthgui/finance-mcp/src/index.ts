@@ -4,12 +4,20 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import {
-  FilingStatusSchema,
   FinanceProfile,
   TaxEstimate,
+  TaxEstimateSchema,
   TaxSituation,
+  TaxSituationSchema,
 } from "./types.js";
-import { getProfile, networthGuiDir, storePath, updateProfile, writeJsonFile } from "./store.js";
+import {
+  getProfile,
+  networthGuiDir,
+  setProfile,
+  storePath,
+  updateProfile,
+  writeJsonFile,
+} from "./store.js";
 import { buildNetWorthSeed, signedRefund } from "./networth.js";
 
 const server = new McpServer({
@@ -73,16 +81,9 @@ server.registerTool(
     description:
       "Store/replace the tax-situation summary, typically gathered from the TurboTax MCP " +
       "(interview / tax_checklist). Returns the updated financial profile.",
-    inputSchema: {
-      taxYear: z.number().int().min(1900).max(2100),
-      filingStatus: FilingStatusSchema,
-      summary: z.string().describe("Free-text tax-situation summary."),
-      state: z.string().optional().describe("Two-letter state code, e.g. \"MO\"."),
-      dependents: z.number().int().min(0).default(0),
-      incomeSources: z.array(z.string()).default([]),
-      lifeEvents: z.array(z.string()).default([]),
-      source: z.string().default("TurboTax MCP"),
-    },
+    // Derived from TaxSituationSchema so input validation stays in sync with the
+    // stored shape; updatedAt is server-managed, not a tool input.
+    inputSchema: TaxSituationSchema.omit({ updatedAt: true }).shape,
   },
   async (args) => {
     const taxSituation: TaxSituation = { ...args, updatedAt: new Date().toISOString() };
@@ -99,19 +100,8 @@ server.registerTool(
       "Store/replace the refund or amount-owed estimate, typically from the TurboTax MCP " +
       "tax_estimate tool. `amount` is the non-negative magnitude; `direction` carries the sign. " +
       "Returns the updated financial profile.",
-    inputSchema: {
-      taxYear: z.number().int().min(1900).max(2100),
-      direction: z.enum(["refund", "owe"]),
-      amount: z.number().min(0),
-      federalAmount: z.number().optional(),
-      stateAmount: z.number().optional(),
-      totalIncome: z.number().min(0).optional(),
-      totalTax: z.number().min(0).optional(),
-      federalEffectiveRate: z.number().min(0).max(1).optional(),
-      stateEffectiveRate: z.number().min(0).max(1).optional(),
-      marginalRate: z.number().min(0).max(1).optional(),
-      source: z.string().default("TurboTax MCP"),
-    },
+    // Derived from TaxEstimateSchema; estimatedAt is server-managed, not an input.
+    inputSchema: TaxEstimateSchema.omit({ estimatedAt: true }).shape,
   },
   async (args) => {
     const taxEstimate: TaxEstimate = { ...args, estimatedAt: new Date().toISOString() };
@@ -222,7 +212,9 @@ server.registerTool(
     },
   },
   async () => {
-    const saved = await updateProfile(() => ({ schemaVersion: 1 }));
+    // setProfile overwrites without reading first, so reset works even if the
+    // existing store file is corrupt.
+    const saved = await setProfile({ schemaVersion: 1 });
     return jsonContent(saved);
   },
 );

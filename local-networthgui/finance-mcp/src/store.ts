@@ -26,14 +26,36 @@ export function storePath(): string {
   return path.join(dataDir(), "finance-profile.json");
 }
 
-/** Load the persisted profile, returning an empty profile if none exists. */
+/** Write JSON to a path atomically: create parent dirs, write a temp file, then rename. */
+async function atomicWriteJson(filePath: string, data: unknown): Promise<void> {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const tmp = `${filePath}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  await fs.rename(tmp, filePath);
+}
+
+/**
+ * Load the persisted profile. Returns an empty profile when the file is absent;
+ * throws a clear, actionable error when the file exists but is unparseable or
+ * schema-invalid (so a corrupt store surfaces instead of silently misbehaving —
+ * `clear_financial_profile` can reset it without first reading it).
+ */
 export async function loadProfile(): Promise<FinanceProfile> {
+  let raw: string;
   try {
-    const raw = await fs.readFile(storePath(), "utf8");
-    return FinanceProfileSchema.parse(JSON.parse(raw));
+    raw = await fs.readFile(storePath(), "utf8");
   } catch (err: unknown) {
     if ((err as NodeJS.ErrnoException)?.code === "ENOENT") return { ...EMPTY_PROFILE };
     throw err;
+  }
+  try {
+    return FinanceProfileSchema.parse(JSON.parse(raw));
+  } catch (err: unknown) {
+    const reason = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Finance store at ${storePath()} is corrupt or schema-invalid: ${reason}. ` +
+        "Fix or delete the file, or call clear_financial_profile to reset it.",
+    );
   }
 }
 
@@ -41,17 +63,13 @@ export async function loadProfile(): Promise<FinanceProfile> {
 export async function saveProfile(profile: FinanceProfile): Promise<FinanceProfile> {
   const next: FinanceProfile = { ...profile, schemaVersion: 1, updatedAt: new Date().toISOString() };
   const validated = FinanceProfileSchema.parse(next);
-  const dir = dataDir();
-  await fs.mkdir(dir, { recursive: true });
-  const target = storePath();
-  const tmp = `${target}.${process.pid}.tmp`;
-  await fs.writeFile(tmp, `${JSON.stringify(validated, null, 2)}\n`, "utf8");
-  await fs.rename(tmp, target);
+  await atomicWriteJson(storePath(), validated);
   return validated;
 }
 
-// Serialize read-modify-write operations so concurrent/pipelined tool calls
-// can't clobber each other (each load sees the prior call's save).
+// Serialize write operations so concurrent/pipelined tool calls can't clobber
+// each other (each load sees the prior call's save). The queue tail is re-armed
+// on every call, so it never grows unbounded.
 let mutationQueue: Promise<unknown> = Promise.resolve();
 
 /** Atomically load the profile, apply `mutate`, and persist the result. */
@@ -68,6 +86,16 @@ export async function updateProfile(
 }
 
 /**
+ * Overwrite the profile without first reading it, serialized through the same
+ * queue. Used to reset the store even when the existing file is corrupt.
+ */
+export async function setProfile(profile: FinanceProfile): Promise<FinanceProfile> {
+  const run = mutationQueue.then(() => saveProfile(profile));
+  mutationQueue = run.catch(() => undefined);
+  return run;
+}
+
+/**
  * Read the profile after any currently-queued mutations have settled, so a
  * read pipelined right after a save still observes that save. Use this from
  * read paths; `updateProfile` uses the raw `loadProfile` internally.
@@ -76,8 +104,7 @@ export async function getProfile(): Promise<FinanceProfile> {
   return mutationQueue.then(() => loadProfile());
 }
 
-/** Write arbitrary JSON to a path, creating parent dirs as needed. */
+/** Write arbitrary JSON to a path atomically, creating parent dirs as needed. */
 export async function writeJsonFile(filePath: string, data: unknown): Promise<void> {
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  await atomicWriteJson(filePath, data);
 }

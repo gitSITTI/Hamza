@@ -7,9 +7,10 @@
   <link rel="stylesheet" href="./styles.css?v=setup-assets-debts-20260525">
   <style>
     /* Non-invasive link to the personal-finance MCP dashboard. Lives at the
-       body level so it survives app.js re-rendering #app. */
+       body level so it survives app.js re-rendering #app. Anchored bottom-left
+       to stay clear of the app's existing top-right .top-frame menu. */
     .finance-mcp-link {
-      position: fixed; top: 12px; right: 12px; z-index: 9999;
+      position: fixed; bottom: 14px; left: 14px; z-index: 40;
       display: inline-flex; align-items: center; gap: 6px;
       padding: 6px 12px; border-radius: 999px;
       background: #161b22; color: #e6edf3; border: 1px solid #2a313c;

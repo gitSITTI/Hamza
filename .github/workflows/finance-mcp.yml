@@ -3,7 +3,10 @@ name: finance-mcp
 # Build and test the personal-finance MCP server. Scoped to its own path so it
 # only runs when that subproject changes.
 on:
+  # Scope push to the default branch so PR branches don't run twice (the
+  # pull_request event already covers them).
   push:
+    branches: [master]
     paths:
       - "local-networthgui/finance-mcp/**"
       - ".github/workflows/finance-mcp.yml"
