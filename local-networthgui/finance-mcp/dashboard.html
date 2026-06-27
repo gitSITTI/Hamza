@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Personal Finance MCP — Dashboard</title>
+<style>
+  :root {
+    --bg: #0e1116; --panel: #161b22; --panel-2: #1c232d; --border: #2a313c;
+    --text: #e6edf3; --muted: #8b949e; --accent: #2f81f7; --green: #3fb950;
+    --red: #f85149; --amber: #d29922; --chip: #21262d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 28px 20px 64px; }
+  header.hero { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0; font-size: 13px; }
+  .source-badge { font-size: 12px; padding: 6px 10px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); color: var(--muted); }
+  .source-badge.live { color: var(--green); border-color: #1f6f33; }
+  .source-badge.example { color: var(--amber); border-color: #6b5512; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 14px; }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .big { font-size: 30px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .big.refund { color: var(--green); }
+  .big.owe { color: var(--red); }
+  .estimate-sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--chip); border: 1px solid var(--border); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td.val { text-align: right; font-variant-numeric: tabular-nums; }
+  tr:last-child td { border-bottom: none; }
+
+  .full { grid-column: 1 / -1; }
+  .toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 8px 0 0; }
+  label.toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; cursor: pointer; }
+  .note { color: var(--muted); font-size: 12.5px; margin: 12px 0 0; }
+  pre { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; overflow: auto; font-size: 12.5px; margin: 0; }
+  details summary { cursor: pointer; color: var(--accent); font-size: 13px; margin-top: 12px; }
+  .warn { background: rgba(210,153,34,.12); border: 1px solid #6b5512; color: #f0d58c; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-top: 10px; }
+  .empty { color: var(--muted); font-style: italic; }
+  .status-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); flex: none; }
+  .pipeline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .pipeline b { color: var(--text); font-weight: 600; }
+  .arrow { color: var(--accent); }
+  code.k { color: #79c0ff; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div>
+      <h1>Personal Finance MCP — Dashboard</h1>
+      <p class="sub">Tax-situation summary &amp; refund/owe estimate (from the TurboTax MCP), and the settings seeded into the Net Worth GUI.</p>
+      <div class="pipeline">
+        <b>TurboTax MCP</b> <span class="arrow">→</span>
+        <b>personal-finance-mcp</b> <span class="arrow">→</span>
+        <b>Net Worth GUI</b>
+      </div>
+    </div>
+    <span id="source-badge" class="source-badge">loading…</span>
+  </header>
+
+  <div class="grid">
+    <section class="card" id="situation-card">
+      <h2>Tax situation</h2>
+      <div id="situation-body"></div>
+    </section>
+
+    <section class="card" id="estimate-card">
+      <h2>Refund / owe estimate</h2>
+      <div id="estimate-body"></div>
+    </section>
+
+    <section class="card full">
+      <h2>Net Worth GUI seed — <code class="k">state.settings</code></h2>
+      <div class="toolbar">
+        <label class="toggle"><input type="checkbox" id="household-toggle" /> Include household mapping (relationship / partner)</label>
+        <label class="toggle">Target year:
+          <input type="number" id="year-input" min="2000" max="2100" style="width:80px;background:var(--panel-2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 6px;" />
+        </label>
+      </div>
+      <div id="seed-warnings"></div>
+      <table id="seed-table" style="margin-top:12px;">
+        <thead><tr><th>GUI setting key</th><th class="val">Value</th></tr></thead>
+        <tbody id="seed-tbody"></tbody>
+      </table>
+      <p class="note">Importable via the GUI's <b>Upload profile</b> control. Keys land in <code class="k">state.settings</code> (and <code class="k">filingStatus</code> / <code class="k">relationshipStatus</code>) through <code class="k">applyProfileSnapshot</code>.</p>
+      <details>
+        <summary>Show raw import payload (JSON)</summary>
+        <pre id="payload-json"></pre>
+      </details>
+    </section>
+
+    <section class="card full">
+      <h2>Build status</h2>
+      <div id="status-body"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+ * Self-contained dashboard. It loads the stored profile (live file -> example
+ * file -> embedded fallback) and recomputes the same tax->GUI mapping the MCP
+ * server uses (src/networth.ts), so it renders even when opened directly.
+ * ------------------------------------------------------------------------- */
+
+// Embedded fallback so the page always renders (e.g. opened over file://).
+const EMBEDDED_EXAMPLE = {
+  schemaVersion: 1,
+  updatedAt: "2026-04-10T00:00:00.000Z",
+  taxSituation: {
+    taxYear: 2025, filingStatus: "married_filing_jointly", state: "MO", dependents: 0,
+    incomeSources: ["W-2", "W-2 (partner)"], lifeEvents: ["marriage"],
+    summary: "Married filing jointly, two W-2 incomes in Missouri, standard deduction, no dependents.",
+    source: "TurboTax MCP", updatedAt: "2026-04-10T00:00:00.000Z",
+  },
+  taxEstimate: {
+    taxYear: 2025, direction: "refund", amount: 2400, federalAmount: 1900, stateAmount: 500,
+    totalIncome: 127000, totalTax: 22860, federalEffectiveRate: 0.18, stateEffectiveRate: 0.03,
+    marginalRate: 0.22, source: "TurboTax MCP", estimatedAt: "2026-04-10T00:00:00.000Z",
+  },
+};
+
+/* ----- mapping logic, mirrored from src/networth.ts ----- */
+const FILING_STATUS_TO_GUI = {
+  single: "Single",
+  married_filing_jointly: "Married Filing Jointly",
+  married_filing_separately: "Married Filing Separately",
+  head_of_household: "Head of Household",
+  qualifying_surviving_spouse: "Married Filing Jointly",
+};
+const MARRIED_STATUSES = ["married_filing_jointly", "married_filing_separately", "qualifying_surviving_spouse"];
+const round2 = (n) => Math.round(n * 100) / 100;
+const round4 = (n) => Math.round(n * 10000) / 10000;
+
+function deriveFederalEffectiveRate(e) {
+  if (typeof e.federalEffectiveRate === "number") return e.federalEffectiveRate;
+  if (typeof e.totalTax === "number" && typeof e.totalIncome === "number" && e.totalIncome > 0)
+    return round4(e.totalTax / e.totalIncome);
+  return undefined;
+}
+function signedRefund(e) { return e.direction === "refund" ? e.amount : -e.amount; }
+
+function buildNetWorthSeed(profile, options = {}) {
+  const warnings = [];
+  const s = profile.taxSituation, e = profile.taxEstimate;
+  if (!s && !e) throw new Error("No tax data stored yet.");
+  const settings = {};
+  const snapshot = { settings };
+
+  if (s) {
+    const gui = FILING_STATUS_TO_GUI[s.filingStatus];
+    snapshot.filingStatus = gui;
+    settings.filing_status = gui;
+    if (s.filingStatus === "qualifying_surviving_spouse")
+      warnings.push("Filing status 'qualifying_surviving_spouse' has no GUI equivalent; mapped to 'Married Filing Jointly'.");
+    if (options.includeHousehold) {
+      const married = MARRIED_STATUSES.includes(s.filingStatus);
+      snapshot.relationshipStatus = married ? "Married" : "Single";
+      settings.partner_included = married;
+    }
+  }
+
+  let federalRate;
+  if (e) {
+    federalRate = deriveFederalEffectiveRate(e);
+    if (typeof federalRate === "number") { settings.federal_effective_tax_rate = federalRate; settings.base_tax_rate = federalRate; }
+    if (typeof e.stateEffectiveRate === "number") settings.state_local_effective_tax_rate = e.stateEffectiveRate;
+    const year = options.targetYear ?? e.taxYear;
+    settings[`tax_refund_other_${year}`] = round2(signedRefund(e));
+    if (federalRate === undefined)
+      warnings.push("No federal effective rate available (provide federalEffectiveRate, or totalTax + totalIncome) — rate fields were not seeded.");
+  } else {
+    warnings.push("No tax estimate stored — refund/owe and effective-rate fields were not seeded.");
+  }
+
+  if (options.includeHousehold && s && MARRIED_STATUSES.includes(s.filingStatus) && typeof federalRate === "number")
+    settings.partner_tax_rate = federalRate;
+
+  const code = options.profileCode ?? `tax-seed-${e?.taxYear ?? s?.taxYear ?? "profile"}`;
+  return {
+    warnings,
+    payload: {
+      profile_code: code, app_version: "0.8.0", model_version: "0.4.0",
+      exported_at: new Date().toISOString(), source: "personal-finance-mcp", snapshot,
+    },
+  };
+}
+
+/* ----- formatting helpers ----- */
+const fmtUSD = (n) => "$" + Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
+const fmtPct = (n) => (n * 100).toFixed(1) + "%";
+const titleize = (s) => s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+/* ----- data loading ----- */
+async function tryFetch(url) {
+  try { const r = await fetch(url, { cache: "no-store" }); if (r.ok) return await r.json(); } catch (_) {}
+  return null;
+}
+async function loadProfile() {
+  const live = await tryFetch("./data/finance-profile.json");
+  if (live) return { profile: live, source: "live" };
+  const example = await tryFetch("./data/finance-profile.example.json");
+  if (example) return { profile: example, source: "example" };
+  return { profile: EMBEDDED_EXAMPLE, source: "example" };
+}
+
+/* ----- rendering ----- */
+let CURRENT;
+
+function renderSituation(s) {
+  const el = document.getElementById("situation-body");
+  if (!s) { el.innerHTML = '<p class="empty">No tax situation stored yet. Call <code>save_tax_situation</code>.</p>'; return; }
+  el.innerHTML = `
+    <dl class="kv">
+      <dt>Tax year</dt><dd>${s.taxYear}</dd>
+      <dt>Filing status</dt><dd>${esc(titleize(s.filingStatus))}</dd>
+      <dt>State</dt><dd>${esc(s.state || "—")}</dd>
+      <dt>Dependents</dt><dd>${s.dependents ?? 0}</dd>
+    </dl>
+    <p class="note" style="margin-top:14px">Income sources</p>
+    <div class="chips">${(s.incomeSources||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join("") || '<span class="empty">none</span>'}</div>
+    ${(s.lifeEvents&&s.lifeEvents.length)?`<p class="note">Life events</p><div class="chips">${s.lifeEvents.map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</div>`:""}
+    <p class="note" style="margin-top:14px">${esc(s.summary||"")}</p>
+    <p class="note">Source: ${esc(s.source||"—")}</p>`;
+}
+
+function renderEstimate(e) {
+  const el = document.getElementById("estimate-body");
+  if (!e) { el.innerHTML = '<p class="empty">No estimate stored yet. Call <code>save_tax_estimate</code>.</p>'; return; }
+  const isRefund = e.direction === "refund";
+  const rows = [];
+  if (typeof e.federalAmount === "number") rows.push(["Federal", fmtUSD(e.federalAmount)]);
+  if (typeof e.stateAmount === "number") rows.push(["State", fmtUSD(e.stateAmount)]);
+  if (typeof e.totalIncome === "number") rows.push(["Total income", fmtUSD(e.totalIncome)]);
+  if (typeof e.totalTax === "number") rows.push(["Total tax", fmtUSD(e.totalTax)]);
+  if (typeof e.federalEffectiveRate === "number") rows.push(["Federal effective rate", fmtPct(e.federalEffectiveRate)]);
+  if (typeof e.stateEffectiveRate === "number") rows.push(["State/local effective rate", fmtPct(e.stateEffectiveRate)]);
+  if (typeof e.marginalRate === "number") rows.push(["Marginal rate", fmtPct(e.marginalRate)]);
+  el.innerHTML = `
+    <div class="big ${isRefund ? "refund" : "owe"}">${isRefund ? "+" : "−"}${fmtUSD(e.amount)}</div>
+    <div class="estimate-sub">${isRefund ? "Estimated refund" : "Estimated amount owed"} · tax year ${e.taxYear}</div>
+    <dl class="kv" style="margin-top:14px">
+      ${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}
+    </dl>
+    <p class="note">Source: ${esc(e.source||"—")}</p>`;
+}
+
+function renderSeed() {
+  const tbody = document.getElementById("seed-tbody");
+  const warnBox = document.getElementById("seed-warnings");
+  const payloadEl = document.getElementById("payload-json");
+  const includeHousehold = document.getElementById("household-toggle").checked;
+  const targetYear = Number(document.getElementById("year-input").value) || undefined;
+  try {
+    const { payload, warnings } = buildNetWorthSeed(CURRENT, { includeHousehold, targetYear });
+    const settings = payload.snapshot.settings;
+    const extra = {};
+    if (payload.snapshot.filingStatus) extra.filingStatus = payload.snapshot.filingStatus;
+    if (payload.snapshot.relationshipStatus) extra.relationshipStatus = payload.snapshot.relationshipStatus;
+    const all = { ...extra, ...settings };
+    tbody.innerHTML = Object.entries(all).map(([k,v]) =>
+      `<tr><td><code class="k">${esc(k)}</code></td><td class="val">${esc(typeof v === "number" ? v : JSON.stringify(v))}</td></tr>`
+    ).join("");
+    warnBox.innerHTML = warnings.map(w => `<div class="warn">⚠ ${esc(w)}</div>`).join("");
+    payloadEl.textContent = JSON.stringify(payload, null, 2);
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="2" class="empty">${esc(err.message)}</td></tr>`;
+    warnBox.innerHTML = ""; payloadEl.textContent = "";
+  }
+}
+
+function renderStatus() {
+  const el = document.getElementById("status-body");
+  const items = [
+    "MCP server (Node/TS, stdio) — 6 tools + finance://profile resource",
+    "Persistent store with atomic writes + serialized mutation queue",
+    "Tax→GUI seed mapping (filing status, effective rates, base rate, signed refund)",
+    "Unit tests for the mapping (10 passing)",
+    "Project .mcp.json registration in both repos",
+    "This dashboard",
+  ];
+  el.innerHTML = items.map(t => `<div class="status-row"><span class="dot"></span><span>${esc(t)}</span></div>`).join("");
+}
+
+async function main() {
+  const { profile, source } = await loadProfile();
+  CURRENT = profile;
+  const badge = document.getElementById("source-badge");
+  badge.textContent = source === "live" ? "live data" : "example data";
+  badge.className = "source-badge " + source;
+
+  const defaultYear = profile.taxEstimate?.taxYear ?? profile.taxSituation?.taxYear ?? new Date().getFullYear();
+  document.getElementById("year-input").value = defaultYear;
+
+  renderSituation(profile.taxSituation);
+  renderEstimate(profile.taxEstimate);
+  renderSeed();
+  renderStatus();
+
+  document.getElementById("household-toggle").addEventListener("change", renderSeed);
+  document.getElementById("year-input").addEventListener("input", renderSeed);
+}
+main();
+</script>
+</body>
+</html>

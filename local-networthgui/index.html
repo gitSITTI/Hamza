@@ -5,8 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NetWorth GUI Local Rebuild</title>
   <link rel="stylesheet" href="./styles.css?v=setup-assets-debts-20260525">
+  <style>
+    /* Non-invasive link to the personal-finance MCP dashboard. Lives at the
+       body level so it survives app.js re-rendering #app. Anchored bottom-left
+       to stay clear of the app's existing top-right .top-frame menu. */
+    .finance-mcp-link {
+      position: fixed; bottom: 14px; left: 14px; z-index: 40;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 999px;
+      background: #161b22; color: #e6edf3; border: 1px solid #2a313c;
+      font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .finance-mcp-link:hover { border-color: #2f81f7; color: #fff; }
+  </style>
 </head>
 <body>
+  <a class="finance-mcp-link" href="./finance-mcp/dashboard.html"
+     title="Open the personal-finance MCP dashboard (tax situation, estimate & seeded settings)">
+    💰 Finance MCP
+  </a>
   <div id="app"></div>
   <script type="module" src="./app.js?v=setup-assets-debts-20260525"></script>
 </body>

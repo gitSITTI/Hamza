@@ -1,0 +1,32 @@
+name: finance-mcp
+
+# Build and test the personal-finance MCP server. Scoped to its own path so it
+# only runs when that subproject changes.
+on:
+  # Scope push to the default branch so PR branches don't run twice (the
+  # pull_request event already covers them).
+  push:
+    branches: [master]
+    paths:
+      - "local-networthgui/finance-mcp/**"
+      - ".github/workflows/finance-mcp.yml"
+  pull_request:
+    paths:
+      - "local-networthgui/finance-mcp/**"
+      - ".github/workflows/finance-mcp.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: local-networthgui/finance-mcp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: local-networthgui/finance-mcp/package-lock.json
+      - run: npm ci
+      - run: npm test

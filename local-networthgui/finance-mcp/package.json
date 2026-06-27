@@ -1,0 +1,32 @@
+{
+  "name": "personal-finance-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal-finance MCP server: stores a tax-situation summary plus a refund/owe estimate (sourced from the TurboTax MCP) and seeds the local Net Worth GUI's settings.",
+  "type": "module",
+  "bin": {
+    "personal-finance-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "npm run build && node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

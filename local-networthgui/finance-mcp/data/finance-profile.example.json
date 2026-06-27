@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-04-10T00:00:00.000Z",
+  "taxSituation": {
+    "taxYear": 2025,
+    "filingStatus": "married_filing_jointly",
+    "state": "MO",
+    "dependents": 0,
+    "incomeSources": ["W-2", "W-2 (partner)"],
+    "lifeEvents": ["marriage"],
+    "summary": "Married filing jointly, two W-2 incomes in Missouri, standard deduction, no dependents.",
+    "source": "TurboTax MCP",
+    "updatedAt": "2026-04-10T00:00:00.000Z"
+  },
+  "taxEstimate": {
+    "taxYear": 2025,
+    "direction": "refund",
+    "amount": 2400,
+    "federalAmount": 1900,
+    "stateAmount": 500,
+    "totalIncome": 127000,
+    "totalTax": 22860,
+    "federalEffectiveRate": 0.18,
+    "stateEffectiveRate": 0.03,
+    "marginalRate": 0.22,
+    "source": "TurboTax MCP",
+    "estimatedAt": "2026-04-10T00:00:00.000Z"
+  }
+}
